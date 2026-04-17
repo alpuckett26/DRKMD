@@ -120,7 +120,7 @@ export default function AdminDashboard() {
         <div className="card space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="font-bold">WendOS</h2>
+              <h2 className="font-bold">Window Ordering</h2>
               <p className="text-xs text-gray-500">Enable to allow orders through window only</p>
             </div>
             <button
