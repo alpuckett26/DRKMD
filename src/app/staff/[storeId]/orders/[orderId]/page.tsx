@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import Link from 'next/link'
 import { formatCents, calcFinalTotal } from '@/lib/utils'
 
 interface OrderItem {
@@ -81,9 +80,9 @@ export default function PickingPage() {
 
   return (
     <div className="min-h-screen pb-32">
-      <div className="bg-gray-900 border-b border-gray-800 sticky top-0 z-10">
+      <div className="panel sticky top-0 z-10">
         <div className="max-w-2xl mx-auto px-4 py-4 flex items-center gap-3">
-          <Link href={`/staff/${storeId}/orders`} className="text-gray-400 text-2xl">‹</Link>
+          <button onClick={() => router.back()} className="text-gray-400 text-2xl">‹</button>
           <div>
             <div className="flex items-center gap-2">
               <span className="font-black text-xl text-brand tracking-widest">{order.pickupCode}</span>

@@ -1,8 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { useParams } from 'next/navigation'
-import Link from 'next/link'
+import { useParams, useRouter } from 'next/navigation'
 import { formatCents } from '@/lib/utils'
 
 interface HandoffResult {
@@ -17,6 +16,7 @@ interface HandoffResult {
 
 export default function HandoffPage() {
   const { storeId } = useParams<{ storeId: string }>()
+  const router = useRouter()
   const [code, setCode] = useState('')
   const [orderId, setOrderId] = useState('')
   const [result, setResult] = useState<HandoffResult | null>(null)
@@ -65,9 +65,9 @@ export default function HandoffPage() {
 
   return (
     <div className="min-h-screen pb-10">
-      <div className="bg-gray-900 border-b border-gray-800 sticky top-0 z-10">
+      <div className="panel sticky top-0 z-10">
         <div className="max-w-lg mx-auto px-4 py-4 flex items-center gap-3">
-          <Link href={`/staff/${storeId}/orders`} className="text-gray-400 text-2xl">‹</Link>
+          <button onClick={() => router.back()} className="text-gray-400 text-2xl">‹</button>
           <h1 className="font-bold text-lg">Verify Handoff</h1>
         </div>
       </div>

@@ -294,7 +294,7 @@ function OrderCard({
 function ReadyCard({ order, storeId }: { order: Order; storeId: string }) {
   return (
     <Link
-      href={`/staff/${storeId}/handoff`}
+      href={`/staff/${storeId}/orders/${order.id}`}
       className="block rounded-2xl p-4 border-2 border-green-600 bg-green-900/20"
     >
       <div className="flex items-center justify-between gap-3">
@@ -309,7 +309,7 @@ function ReadyCard({ order, storeId }: { order: Order; storeId: string }) {
           </p>
         </div>
       </div>
-      <p className="text-xs text-green-600 mt-2 font-semibold">→ Tap to go to handoff screen</p>
+      <p className="text-xs text-green-600 mt-2 font-semibold">→ Tap to view order</p>
     </Link>
   )
 }
