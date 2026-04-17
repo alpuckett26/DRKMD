@@ -5,23 +5,59 @@
 @layer base {
   body {
     @apply bg-gray-950 text-gray-100;
+    background-image: radial-gradient(ellipse at top, rgba(46,168,255,0.06) 0%, transparent 55%);
+    background-attachment: fixed;
   }
 }
 
 @layer components {
   .btn-primary {
-    @apply w-full bg-brand text-white font-semibold py-3 px-6 rounded-xl text-base active:bg-brand-dark disabled:opacity-50 disabled:cursor-not-allowed transition-colors;
+    @apply w-full bg-brand text-white font-semibold py-3 px-6 rounded-xl text-base active:bg-brand-dark disabled:opacity-50 disabled:cursor-not-allowed transition-all;
+    box-shadow: 0 0 16px rgba(46,168,255,0.35), 0 0 4px rgba(46,168,255,0.2);
+  }
+  .btn-primary:hover:not(:disabled) {
+    box-shadow: 0 0 24px rgba(46,168,255,0.5), 0 0 8px rgba(46,168,255,0.3);
   }
   .btn-secondary {
-    @apply w-full bg-gray-800 text-gray-100 font-semibold py-3 px-6 rounded-xl text-base active:bg-gray-700 transition-colors;
+    @apply w-full font-semibold py-3 px-6 rounded-xl text-base transition-all text-gray-200;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(46,168,255,0.2);
+    backdrop-filter: blur(8px);
+  }
+  .btn-secondary:hover {
+    background: rgba(255,255,255,0.08);
+    border-color: rgba(46,168,255,0.4);
+    box-shadow: 0 0 12px rgba(46,168,255,0.2);
   }
   .card {
-    @apply bg-gray-900 rounded-2xl p-4;
+    @apply rounded-2xl p-4;
+    background: rgba(15,20,30,0.7);
+    border: 1px solid rgba(46,168,255,0.15);
+    backdrop-filter: blur(12px);
+    box-shadow: 0 0 24px rgba(46,168,255,0.08), inset 0 0 20px rgba(46,168,255,0.04);
   }
   .input {
-    @apply w-full bg-gray-800 text-gray-100 rounded-xl px-4 py-3 text-base placeholder-gray-500 border border-gray-700 focus:outline-none focus:border-brand;
+    @apply w-full text-gray-100 rounded-xl px-4 py-3 text-base placeholder-gray-500 focus:outline-none transition-all;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(46,168,255,0.2);
+    backdrop-filter: blur(8px);
+  }
+  .input:focus {
+    border-color: rgba(46,168,255,0.6);
+    box-shadow: 0 0 16px rgba(46,168,255,0.2), inset 0 0 8px rgba(46,168,255,0.05);
   }
   .badge {
     @apply text-xs font-semibold px-2 py-0.5 rounded-full;
+  }
+  .glass {
+    background: rgba(15,20,30,0.6);
+    border: 1px solid rgba(46,168,255,0.15);
+    backdrop-filter: blur(16px);
+  }
+  .glow {
+    box-shadow: 0 0 20px rgba(46,168,255,0.4), 0 0 8px rgba(46,168,255,0.25);
+  }
+  .glow-text {
+    text-shadow: 0 0 12px rgba(46,168,255,0.6), 0 0 4px rgba(46,168,255,0.4);
   }
 }
