@@ -17,6 +17,9 @@ model Store {
   windowModeEnd     String?
   timezone          String    @default("America/Chicago")
   logoUrl           String?
+  onboardingComplete Boolean  @default(false)
+  ownerName          String?
+  ownerEmail         String?
   products          Product[]
   orders            Order[]
   createdAt         DateTime  @default(now())
