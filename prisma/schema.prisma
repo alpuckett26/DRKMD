@@ -31,8 +31,57 @@ model Store {
   tosAcceptedAt      DateTime?
   products          Product[]
   orders            Order[]
+  staff             Staff[]
+  account           Account?
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
+}
+
+model Account {
+  id             String    @id @default(cuid())
+  email          String    @unique
+  passwordHash   String
+  storeId        String    @unique
+  store          Store     @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  sessionToken   String?   @unique
+  sessionExpires DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+}
+
+model Staff {
+  id             String       @id @default(cuid())
+  storeId        String
+  store          Store        @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  name           String
+  role           StaffRole    @default(staff)
+  pin            String
+  active         Boolean      @default(true)
+  failedAttempts Int          @default(0)
+  lockedUntil    DateTime?
+  sessionToken   String?      @unique
+  sessionExpires DateTime?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  shifts         StaffShift[]
+  events         OrderEvent[]
+  orders         Order[]
+}
+
+model StaffShift {
+  id         String    @id @default(cuid())
+  staffId    String
+  staff      Staff     @relation(fields: [staffId], references: [id])
+  storeId    String
+  startedAt  DateTime  @default(now())
+  endedAt    DateTime?
+  orderCount Int       @default(0)
+  totalSales Int       @default(0)
+}
+
+enum StaffRole {
+  admin
+  staff
 }
 
 model Product {
@@ -67,6 +116,8 @@ model Order {
   substitutionPreference SubstitutionPreference @default(none)
   pickupCode             String
   pickupCodeQr           String?
+  staffId                String?
+  staff                  Staff?                 @relation(fields: [staffId], references: [id])
   createdAt              DateTime               @default(now())
   completedAt            DateTime?
   items                  OrderItem[]
@@ -95,6 +146,8 @@ model OrderEvent {
   order     Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
   eventType EventType
   notes     String?
+  staffId   String?
+  staff     Staff?    @relation(fields: [staffId], references: [id])
   createdAt DateTime  @default(now())
 }
 
