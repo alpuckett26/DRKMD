@@ -55,6 +55,8 @@ export default function FulfillmentTablet() {
   const [storeName, setStoreName] = useState('')
   const [newOrderIds, setNewOrderIds] = useState<Set<string>>(new Set())
   const knownIds = useRef<Set<string>>(new Set())
+  // Track when each unacknowledged order was first seen and how many reminders sent
+  const reminderState = useRef<Map<string, { seenAt: number; reminders: number }>>(new Map())
   const [lastPoll, setLastPoll] = useState<Date | null>(null)
 
   useEffect(() => {
@@ -83,6 +85,7 @@ export default function FulfillmentTablet() {
     setOrders(active)
     setLastPoll(new Date())
 
+    const now = Date.now()
     const incoming = active.filter(
       o => QUEUE_STATUSES.includes(o.status) && !knownIds.current.has(o.id),
     )
@@ -96,6 +99,29 @@ export default function FulfillmentTablet() {
           return next
         })
       }, 5000)
+      incoming.forEach(o => reminderState.current.set(o.id, { seenAt: now, reminders: 0 }))
+    }
+
+    // Reminder beeps: re-alert every 2 minutes, up to 2 reminders, for unacknowledged authorized orders
+    const REMINDER_INTERVAL_MS = 2 * 60 * 1000
+    const MAX_REMINDERS = 2
+    const unacknowledged = active.filter(o => o.status === 'authorized')
+    for (const order of unacknowledged) {
+      const state = reminderState.current.get(order.id)
+      if (state && state.reminders < MAX_REMINDERS) {
+        const elapsed = now - state.seenAt
+        const due = (state.reminders + 1) * REMINDER_INTERVAL_MS
+        if (elapsed >= due) {
+          playBeep()
+          reminderState.current.set(order.id, { ...state, reminders: state.reminders + 1 })
+        }
+      }
+    }
+
+    // Clean up reminder state for orders no longer in queue
+    const activeIds = new Set(active.map(o => o.id))
+    for (const id of Array.from(reminderState.current.keys())) {
+      if (!activeIds.has(id)) reminderState.current.delete(id)
     }
 
     active.forEach(o => knownIds.current.add(o.id))

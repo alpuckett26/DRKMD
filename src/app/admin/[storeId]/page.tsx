@@ -13,6 +13,7 @@ export default function AdminDashboard() {
   const [windowModeEnabled, setWindowModeEnabled] = useState(false)
   const [windowStart, setWindowStart] = useState('22:00')
   const [windowEnd, setWindowEnd] = useState('06:00')
+  const [logoUrl, setLogoUrl] = useState('')
 
   useEffect(() => {
     fetch(`/api/stores/${storeId}`)
@@ -22,6 +23,7 @@ export default function AdminDashboard() {
         setWindowModeEnabled(s.windowModeEnabled)
         setWindowStart(s.windowModeStart ?? '22:00')
         setWindowEnd(s.windowModeEnd ?? '06:00')
+        setLogoUrl((s as StoreInfo & { logoUrl?: string }).logoUrl ?? '')
       })
     fetch(`/api/qr/${storeId}`)
       .then(r => r.json())
@@ -37,6 +39,7 @@ export default function AdminDashboard() {
         windowModeEnabled,
         windowModeStart: windowStart,
         windowModeEnd: windowEnd,
+        logoUrl: logoUrl || null,
       }),
     })
     setSaving(false)
@@ -112,6 +115,25 @@ export default function AdminDashboard() {
               Download QR Code
             </a>
           )}
+        </div>
+
+        {/* Storefront Photo */}
+        <div className="card space-y-3">
+          <h2 className="font-bold">Storefront Photo</h2>
+          <p className="text-xs text-gray-500">Paste a URL to your store photo or logo. Shown to customers on the menu.</p>
+          <input
+            type="url"
+            placeholder="https://example.com/photo.jpg"
+            value={logoUrl}
+            onChange={e => setLogoUrl(e.target.value)}
+            className="input"
+          />
+          {logoUrl && (
+            <img src={logoUrl} alt="Storefront preview" className="w-full max-h-40 object-cover rounded-xl" />
+          )}
+          <button onClick={saveSettings} disabled={saving} className="btn-primary">
+            {saving ? 'Saving…' : 'Save Photo'}
+          </button>
         </div>
 
         {/* Quick links */}
