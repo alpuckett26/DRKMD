@@ -76,7 +76,7 @@ export default function StaffLogin() {
 
   if (loadingStaff) {
     return (
-      <div className="min-h-screen bg-gray-950 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center">
         <p className="text-gray-500 animate-pulse">Loading…</p>
       </div>
     )
@@ -85,16 +85,16 @@ export default function StaffLogin() {
   // Step 1: Staff name selection
   if (!selectedStaff) {
     return (
-      <div className="min-h-screen bg-gray-950 flex flex-col items-center justify-center gap-8 px-4">
+      <div className="min-h-screen flex flex-col items-center justify-center gap-8 px-4">
         <div className="text-center">
-          <h1 className="font-black text-2xl text-brand">WendOS</h1>
-          <p className="text-gray-500 text-sm mt-1">Staff Login — Who are you?</p>
+          <h1 className="font-black text-3xl text-brand glow-text">WendOS</h1>
+          <p className="text-gray-400 text-sm mt-2">Who&apos;s working?</p>
         </div>
 
         {staff.length === 0 ? (
           <div className="card text-center space-y-2 w-full max-w-sm">
             <p className="text-gray-400">No staff accounts found.</p>
-            <p className="text-xs text-gray-600">Ask your manager to add staff members in the admin panel.</p>
+            <p className="text-xs text-gray-500">Ask your manager to add staff in the admin panel.</p>
           </div>
         ) : (
           <div className="w-full max-w-sm space-y-3">
@@ -105,13 +105,14 @@ export default function StaffLogin() {
                   key={member.id}
                   onClick={() => selectStaffMember(member)}
                   disabled={!!locked}
-                  className={`w-full rounded-2xl p-4 text-left font-semibold text-lg transition-colors ${
+                  className={`w-full rounded-2xl p-4 text-left font-bold text-lg transition-all ${
                     locked
-                      ? 'bg-gray-800 text-gray-600 cursor-not-allowed'
-                      : 'bg-gray-800 text-white active:bg-brand hover:bg-gray-700'
+                      ? 'opacity-40 cursor-not-allowed glass'
+                      : 'glass hover:border-brand/60 active:scale-[0.98]'
                   }`}
+                  style={!locked ? { boxShadow: 'none' } : undefined}
                 >
-                  <span>{member.name}</span>
+                  <span className={locked ? 'text-gray-500' : 'text-white'}>{member.name}</span>
                   {locked && (
                     <span className="text-xs text-red-400 block font-normal mt-0.5">
                       Locked — try again later
@@ -128,20 +129,22 @@ export default function StaffLogin() {
 
   // Step 2: PIN entry
   return (
-    <div className="min-h-screen bg-gray-950 flex flex-col items-center justify-center gap-8 px-4">
+    <div className="min-h-screen flex flex-col items-center justify-center gap-8 px-4">
       <div className="text-center">
-        <h1 className="font-black text-2xl text-brand">WendOS</h1>
-        <p className="text-gray-400 text-base mt-1 font-semibold">{selectedStaff.name}</p>
-        <p className="text-gray-600 text-sm">Enter your PIN</p>
+        <h1 className="font-black text-3xl text-brand glow-text">WendOS</h1>
+        <p className="text-white text-lg mt-2 font-bold">{selectedStaff.name}</p>
+        <p className="text-gray-500 text-sm">Enter your PIN</p>
       </div>
 
       {/* PIN dots */}
-      <div className="flex gap-4">
+      <div className="flex gap-5">
         {[0, 1, 2, 3].map(i => (
           <div
             key={i}
-            className={`w-4 h-4 rounded-full border-2 transition-colors ${
-              i < pin.length ? 'bg-brand border-brand' : 'border-gray-600'
+            className={`w-5 h-5 rounded-full border-2 transition-all ${
+              i < pin.length
+                ? 'bg-brand border-brand shadow-[0_0_12px_rgba(46,168,255,0.8)]'
+                : 'border-gray-600'
             }`}
           />
         ))}
@@ -154,21 +157,12 @@ export default function StaffLogin() {
         {['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', '⌫'].map((k, i) =>
           k === '' ? (
             <div key={i} />
-          ) : k === '⌫' ? (
-            <button
-              key={i}
-              onClick={backspace}
-              disabled={loading}
-              className="h-16 rounded-2xl bg-gray-800 text-gray-400 text-xl font-bold active:bg-gray-700 transition-colors"
-            >
-              ⌫
-            </button>
           ) : (
             <button
               key={i}
-              onClick={() => pressDigit(k)}
+              onClick={k === '⌫' ? backspace : () => pressDigit(k)}
               disabled={loading}
-              className="h-16 rounded-2xl bg-gray-800 text-white text-xl font-bold active:bg-brand transition-colors"
+              className={`pin-btn ${k === '⌫' ? 'text-gray-400' : ''}`}
             >
               {k}
             </button>
@@ -176,7 +170,7 @@ export default function StaffLogin() {
         )}
       </div>
 
-      <button onClick={goBack} className="text-gray-600 text-sm underline">
+      <button onClick={goBack} className="text-gray-600 text-sm underline hover:text-gray-400 transition-colors">
         ← Back
       </button>
     </div>

@@ -154,11 +154,11 @@ export default function FulfillmentTablet() {
   const ready = orders.filter(o => READY_STATUSES.includes(o.status))
 
   return (
-    <div className="min-h-screen bg-gray-950 flex flex-col">
+    <div className="min-h-screen flex flex-col" style={{background:'#050a12'}}>
       {/* Header bar */}
-      <div className="bg-gray-900 border-b border-gray-800 px-6 py-3 flex items-center justify-between">
+      <div className="panel px-6 py-3 flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <span className="font-black text-brand text-xl">WendOS</span>
+          <span className="font-black text-brand text-xl glow-text">WendOS</span>
           <span className="text-gray-500 text-sm">{storeName}</span>
           <span className="badge bg-green-900 text-green-400 text-xs">● FULFILLMENT</span>
         </div>
@@ -170,7 +170,7 @@ export default function FulfillmentTablet() {
               <button
                 onClick={endShift}
                 disabled={endingShift}
-                className="bg-gray-700 hover:bg-gray-600 text-white text-xs px-3 py-1.5 rounded-lg transition-colors"
+                className="glass text-white text-xs px-3 py-1.5 rounded-lg transition-all hover:border-brand/50"
               >
                 {endingShift ? '…' : 'End Shift'}
               </button>

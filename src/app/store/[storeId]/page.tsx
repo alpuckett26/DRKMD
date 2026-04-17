@@ -65,9 +65,9 @@ export default function MenuPage() {
   }
 
   return (
-    <div className="min-h-screen pb-32 bg-gray-950">
+    <div className="min-h-screen pb-32">
       {/* Header */}
-      <div className="bg-gray-900 border-b border-gray-800 sticky top-0 z-20">
+      <div className="panel sticky top-0 z-20">
         <div className="max-w-lg mx-auto px-4 pt-4 pb-2">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-3">
@@ -99,7 +99,7 @@ export default function MenuPage() {
               placeholder="Search products…"
               value={search}
               onChange={e => { setSearch(e.target.value); setActiveCategory('All') }}
-              className="w-full bg-gray-800 text-gray-100 rounded-xl pl-9 pr-4 py-2.5 text-sm placeholder-gray-500 border border-gray-700 focus:outline-none focus:border-brand"
+              className="input pl-9 py-2.5 text-sm"
             />
           </div>
         </div>
@@ -153,7 +153,7 @@ export default function MenuPage() {
 
       {/* Cart bar */}
       {itemCount > 0 && (
-        <div className="fixed bottom-0 left-0 right-0 p-4 bg-gray-950/95 backdrop-blur border-t border-gray-800 z-30">
+        <div className="fixed bottom-0 left-0 right-0 p-4 z-30" style={{background:'rgba(5,10,18,0.92)',borderTop:'1px solid rgba(46,168,255,0.25)',backdropFilter:'blur(20px)'}}>
           <div className="max-w-lg mx-auto">
             <Link href={`/store/${storeId}/cart`} className="btn-primary flex items-center justify-between">
               <span className="bg-brand-dark rounded-lg px-2 py-0.5 text-sm font-bold">{itemCount}</span>
@@ -169,7 +169,7 @@ export default function MenuPage() {
 
 function ProductCard({ product, qty, onAdd }: { product: ProductInfo; qty: number; onAdd: () => void }) {
   return (
-    <div className="bg-gray-900 rounded-2xl overflow-hidden flex flex-col">
+    <div className="product-card">
       <div className="relative aspect-square bg-gray-800">
         {product.imageUrl ? (
           <Image src={product.imageUrl} alt={product.name} fill className="object-contain p-2" unoptimized />

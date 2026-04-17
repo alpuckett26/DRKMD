@@ -92,10 +92,10 @@ export default function AdminDashboard() {
 
   return (
     <div className="min-h-screen pb-10">
-      <div className="bg-gray-900 border-b border-gray-800">
+      <div className="panel">
         <div className="max-w-2xl mx-auto px-4 py-4 flex items-center justify-between">
           <div>
-            <h1 className="font-black text-lg text-brand">Admin</h1>
+            <h1 className="font-black text-lg text-brand glow-text">WendOS</h1>
             <p className="text-sm text-gray-400">{store.name}</p>
           </div>
           <div className="flex gap-3 text-sm">
