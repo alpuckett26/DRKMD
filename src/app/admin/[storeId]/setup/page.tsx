@@ -9,7 +9,7 @@ const STEPS = ['Welcome', 'Business', 'Photo', 'Shelf', 'Hours', 'Terms', 'Purch
 const BUSINESS_TYPES = ['Sole Proprietorship', 'LLC', 'Corporation', 'Partnership', 'Other']
 
 interface SquareConfig { appId: string; locationId: string; environment: string }
-interface SuggestedProduct { name: string; category: string; restricted: boolean; selected: boolean }
+interface SuggestedProduct { name: string; category: string; restricted: boolean; estimatedPrice: number | null; imageUrl: string | null; selected: boolean; customPrice: string }
 
 export default function SetupWizard() {
   const { storeId } = useParams<{ storeId: string }>()
@@ -127,7 +127,11 @@ export default function SetupWizard() {
         body: JSON.stringify({ images: shelfPhotos }),
       })
       const data = await res.json()
-      setSuggestions((data.products ?? []).map((p: Omit<SuggestedProduct, 'selected'>) => ({ ...p, selected: true })))
+      setSuggestions((data.products ?? []).map((p: Omit<SuggestedProduct, 'selected' | 'customPrice'>) => ({
+        ...p,
+        selected: true,
+        customPrice: p.estimatedPrice != null ? String(p.estimatedPrice) : '',
+      })))
     } catch {
       setSuggestions([])
     }
@@ -138,16 +142,21 @@ export default function SetupWizard() {
     const selected = suggestions.filter(s => s.selected)
     if (!selected.length) return
     setAddingItems(true)
-    await Promise.all(selected.map(p =>
-      fetch('/api/admin/products', {
+    await Promise.all(selected.map(p => {
+      const priceVal = parseFloat(p.customPrice)
+      const priceCents = !isNaN(priceVal) && priceVal > 0 ? Math.round(priceVal * 100) : 0
+      return fetch('/api/admin/products', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           storeId, name: p.name, category: p.category,
-          price: 0, restrictedFlag: p.restricted, nighttimeAvailable: true,
+          price: priceCents,
+          restrictedFlag: p.restricted,
+          nighttimeAvailable: true,
+          imageUrl: p.imageUrl ?? undefined,
         }),
       })
-    ))
+    }))
     setAddingItems(false)
     setItemsAdded(true)
   }
@@ -195,7 +204,7 @@ export default function SetupWizard() {
     : 'https://sandbox.web.squarecdn.com/v1/square.js'
 
   const canAcceptTerms = tosChecked && billingChecked && authorizedChecked
-  const selectedCount = suggestions.filter(s => s.selected).length
+  const selectedCount = suggestions.filter(s => s.selected && s.customPrice).length
 
   return (
     <>
@@ -366,23 +375,36 @@ export default function SetupWizard() {
               {suggestions.length > 0 && !itemsAdded && (
                 <div className="card space-y-3">
                   <div className="flex items-center justify-between">
-                    <p className="font-bold text-sm">Found {suggestions.length} products</p>
+                    <p className="font-bold text-sm">✨ Found {suggestions.length} products</p>
                     <div className="flex gap-3 text-xs">
                       <button onClick={() => setSuggestions(p => p.map(s => ({ ...s, selected: true })))} className="text-brand underline">All</button>
                       <button onClick={() => setSuggestions(p => p.map(s => ({ ...s, selected: false })))} className="text-gray-500 underline">None</button>
                     </div>
                   </div>
-                  <div className="space-y-2 max-h-64 overflow-y-auto">
+                  <div className="space-y-2 max-h-96 overflow-y-auto">
                     {suggestions.map((s, i) => (
-                      <label key={i} className="flex items-center gap-3 cursor-pointer py-1">
-                        <input type="checkbox" checked={s.selected}
-                          onChange={e => setSuggestions(p => p.map((x, j) => j === i ? { ...x, selected: e.target.checked } : x))}
+                      <div key={i}
+                        className={`flex items-center gap-3 py-2 cursor-pointer transition-opacity ${s.selected ? '' : 'opacity-40'}`}
+                        onClick={() => setSuggestions(p => p.map((x, j) => j === i ? { ...x, selected: !x.selected } : x))}
+                      >
+                        <input type="checkbox" checked={s.selected} readOnly
                           className="accent-brand w-4 h-4 shrink-0" />
-                        <div className="min-w-0">
+                        {s.imageUrl
+                          ? <img src={s.imageUrl} alt={s.name} className="w-10 h-10 rounded-lg object-contain bg-gray-800 shrink-0" />
+                          : <div className="w-10 h-10 rounded-lg bg-gray-800 shrink-0 flex items-center justify-center text-lg">🛒</div>
+                        }
+                        <div className="flex-1 min-w-0">
                           <p className="text-sm font-semibold truncate">{s.name}</p>
                           <p className="text-xs text-gray-500">{s.category}{s.restricted ? ' · 21+' : ''}</p>
                         </div>
-                      </label>
+                        <input
+                          type="number" step="0.01" min="0" placeholder="Price"
+                          value={s.customPrice}
+                          onChange={e => { e.stopPropagation(); setSuggestions(p => p.map((x, j) => j === i ? { ...x, customPrice: e.target.value } : x)) }}
+                          onClick={e => e.stopPropagation()}
+                          className="input text-sm py-1 w-20 shrink-0"
+                        />
+                      </div>
                     ))}
                   </div>
                   <button onClick={addSelectedItems} disabled={addingItems || selectedCount === 0} className="btn-primary">
