@@ -104,8 +104,8 @@ export default function CheckoutPage() {
     }
 
     const order = await res.json()
-    clearCart()
     router.push(`/store/${storeId}/order/${order.id}`)
+    clearCart()
   }
 
   return (
