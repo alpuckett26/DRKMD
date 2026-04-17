@@ -18,6 +18,11 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Missing storeId or rows' }, { status: 400 })
   }
 
+  const store = await db.store.findUnique({ where: { id: storeId } })
+  if (!store) {
+    return NextResponse.json({ error: `Store not found: "${storeId}". Check your URL matches the seeded store ID.` }, { status: 404 })
+  }
+
   const created = []
   const errors = []
 
