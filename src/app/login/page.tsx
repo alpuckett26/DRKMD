@@ -1,9 +1,11 @@
 'use client'
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, Suspense } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const next = searchParams.get('next') ?? ''
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
@@ -20,30 +22,38 @@ export default function LoginPage() {
     })
     const data = await res.json()
     if (!res.ok) { setError(data.error); setLoading(false); return }
-    router.push(`/admin/${data.storeId}`)
+    router.push(next || `/admin/${data.storeId}`)
   }
 
   return (
-    <div className="min-h-screen bg-gray-950 flex items-center justify-center px-4">
+    <form onSubmit={handleSubmit} className="card space-y-4">
+      <div>
+        <label className="text-xs text-gray-400 block mb-1">Email</label>
+        <input type="email" value={email} onChange={e => setEmail(e.target.value)} required className="input" placeholder="you@yourstore.com" autoComplete="email" />
+      </div>
+      <div>
+        <label className="text-xs text-gray-400 block mb-1">Password</label>
+        <input type="password" value={password} onChange={e => setPassword(e.target.value)} required className="input" placeholder="••••••••" autoComplete="current-password" />
+      </div>
+      {error && <p className="text-red-400 text-sm">{error}</p>}
+      <button type="submit" disabled={loading} className="btn-primary">
+        {loading ? 'Signing in…' : 'Sign In →'}
+      </button>
+    </form>
+  )
+}
+
+export default function LoginPage() {
+  return (
+    <div className="min-h-screen flex items-center justify-center px-4">
       <div className="w-full max-w-sm space-y-6">
         <div className="text-center">
-          <h1 className="font-black text-3xl text-brand">WendOS</h1>
-          <p className="text-gray-500 text-sm mt-1">Store Admin Login</p>
+          <h1 className="font-black text-4xl text-brand glow-text">WendOS</h1>
+          <p className="text-gray-500 text-sm mt-2">Store Admin Login</p>
         </div>
-        <form onSubmit={handleSubmit} className="card space-y-4">
-          <div>
-            <label className="text-xs text-gray-500 block mb-1">Email</label>
-            <input type="email" value={email} onChange={e => setEmail(e.target.value)} required className="input" placeholder="you@yourstore.com" />
-          </div>
-          <div>
-            <label className="text-xs text-gray-500 block mb-1">Password</label>
-            <input type="password" value={password} onChange={e => setPassword(e.target.value)} required className="input" placeholder="••••••••" />
-          </div>
-          {error && <p className="text-red-400 text-sm">{error}</p>}
-          <button type="submit" disabled={loading} className="btn-primary w-full">
-            {loading ? 'Signing in…' : 'Sign In →'}
-          </button>
-        </form>
+        <Suspense>
+          <LoginForm />
+        </Suspense>
         <p className="text-center text-xs text-gray-600">
           New store? <a href="/signup" className="text-brand underline">Get started</a>
         </p>

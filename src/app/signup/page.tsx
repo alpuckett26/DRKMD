@@ -16,14 +16,8 @@ export default function SignupPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError('')
-    if (password !== confirmPassword) {
-      setError('Passwords do not match')
-      return
-    }
-    if (password.length < 8) {
-      setError('Password must be at least 8 characters')
-      return
-    }
+    if (password !== confirmPassword) { setError('Passwords do not match'); return }
+    if (password.length < 8) { setError('Password must be at least 8 characters'); return }
     setSubmitting(true)
     try {
       const res = await fetch('/api/signup', {
@@ -41,75 +35,39 @@ export default function SignupPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-950 flex items-center justify-center px-4 py-12">
+    <div className="min-h-screen flex items-center justify-center px-4 py-12">
       <div className="w-full max-w-md space-y-6">
         <div className="text-center space-y-2">
           <p className="text-5xl">🪟</p>
-          <h1 className="font-black text-3xl text-brand">WendOS</h1>
-          <p className="text-gray-400 text-sm">Window ordering, powered by WendOS — set up your store in minutes.</p>
+          <h1 className="font-black text-4xl text-brand glow-text">WendOS</h1>
+          <p className="text-gray-400 text-sm">Window ordering for convenience stores — set up in minutes.</p>
         </div>
 
         <div className="card space-y-5">
           <h2 className="font-black text-xl">Create Your Store</h2>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="text-xs text-gray-500 block mb-1">Store Name</label>
-              <input
-                type="text"
-                value={storeName}
-                onChange={e => setStoreName(e.target.value)}
-                placeholder="Main St. Convenience"
-                required
-                className="input"
-              />
+              <label className="text-xs text-gray-400 block mb-1">Store Name</label>
+              <input type="text" value={storeName} onChange={e => setStoreName(e.target.value)} placeholder="Main St. Convenience" required className="input" />
             </div>
             <div>
-              <label className="text-xs text-gray-500 block mb-1">Your Name</label>
-              <input
-                type="text"
-                value={ownerName}
-                onChange={e => setOwnerName(e.target.value)}
-                placeholder="Jane Smith"
-                required
-                className="input"
-              />
+              <label className="text-xs text-gray-400 block mb-1">Your Name</label>
+              <input type="text" value={ownerName} onChange={e => setOwnerName(e.target.value)} placeholder="Jane Smith" required className="input" />
             </div>
             <div>
-              <label className="text-xs text-gray-500 block mb-1">Email</label>
-              <input
-                type="email"
-                value={ownerEmail}
-                onChange={e => setOwnerEmail(e.target.value)}
-                placeholder="jane@example.com"
-                required
-                className="input"
-              />
+              <label className="text-xs text-gray-400 block mb-1">Email</label>
+              <input type="email" value={ownerEmail} onChange={e => setOwnerEmail(e.target.value)} placeholder="jane@example.com" required className="input" autoComplete="email" />
             </div>
             <div>
-              <label className="text-xs text-gray-500 block mb-1">Password</label>
-              <input
-                type="password"
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-                placeholder="At least 8 characters"
-                required
-                minLength={8}
-                className="input"
-              />
+              <label className="text-xs text-gray-400 block mb-1">Password</label>
+              <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="At least 8 characters" required minLength={8} className="input" autoComplete="new-password" />
             </div>
             <div>
-              <label className="text-xs text-gray-500 block mb-1">Confirm Password</label>
-              <input
-                type="password"
-                value={confirmPassword}
-                onChange={e => setConfirmPassword(e.target.value)}
-                placeholder="Repeat password"
-                required
-                className="input"
-              />
+              <label className="text-xs text-gray-400 block mb-1">Confirm Password</label>
+              <input type="password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} placeholder="Repeat password" required className="input" autoComplete="new-password" />
             </div>
             {error && <p className="text-red-400 text-sm">{error}</p>}
-            <button type="submit" disabled={submitting} className="btn-primary w-full">
+            <button type="submit" disabled={submitting} className="btn-primary">
               {submitting ? 'Creating…' : 'Create Store →'}
             </button>
           </form>

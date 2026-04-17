@@ -12,7 +12,10 @@ export default function Home() {
           <p>💳 Pay securely – charged only for what you receive</p>
           <p>🪟 Show pickup code at window</p>
         </div>
-        <p className="text-xs text-gray-600">Staff? <a href="/staff" className="text-brand underline">Staff login</a></p>
+        <div className="flex justify-center gap-4 text-xs text-gray-600">
+          <p>Staff? <a href="/staff" className="text-brand underline">Staff login</a></p>
+          <p>Store owner? <a href="/login" className="text-brand underline">Admin</a></p>
+        </div>
       </div>
     </main>
   )

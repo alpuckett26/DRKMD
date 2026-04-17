@@ -1,12 +1,13 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useParams } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import type { StoreInfo } from '@/types'
 
 export default function AdminDashboard() {
   const { storeId } = useParams<{ storeId: string }>()
+  const router = useRouter()
   const [store, setStore] = useState<StoreInfo | null>(null)
   const [qrUrl, setQrUrl] = useState('')
   const [saving, setSaving] = useState(false)
@@ -75,6 +76,11 @@ export default function AdminDashboard() {
     setDemoResetting(false)
   }
 
+  async function logout() {
+    await fetch('/api/auth/logout', { method: 'POST' })
+    router.push('/login')
+  }
+
   async function runMigrate() {
     setMigrating(true)
     setMigrateResult(null)
@@ -98,12 +104,17 @@ export default function AdminDashboard() {
             <h1 className="font-black text-lg text-brand glow-text">WendOS</h1>
             <p className="text-sm text-gray-400">{store.name}</p>
           </div>
-          <div className="flex gap-3 text-sm">
+          <div className="flex gap-3 text-sm items-center">
             <Link href={`/admin/${storeId}/products`} className="text-brand underline">Products</Link>
             <Link href={`/admin/${storeId}/orders`} className="text-brand underline">Orders</Link>
             <Link href={`/admin/${storeId}/staff`} className="text-brand underline">Staff</Link>
             <Link href={`/staff/${storeId}/orders`} className="text-gray-400 underline">Staff View</Link>
-            <Link href={`/fulfillment/${storeId}`} className="text-gray-400 underline">Fulfillment Tablet</Link>
+            <Link href={`/fulfillment/${storeId}`} className="text-gray-400 underline">Fulfillment</Link>
+            {!isDemo && (
+              <button onClick={logout} className="text-gray-600 text-xs underline hover:text-gray-400 transition-colors">
+                Sign out
+              </button>
+            )}
           </div>
         </div>
       </div>
