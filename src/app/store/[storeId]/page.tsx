@@ -1,88 +1,149 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
 import { useCart } from '@/context/CartContext'
 import { formatCents } from '@/lib/utils'
 import type { ProductInfo, StoreInfo } from '@/types'
 
-type GroupedProducts = Record<string, ProductInfo[]>
+const CAT_ICON: Record<string, string> = {
+  'Drinks': '🥤', 'Energy': '⚡', 'Coffee & Tea': '☕',
+  'Beer': '🍺', 'Wine & Spirits': '🍷',
+  'Snacks': '🍿', 'Candy & Chocolate': '🍬',
+  'Food': '🌮', 'Health': '💊', 'Health & Beauty': '🧴',
+  'Tobacco': '🚬', 'Electronics': '🔋',
+  'Household': '🏠', 'Baby': '👶', 'General': '🛒',
+}
 
 export default function MenuPage() {
   const { storeId } = useParams<{ storeId: string }>()
   const [store, setStore] = useState<StoreInfo | null>(null)
   const [products, setProducts] = useState<ProductInfo[]>([])
   const [loading, setLoading] = useState(true)
+  const [search, setSearch] = useState('')
+  const [activeCategory, setActiveCategory] = useState('All')
   const { addItem, items, itemCount, total } = useCart()
+  const catRefs = useRef<Record<string, HTMLDivElement | null>>({})
+  const catBarRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     Promise.all([
       fetch(`/api/stores/${storeId}`).then(r => r.json()),
       fetch(`/api/stores/${storeId}/menu`).then(r => r.json()),
-    ]).then(([s, p]) => {
-      setStore(s)
-      setProducts(p)
-      setLoading(false)
-    })
+    ]).then(([s, p]) => { setStore(s); setProducts(p); setLoading(false) })
   }, [storeId])
 
-  const grouped = products.reduce<GroupedProducts>((acc, p) => {
+  const categories = ['All', ...Array.from(new Set(products.map(p => p.category ?? 'Other')))]
+
+  const filtered = products.filter(p => {
+    const matchSearch = !search || p.name.toLowerCase().includes(search.toLowerCase()) || (p.category ?? '').toLowerCase().includes(search.toLowerCase())
+    const matchCat = activeCategory === 'All' || (p.category ?? 'Other') === activeCategory
+    return matchSearch && matchCat
+  })
+
+  const grouped = filtered.reduce<Record<string, ProductInfo[]>>((acc, p) => {
     const cat = p.category ?? 'Other'
     acc[cat] = acc[cat] ? [...acc[cat], p] : [p]
     return acc
   }, {})
 
+  function scrollToCategory(cat: string) {
+    setActiveCategory(cat)
+    setSearch('')
+    if (cat === 'All') { window.scrollTo({ top: 0, behavior: 'smooth' }); return }
+    setTimeout(() => catRefs.current[cat]?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50)
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="text-gray-500 animate-pulse">Loading menu…</div>
+        <div className="text-gray-500 animate-pulse">Loading…</div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen pb-32">
+    <div className="min-h-screen pb-32 bg-gray-950">
       {/* Header */}
-      <div className="bg-gray-900 border-b border-gray-800 sticky top-0 z-10">
-        <div className="max-w-lg mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="font-black text-lg text-brand">WINDOW MODE</h1>
-              <p className="text-xs text-gray-400">{store?.name}</p>
+      <div className="bg-gray-900 border-b border-gray-800 sticky top-0 z-20">
+        <div className="max-w-lg mx-auto px-4 pt-4 pb-2">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-3">
+              {(store as StoreInfo & { logoUrl?: string })?.logoUrl ? (
+                <Image
+                  src={(store as StoreInfo & { logoUrl?: string }).logoUrl!}
+                  alt="Store"
+                  width={40}
+                  height={40}
+                  className="w-10 h-10 rounded-xl object-cover"
+                  unoptimized
+                />
+              ) : (
+                <div className="w-10 h-10 rounded-xl bg-brand/20 flex items-center justify-center text-xl">🏪</div>
+              )}
+              <div>
+                <h1 className="font-black text-base leading-tight">{store?.name}</h1>
+                <p className="text-xs text-gray-500">Tap items • Pay at checkout • Show code at window</p>
+              </div>
             </div>
-            <div className="flex items-center gap-2">
-              <span className="badge bg-green-900 text-green-400">● OPEN</span>
-            </div>
+            <span className="badge bg-green-900 text-green-400 text-xs shrink-0">● OPEN</span>
+          </div>
+
+          {/* Search */}
+          <div className="relative mb-2">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">🔍</span>
+            <input
+              type="search"
+              placeholder="Search products…"
+              value={search}
+              onChange={e => { setSearch(e.target.value); setActiveCategory('All') }}
+              className="w-full bg-gray-800 text-gray-100 rounded-xl pl-9 pr-4 py-2.5 text-sm placeholder-gray-500 border border-gray-700 focus:outline-none focus:border-brand"
+            />
           </div>
         </div>
+
+        {/* Category chips */}
+        {!search && (
+          <div ref={catBarRef} className="flex gap-2 overflow-x-auto px-4 pb-3 scrollbar-hide" style={{ scrollbarWidth: 'none' }}>
+            {categories.map(cat => (
+              <button
+                key={cat}
+                onClick={() => scrollToCategory(cat)}
+                className={`shrink-0 text-xs font-semibold px-3 py-1.5 rounded-full transition-colors ${
+                  activeCategory === cat
+                    ? 'bg-brand text-white'
+                    : 'bg-gray-800 text-gray-400 hover:text-gray-200'
+                }`}
+              >
+                {cat !== 'All' && (CAT_ICON[cat] ?? '🛒')} {cat}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
-      {/* Menu */}
+      {/* Product grid */}
       <div className="max-w-lg mx-auto px-4 pt-4 space-y-6">
-        <p className="text-xs text-gray-500 text-center">
-          Tap items to add • Pay at checkout • Show code at window
-        </p>
+        {Object.keys(grouped).length === 0 && (
+          <p className="text-center text-gray-500 pt-16">No products found.</p>
+        )}
 
-        {Object.entries(grouped).map(([category, items]) => (
-          <div key={category}>
-            <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-widest mb-2">
-              {category}
-            </h2>
-            <div className="space-y-2">
-              {items.map(product => (
+        {Object.entries(grouped).map(([category, catProducts]) => (
+          <div key={category} ref={el => { catRefs.current[category] = el }}>
+            <div className="flex items-center gap-2 mb-3">
+              <span className="text-lg">{CAT_ICON[category] ?? '🛒'}</span>
+              <h2 className="font-black text-sm uppercase tracking-widest text-gray-300">{category}</h2>
+              <span className="text-xs text-gray-600">({catProducts.length})</span>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              {catProducts.map(product => (
                 <ProductCard
                   key={product.id}
                   product={product}
-                  qty={useCartQty(items, product.id)}
-                  onAdd={() =>
-                    addItem({
-                      productId: product.id,
-                      name: product.name,
-                      price: product.price,
-                      restricted: product.restrictedFlag,
-                    })
-                  }
+                  qty={items.find(i => i.productId === product.id)?.qty ?? 0}
+                  onAdd={() => addItem({ productId: product.id, name: product.name, price: product.price, restricted: product.restrictedFlag })}
                 />
               ))}
             </div>
@@ -92,15 +153,10 @@ export default function MenuPage() {
 
       {/* Cart bar */}
       {itemCount > 0 && (
-        <div className="fixed bottom-0 left-0 right-0 p-4 bg-gray-950 border-t border-gray-800">
+        <div className="fixed bottom-0 left-0 right-0 p-4 bg-gray-950/95 backdrop-blur border-t border-gray-800 z-30">
           <div className="max-w-lg mx-auto">
-            <Link
-              href={`/store/${storeId}/cart`}
-              className="btn-primary flex items-center justify-between"
-            >
-              <span className="bg-brand-dark rounded-lg px-2 py-0.5 text-sm font-bold">
-                {itemCount}
-              </span>
+            <Link href={`/store/${storeId}/cart`} className="btn-primary flex items-center justify-between">
+              <span className="bg-brand-dark rounded-lg px-2 py-0.5 text-sm font-bold">{itemCount}</span>
               <span>View Cart</span>
               <span>{formatCents(total)}</span>
             </Link>
@@ -111,48 +167,35 @@ export default function MenuPage() {
   )
 }
 
-function useCartQty(cartItems: ProductInfo[], productId: string): number {
-  const { items } = useCart()
-  return items.find(i => i.productId === productId)?.qty ?? 0
-}
-
-function ProductCard({
-  product,
-  qty,
-  onAdd,
-}: {
-  product: ProductInfo
-  qty: number
-  onAdd: () => void
-}) {
+function ProductCard({ product, qty, onAdd }: { product: ProductInfo; qty: number; onAdd: () => void }) {
   return (
-    <div className="card flex items-center gap-3">
-      {product.imageUrl ? (
-        <img
-          src={product.imageUrl}
-          alt={product.name}
-          className="w-16 h-16 rounded-xl object-cover flex-shrink-0"
-        />
-      ) : (
-        <div className="w-16 h-16 rounded-xl bg-gray-800 flex-shrink-0 flex items-center justify-center text-2xl">
-          🛒
-        </div>
-      )}
-      <div className="flex-1 min-w-0">
-        <p className="font-semibold text-sm leading-tight">{product.name}</p>
-        <div className="flex items-center gap-2 mt-1">
-          <span className="text-brand font-bold text-sm">{formatCents(product.price)}</span>
-          {product.restrictedFlag && (
-            <span className="badge bg-red-900 text-red-400">21+</span>
-          )}
+    <div className="bg-gray-900 rounded-2xl overflow-hidden flex flex-col">
+      <div className="relative aspect-square bg-gray-800">
+        {product.imageUrl ? (
+          <Image src={product.imageUrl} alt={product.name} fill className="object-contain p-2" unoptimized />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center text-4xl">
+            {CAT_ICON[product.category ?? ''] ?? '🛒'}
+          </div>
+        )}
+        {product.restrictedFlag && (
+          <span className="absolute top-2 left-2 badge bg-red-900 text-red-400 text-xs">21+</span>
+        )}
+      </div>
+      <div className="p-2.5 flex flex-col flex-1 justify-between gap-2">
+        <p className="text-xs font-semibold leading-snug line-clamp-2">{product.name}</p>
+        <div className="flex items-center justify-between">
+          <span className="text-brand font-black text-sm">{formatCents(product.price)}</span>
+          <button
+            onClick={onAdd}
+            className={`w-8 h-8 rounded-full font-bold text-sm flex items-center justify-center transition-colors shrink-0 ${
+              qty > 0 ? 'bg-brand text-white' : 'bg-gray-700 text-gray-300 hover:bg-brand hover:text-white'
+            }`}
+          >
+            {qty > 0 ? qty : '+'}
+          </button>
         </div>
       </div>
-      <button
-        onClick={onAdd}
-        className="w-9 h-9 rounded-full bg-brand text-white font-bold text-xl flex items-center justify-center active:bg-brand-dark flex-shrink-0"
-      >
-        {qty > 0 ? qty : '+'}
-      </button>
     </div>
   )
 }
