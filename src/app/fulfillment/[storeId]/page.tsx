@@ -28,21 +28,25 @@ interface Order {
 
 const QUEUE_STATUSES = ['authorized', 'picking']
 const READY_STATUSES = ['ready', 'partially_ready', 'captured']
-const POLL_MS = 4000
+const POLL_MS = 2000
 
 function playBeep() {
-  try {
-    const ctx = new AudioContext()
-    const osc = ctx.createOscillator()
-    const gain = ctx.createGain()
-    osc.connect(gain)
-    gain.connect(ctx.destination)
-    osc.frequency.value = 880
-    gain.gain.setValueAtTime(0.3, ctx.currentTime)
-    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4)
-    osc.start(ctx.currentTime)
-    osc.stop(ctx.currentTime + 0.4)
-  } catch {}
+  function tone(offset: number) {
+    try {
+      const ctx = new AudioContext()
+      const osc = ctx.createOscillator()
+      const gain = ctx.createGain()
+      osc.connect(gain)
+      gain.connect(ctx.destination)
+      osc.frequency.value = 880
+      gain.gain.setValueAtTime(0.6, ctx.currentTime + offset)
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + offset + 0.3)
+      osc.start(ctx.currentTime + offset)
+      osc.stop(ctx.currentTime + offset + 0.3)
+    } catch {}
+  }
+  tone(0)
+  tone(0.4)
 }
 
 export default function FulfillmentTablet() {
@@ -58,6 +62,18 @@ export default function FulfillmentTablet() {
       .then(r => r.json())
       .then(s => setStoreName(s.name))
   }, [storeId])
+
+  // Keep screen awake on tablet
+  useEffect(() => {
+    let lock: WakeLockSentinel | null = null
+    async function acquire() {
+      try { lock = await navigator.wakeLock.request('screen') } catch {}
+    }
+    acquire()
+    const onVisible = () => { if (document.visibilityState === 'visible') acquire() }
+    document.addEventListener('visibilitychange', onVisible)
+    return () => { document.removeEventListener('visibilitychange', onVisible); lock?.release() }
+  }, [])
 
   async function poll() {
     const res = await fetch(`/api/admin/stores/${storeId}/orders`)

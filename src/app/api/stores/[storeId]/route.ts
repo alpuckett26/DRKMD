@@ -12,9 +12,11 @@ export async function PATCH(req: Request, { params }: { params: { storeId: strin
   const store = await db.store.update({
     where: { id: params.storeId },
     data: {
-      windowModeEnabled: body.windowModeEnabled,
-      windowModeStart: body.windowModeStart,
-      windowModeEnd: body.windowModeEnd,
+      ...(body.windowModeEnabled !== undefined && { windowModeEnabled: body.windowModeEnabled }),
+      ...(body.windowModeStart !== undefined && { windowModeStart: body.windowModeStart }),
+      ...(body.windowModeEnd !== undefined && { windowModeEnd: body.windowModeEnd }),
+      ...(body.logoUrl !== undefined && { logoUrl: body.logoUrl }),
+      ...(body.name !== undefined && { name: body.name }),
     },
   })
   return NextResponse.json(store)
