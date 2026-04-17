@@ -1,6 +1,10 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 
+export async function GET() {
+  return POST()
+}
+
 export async function POST() {
   try {
     // Create enums (ignore error if already exists)
