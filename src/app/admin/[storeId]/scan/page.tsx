@@ -92,14 +92,20 @@ export default function ScanShelfPage() {
       }))
     if (!rows.length) { setError('Select at least one product with a price.'); return }
     setStage('importing')
-    const res = await fetch('/api/admin/products/import', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ storeId, rows }),
-    })
-    const data = await res.json()
-    setImportResult({ created: data.created })
-    setStage('done')
+    try {
+      const res = await fetch('/api/admin/products/import', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ storeId, rows }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error ?? `Server error ${res.status}`)
+      setImportResult({ created: data.created })
+      setStage('done')
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Import failed')
+      setStage('review')
+    }
   }
 
   function reset() {
