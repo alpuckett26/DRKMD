@@ -7,16 +7,18 @@ export async function GET() {
 
 export async function POST() {
   try {
-    // Create enums (ignore error if already exists)
+    // Enums
     for (const sql of [
       `DO $$ BEGIN CREATE TYPE "OrderStatus" AS ENUM ('submitted','authorized','picking','ready','partially_ready','captured','completed','voided','canceled'); EXCEPTION WHEN duplicate_object THEN null; END $$`,
       `DO $$ BEGIN CREATE TYPE "ItemStatus" AS ENUM ('requested','found','unavailable','substituted','refused_restricted'); EXCEPTION WHEN duplicate_object THEN null; END $$`,
       `DO $$ BEGIN CREATE TYPE "SubstitutionPreference" AS ENUM ('none','allow_similar'); EXCEPTION WHEN duplicate_object THEN null; END $$`,
       `DO $$ BEGIN CREATE TYPE "EventType" AS ENUM ('submitted','authorized','picking_started','item_marked','ready','captured','completed','voided','canceled'); EXCEPTION WHEN duplicate_object THEN null; END $$`,
+      `DO $$ BEGIN CREATE TYPE "StaffRole" AS ENUM ('admin','staff'); EXCEPTION WHEN duplicate_object THEN null; END $$`,
     ]) {
       await db.$executeRawUnsafe(sql)
     }
 
+    // Core tables
     await db.$executeRawUnsafe(`
       CREATE TABLE IF NOT EXISTS "Store" (
         "id" TEXT NOT NULL,
@@ -97,9 +99,83 @@ export async function POST() {
         CONSTRAINT "OrderEvent_orderId_fkey" FOREIGN KEY ("orderId") REFERENCES "Order"("id") ON DELETE CASCADE
       )`)
 
-    await db.$executeRawUnsafe(`ALTER TABLE "Store" ADD COLUMN IF NOT EXISTS "logoUrl" TEXT`)
+    // Staff tables
+    await db.$executeRawUnsafe(`
+      CREATE TABLE IF NOT EXISTS "Staff" (
+        "id" TEXT NOT NULL,
+        "storeId" TEXT NOT NULL,
+        "name" TEXT NOT NULL,
+        "role" "StaffRole" NOT NULL DEFAULT 'staff',
+        "pin" TEXT NOT NULL,
+        "active" BOOLEAN NOT NULL DEFAULT true,
+        "failedAttempts" INTEGER NOT NULL DEFAULT 0,
+        "lockedUntil" TIMESTAMP(3),
+        "sessionToken" TEXT,
+        "sessionExpires" TIMESTAMP(3),
+        "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        CONSTRAINT "Staff_pkey" PRIMARY KEY ("id"),
+        CONSTRAINT "Staff_storeId_fkey" FOREIGN KEY ("storeId") REFERENCES "Store"("id") ON DELETE CASCADE
+      )`)
 
-    // Remove duplicate products, keeping the most recently updated one
+    await db.$executeRawUnsafe(`CREATE UNIQUE INDEX IF NOT EXISTS "Staff_sessionToken_key" ON "Staff"("sessionToken")`)
+
+    await db.$executeRawUnsafe(`
+      CREATE TABLE IF NOT EXISTS "StaffShift" (
+        "id" TEXT NOT NULL,
+        "staffId" TEXT NOT NULL,
+        "storeId" TEXT NOT NULL,
+        "startedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        "endedAt" TIMESTAMP(3),
+        "orderCount" INTEGER NOT NULL DEFAULT 0,
+        "totalSales" INTEGER NOT NULL DEFAULT 0,
+        CONSTRAINT "StaffShift_pkey" PRIMARY KEY ("id"),
+        CONSTRAINT "StaffShift_staffId_fkey" FOREIGN KEY ("staffId") REFERENCES "Staff"("id")
+      )`)
+
+    await db.$executeRawUnsafe(`
+      CREATE TABLE IF NOT EXISTS "Account" (
+        "id" TEXT NOT NULL,
+        "email" TEXT NOT NULL,
+        "passwordHash" TEXT NOT NULL,
+        "storeId" TEXT NOT NULL,
+        "sessionToken" TEXT,
+        "sessionExpires" TIMESTAMP(3),
+        "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        CONSTRAINT "Account_pkey" PRIMARY KEY ("id"),
+        CONSTRAINT "Account_storeId_fkey" FOREIGN KEY ("storeId") REFERENCES "Store"("id") ON DELETE CASCADE
+      )`)
+
+    await db.$executeRawUnsafe(`CREATE UNIQUE INDEX IF NOT EXISTS "Account_email_key" ON "Account"("email")`)
+    await db.$executeRawUnsafe(`CREATE UNIQUE INDEX IF NOT EXISTS "Account_storeId_key" ON "Account"("storeId")`)
+    await db.$executeRawUnsafe(`CREATE UNIQUE INDEX IF NOT EXISTS "Account_sessionToken_key" ON "Account"("sessionToken")`)
+
+    // ADD COLUMNS to existing tables (idempotent)
+    for (const sql of [
+      // Store columns
+      `ALTER TABLE "Store" ADD COLUMN IF NOT EXISTS "logoUrl" TEXT`,
+      `ALTER TABLE "Store" ADD COLUMN IF NOT EXISTS "onboardingComplete" BOOLEAN NOT NULL DEFAULT false`,
+      `ALTER TABLE "Store" ADD COLUMN IF NOT EXISTS "ownerName" TEXT`,
+      `ALTER TABLE "Store" ADD COLUMN IF NOT EXISTS "ownerEmail" TEXT`,
+      `ALTER TABLE "Store" ADD COLUMN IF NOT EXISTS "phone" TEXT`,
+      `ALTER TABLE "Store" ADD COLUMN IF NOT EXISTS "businessLegalName" TEXT`,
+      `ALTER TABLE "Store" ADD COLUMN IF NOT EXISTS "businessType" TEXT`,
+      `ALTER TABLE "Store" ADD COLUMN IF NOT EXISTS "ein" TEXT`,
+      `ALTER TABLE "Store" ADD COLUMN IF NOT EXISTS "address" TEXT`,
+      `ALTER TABLE "Store" ADD COLUMN IF NOT EXISTS "city" TEXT`,
+      `ALTER TABLE "Store" ADD COLUMN IF NOT EXISTS "state" TEXT`,
+      `ALTER TABLE "Store" ADD COLUMN IF NOT EXISTS "zip" TEXT`,
+      `ALTER TABLE "Store" ADD COLUMN IF NOT EXISTS "tosAcceptedAt" TIMESTAMP(3)`,
+      // Order columns
+      `ALTER TABLE "Order" ADD COLUMN IF NOT EXISTS "staffId" TEXT`,
+      // OrderEvent columns
+      `ALTER TABLE "OrderEvent" ADD COLUMN IF NOT EXISTS "staffId" TEXT`,
+    ]) {
+      await db.$executeRawUnsafe(sql)
+    }
+
+    // Indexes and unique constraints
     await db.$executeRawUnsafe(`
       DELETE FROM "Product" WHERE id IN (
         SELECT id FROM (
@@ -107,10 +183,9 @@ export async function POST() {
           FROM "Product"
         ) t WHERE rn > 1
       )`)
-
     await db.$executeRawUnsafe(`CREATE UNIQUE INDEX IF NOT EXISTS "Product_storeId_name_key" ON "Product"("storeId", "name")`)
 
-    return NextResponse.json({ ok: true, message: 'All tables created' })
+    return NextResponse.json({ ok: true, message: 'Migration complete' })
   } catch (e) {
     return NextResponse.json({ ok: false, error: String(e) }, { status: 500 })
   }

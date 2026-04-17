@@ -37,18 +37,20 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     fetch(`/api/stores/${storeId}`)
-      .then(r => r.json())
+      .then(r => r.ok ? r.json() : Promise.reject(r.status))
       .then(s => {
         setStore(s)
-        setWindowModeEnabled(s.windowModeEnabled)
+        setWindowModeEnabled(s.windowModeEnabled ?? false)
         setWindowStart(s.windowModeStart ?? '22:00')
         setWindowEnd(s.windowModeEnd ?? '06:00')
         setLogoUrl(s.logoUrl ?? '')
         setOnboardingComplete(s.onboardingComplete ?? true)
       })
+      .catch(() => setStore({ id: storeId, name: 'Store' } as StoreInfo))
     fetch(`/api/qr/${storeId}`)
-      .then(r => r.json())
-      .then(d => setQrUrl(d.qrDataUrl))
+      .then(r => r.ok ? r.json() : null)
+      .then(d => d && setQrUrl(d.qrDataUrl))
+      .catch(() => {})
   }, [storeId])
 
   async function saveSettings() {
