@@ -33,8 +33,10 @@ export async function POST(req: Request) {
       continue
     }
     try {
-      const product = await db.product.create({
-        data: { storeId, active: true, ...parsed.data },
+      const product = await db.product.upsert({
+        where: { storeId_name: { storeId, name: parsed.data.name } },
+        update: { ...parsed.data, active: true },
+        create: { storeId, active: true, ...parsed.data },
       })
       created.push(product)
     } catch (e) {

@@ -17,6 +17,11 @@ export async function POST(req: Request) {
   const parsed = ProductSchema.safeParse(body)
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 })
 
-  const product = await db.product.create({ data: parsed.data })
+  const { storeId, name, ...rest } = parsed.data
+  const product = await db.product.upsert({
+    where: { storeId_name: { storeId, name } },
+    update: { ...rest, active: true },
+    create: { storeId, name, ...rest, active: true },
+  })
   return NextResponse.json(product, { status: 201 })
 }

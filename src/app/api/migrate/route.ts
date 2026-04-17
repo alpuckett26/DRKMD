@@ -93,8 +93,8 @@ export async function POST() {
         CONSTRAINT "OrderEvent_orderId_fkey" FOREIGN KEY ("orderId") REFERENCES "Order"("id") ON DELETE CASCADE
       )`)
 
-    // Add new columns to existing tables (safe to run multiple times)
     await db.$executeRawUnsafe(`ALTER TABLE "Store" ADD COLUMN IF NOT EXISTS "logoUrl" TEXT`)
+    await db.$executeRawUnsafe(`CREATE UNIQUE INDEX IF NOT EXISTS "Product_storeId_name_key" ON "Product"("storeId", "name")`)
 
     return NextResponse.json({ ok: true, message: 'All tables created' })
   } catch (e) {
