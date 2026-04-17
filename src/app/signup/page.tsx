@@ -10,6 +10,7 @@ export default function SignupPage() {
   const [ownerEmail, setOwnerEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
+  const [smsConsent, setSmsConsent] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
 
@@ -66,8 +67,16 @@ export default function SignupPage() {
               <label className="text-xs text-gray-400 block mb-1">Confirm Password</label>
               <input type="password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} placeholder="Repeat password" required className="input" autoComplete="new-password" />
             </div>
+            <label className="flex items-start gap-3 cursor-pointer">
+              <input type="checkbox" checked={smsConsent} onChange={e => setSmsConsent(e.target.checked)} className="mt-0.5 accent-brand w-4 h-4 shrink-0" />
+              <span className="text-xs text-gray-400">
+                I agree to receive SMS and email notifications from WendOS related to orders, account updates, and onboarding.
+                Message frequency varies. Reply STOP to opt out of non-essential messages.
+                See our <a href="/legal/service-agreement" target="_blank" className="text-brand underline">Terms of Service</a>.
+              </span>
+            </label>
             {error && <p className="text-red-400 text-sm">{error}</p>}
-            <button type="submit" disabled={submitting} className="btn-primary">
+            <button type="submit" disabled={submitting || !smsConsent} className="btn-primary">
               {submitting ? 'Creating…' : 'Create Store →'}
             </button>
           </form>

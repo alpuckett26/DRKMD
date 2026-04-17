@@ -457,11 +457,22 @@ export default function SetupWizard() {
                   <p>• Cancel with 30 days notice. No refunds on kit hardware.</p>
                 </div>
               </div>
+              <div className="card space-y-1 border-brand/20">
+                <a href="/legal/service-agreement" target="_blank" className="flex items-center justify-between py-2 text-sm hover:text-brand transition-colors">
+                  <span>📄 Platform Service Agreement</span>
+                  <span className="text-gray-500 text-xs">Read →</span>
+                </a>
+                <div className="border-t border-gray-800" />
+                <a href="/legal/pilot-agreement" target="_blank" className="flex items-center justify-between py-2 text-sm hover:text-brand transition-colors">
+                  <span>🧪 Pilot Program Agreement</span>
+                  <span className="text-gray-500 text-xs">Read →</span>
+                </a>
+              </div>
               <div className="card space-y-4">
                 {[
-                  { key: 'tos', checked: tosChecked, set: setTosChecked, label: 'I have read and agree to the Terms of Service and Privacy Policy. I understand how customer payment authorization and capture works.' },
-                  { key: 'billing', checked: billingChecked, set: setBillingChecked, label: 'I authorize WendOS to charge my card $99/month after my kit ships. I can cancel with 30 days written notice.' },
-                  { key: 'auth', checked: authorizedChecked, set: setAuthorizedChecked, label: 'I confirm I am authorized to enter this agreement on behalf of the business listed above.' },
+                  { key: 'tos', checked: tosChecked, set: setTosChecked, label: 'I have read and agree to the WendOS Platform Service Agreement. I understand how customer payment authorization and capture works, and I agree to comply with all age-verification requirements for restricted items.' },
+                  { key: 'billing', checked: billingChecked, set: setBillingChecked, label: 'I authorize WendOS to charge my card on file $349 for the Starter Kit now, and $99/month after the kit ships. I understand I can cancel with 30 days written notice and that hardware must be returned upon cancellation.' },
+                  { key: 'auth', checked: authorizedChecked, set: setAuthorizedChecked, label: 'I confirm I am authorized to enter this agreement on behalf of the business listed above, and I consent to receive SMS and email notifications from WendOS related to my account and orders.' },
                 ].map(({ key, checked, set, label }) => (
                   <label key={key} className="flex items-start gap-3 cursor-pointer">
                     <input type="checkbox" checked={checked} onChange={e => set(e.target.checked)} className="mt-0.5 accent-brand w-4 h-4 shrink-0" />
@@ -520,30 +531,62 @@ export default function SetupWizard() {
 
           {/* Step 7: Done */}
           {step === 7 && (
-            <div className="text-center space-y-6">
-              <div>
+            <div className="space-y-6">
+              <div className="text-center">
                 <p className="text-6xl">🎉</p>
                 <h2 className="font-black text-3xl mt-3">
                   Welcome to the team{storeName ? `, ${storeName}` : ''}!
                 </h2>
                 <p className="text-gray-400 text-sm mt-2">
-                  {isDemo ? 'Demo complete. Reset and run again anytime.' : 'Your kit is on its way. Your store is live.'}
+                  {isDemo ? 'Demo complete. Reset and run again anytime.' : 'Your kit is on its way. Your store goes live once hardware arrives.'}
                 </p>
               </div>
+
               {!isDemo && (
-                <div className="card space-y-2 text-sm text-gray-400 text-left">
-                  <p>📦 Kit ships within 3–5 business days</p>
-                  <p>📧 Confirmation sent to your email</p>
-                  <p>💬 We&apos;ll contact you to confirm your shipping address</p>
-                  <p>💳 Monthly billing begins after kit ships</p>
-                </div>
+                <>
+                  <div className="card space-y-2 text-sm text-gray-400">
+                    <p className="font-bold text-white text-xs uppercase tracking-widest mb-3">What happens next</p>
+                    <p>📦 Kit ships within 3–5 business days</p>
+                    <p>📧 Confirmation sent to your email</p>
+                    <p>💬 Our team will call to schedule your installation</p>
+                    <p>💳 Monthly billing begins after kit ships</p>
+                  </div>
+
+                  <div className="card space-y-4">
+                    <p className="font-bold text-white text-xs uppercase tracking-widest">Go-Live Checklist</p>
+                    <p className="text-xs text-gray-500">Complete this with your WendOS installer on the day your kit arrives.</p>
+                    {[
+                      'Tablet is mounted, plugged in, and connected to Wi-Fi',
+                      'QR code sign is posted at the service window',
+                      'Window decal is applied and visible from the street',
+                      'Staff have logged in and completed a test order',
+                      'Order alerts (SMS/email) confirmed working',
+                      'Store owner/manager has been trained on the fulfillment app',
+                    ].map((item, i) => (
+                      <div key={i} className="flex items-start gap-3 text-sm text-gray-400">
+                        <div className="w-5 h-5 mt-0.5 rounded border border-gray-600 shrink-0 flex items-center justify-center text-xs text-gray-600">{i + 1}</div>
+                        <span>{item}</span>
+                      </div>
+                    ))}
+                    <p className="text-xs text-gray-600">Your installer will sign off on this checklist. A copy will be emailed to you and kept on file by WendOS.</p>
+                  </div>
+                </>
               )}
+
               {qrUrl && (
-                <div className="card space-y-2">
+                <div className="card space-y-2 text-center">
                   <p className="text-xs text-gray-500">Your store QR — post it at your window</p>
                   <img src={qrUrl} alt="QR Code" className="w-40 h-40 mx-auto rounded-xl bg-white p-2" />
                 </div>
               )}
+
+              {isDemo && (
+                <div className="card space-y-2 border border-yellow-800/40">
+                  <p className="text-yellow-400 text-xs font-semibold">Demo Complete</p>
+                  <p className="text-xs text-gray-500">Ready to go live? Sign up for a real account to receive your Starter Kit and activate your window.</p>
+                </div>
+              )}
+
               <button onClick={() => router.push(`/admin/${storeId}`)} className="btn-primary">
                 Go to Dashboard →
               </button>
