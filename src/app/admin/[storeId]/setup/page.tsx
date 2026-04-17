@@ -5,11 +5,11 @@ import { useParams, useRouter } from 'next/navigation'
 import Script from 'next/script'
 import confetti from 'canvas-confetti'
 
-const STEPS = ['Welcome', 'Business', 'Photo', 'Hours', 'Terms', 'Purchase', 'Done']
-
+const STEPS = ['Welcome', 'Business', 'Photo', 'Shelf', 'Hours', 'Terms', 'Purchase', 'Done']
 const BUSINESS_TYPES = ['Sole Proprietorship', 'LLC', 'Corporation', 'Partnership', 'Other']
 
 interface SquareConfig { appId: string; locationId: string; environment: string }
+interface SuggestedProduct { name: string; category: string; restricted: boolean; selected: boolean }
 
 export default function SetupWizard() {
   const { storeId } = useParams<{ storeId: string }>()
@@ -17,30 +17,32 @@ export default function SetupWizard() {
   const [step, setStep] = useState(0)
   const [storeName, setStoreName] = useState('')
 
-  // Business info
   const [phone, setPhone] = useState('')
   const [businessLegalName, setBusinessLegalName] = useState('')
   const [businessType, setBusinessType] = useState('')
   const [ein, setEin] = useState('')
   const [address, setAddress] = useState('')
   const [city, setCity] = useState('')
-  const [state, setState] = useState('')
+  const [stateVal, setStateVal] = useState('')
   const [zip, setZip] = useState('')
 
-  // Photo
   const [logoUrl, setLogoUrl] = useState('')
   const [logoSaving, setLogoSaving] = useState(false)
 
-  // Hours
+  // Shelf photos
+  const [shelfPhotos, setShelfPhotos] = useState<string[]>([])
+  const [analyzing, setAnalyzing] = useState(false)
+  const [suggestions, setSuggestions] = useState<SuggestedProduct[]>([])
+  const [addingItems, setAddingItems] = useState(false)
+  const [itemsAdded, setItemsAdded] = useState(false)
+
   const [windowStart, setWindowStart] = useState('22:00')
   const [windowEnd, setWindowEnd] = useState('06:00')
 
-  // Terms
   const [tosChecked, setTosChecked] = useState(false)
   const [billingChecked, setBillingChecked] = useState(false)
   const [authorizedChecked, setAuthorizedChecked] = useState(false)
 
-  // Payment
   const [squareConfig, setSquareConfig] = useState<SquareConfig | null>(null)
   const [squareLoaded, setSquareLoaded] = useState(false)
   const [paying, setPaying] = useState(false)
@@ -55,9 +57,8 @@ export default function SetupWizard() {
     fetch('/api/square/config').then(r => r.json()).then(setSquareConfig)
   }, [storeId])
 
-  // Init Square card on purchase step
   useEffect(() => {
-    if (step !== 5 || !squareConfig || !squareLoaded) return
+    if (step !== 6 || !squareConfig || !squareLoaded) return
     async function init() {
       try {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -73,13 +74,12 @@ export default function SetupWizard() {
     return () => { (cardRef.current as any)?.destroy(); cardRef.current = null }
   }, [step, squareConfig, squareLoaded])
 
-  // Confetti on done
   useEffect(() => {
-    if (step !== 6) return
+    if (step !== 7) return
     const end = Date.now() + 2500
     const frame = () => {
-      confetti({ particleCount: 6, angle: 60, spread: 55, origin: { x: 0 }, colors: ['#f97316', '#fb923c', '#fdba74'] })
-      confetti({ particleCount: 6, angle: 120, spread: 55, origin: { x: 1 }, colors: ['#f97316', '#fb923c', '#fdba74'] })
+      confetti({ particleCount: 6, angle: 60, spread: 55, origin: { x: 0 }, colors: ['#2EA8FF', '#44b4ff', '#1A8FE3'] })
+      confetti({ particleCount: 6, angle: 120, spread: 55, origin: { x: 1 }, colors: ['#2EA8FF', '#44b4ff', '#1A8FE3'] })
       if (Date.now() < end) requestAnimationFrame(frame)
     }
     frame()
@@ -88,7 +88,7 @@ export default function SetupWizard() {
   async function saveBusinessInfo() {
     await fetch(`/api/stores/${storeId}`, {
       method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ phone, businessLegalName, businessType, ein, address, city, state, zip }),
+      body: JSON.stringify({ phone, businessLegalName, businessType, ein, address, city, state: stateVal, zip }),
     })
     setStep(2)
   }
@@ -106,12 +106,58 @@ export default function SetupWizard() {
     setLogoSaving(false)
   }
 
+  async function handleShelfPhoto(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files ?? [])
+    if (!files.length) return
+    const compressed = await Promise.all(files.map(f => compressImage(f, 600, 0.6)))
+    setShelfPhotos(prev => [...prev, ...compressed].slice(0, 6))
+    setSuggestions([])
+    setItemsAdded(false)
+    e.target.value = ''
+  }
+
+  async function analyzeShelf() {
+    if (!shelfPhotos.length) return
+    setAnalyzing(true)
+    setSuggestions([])
+    try {
+      const res = await fetch(`/api/stores/${storeId}/shelf-analysis`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ images: shelfPhotos }),
+      })
+      const data = await res.json()
+      setSuggestions((data.products ?? []).map((p: Omit<SuggestedProduct, 'selected'>) => ({ ...p, selected: true })))
+    } catch {
+      setSuggestions([])
+    }
+    setAnalyzing(false)
+  }
+
+  async function addSelectedItems() {
+    const selected = suggestions.filter(s => s.selected)
+    if (!selected.length) return
+    setAddingItems(true)
+    await Promise.all(selected.map(p =>
+      fetch('/api/admin/products', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          storeId, name: p.name, category: p.category,
+          price: 0, restrictedFlag: p.restricted, nighttimeAvailable: true,
+        }),
+      })
+    ))
+    setAddingItems(false)
+    setItemsAdded(true)
+  }
+
   async function saveHours() {
     await fetch(`/api/stores/${storeId}`, {
       method: 'PATCH', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ windowModeStart: windowStart, windowModeEnd: windowEnd }),
     })
-    setStep(4)
+    setStep(5)
   }
 
   async function acceptTerms() {
@@ -119,8 +165,8 @@ export default function SetupWizard() {
       method: 'PATCH', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ tosAcceptedAt: new Date().toISOString() }),
     })
-    if (isDemo) { setStep(6); return }
-    setStep(5)
+    if (isDemo) { setStep(7); return }
+    setStep(6)
   }
 
   async function handlePurchase() {
@@ -139,7 +185,7 @@ export default function SetupWizard() {
       if (!res.ok) throw new Error(data.error)
       const qr = await fetch(`/api/qr/${storeId}`).then(r => r.json())
       setQrUrl(qr.qrDataUrl)
-      setStep(6)
+      setStep(7)
     } catch (e) { setPayError(e instanceof Error ? e.message : 'Payment failed') }
     setPaying(false)
   }
@@ -149,24 +195,25 @@ export default function SetupWizard() {
     : 'https://sandbox.web.squarecdn.com/v1/square.js'
 
   const canAcceptTerms = tosChecked && billingChecked && authorizedChecked
+  const selectedCount = suggestions.filter(s => s.selected).length
 
   return (
     <>
       {squareConfig && !isDemo && <Script src={scriptSrc} onLoad={() => setSquareLoaded(true)} />}
-      <div className="min-h-screen bg-gray-950 pb-10">
-        {/* Header + progress */}
-        <div className="bg-gray-900 border-b border-gray-800 px-4 py-4 sticky top-0 z-10">
+      <div className="min-h-screen pb-10">
+        <div className="panel px-4 py-4 sticky top-0 z-10">
           <div className="max-w-lg mx-auto">
             <div className="flex items-center justify-between mb-3">
               <div>
-                <h1 className="font-black text-brand">Setup Wizard</h1>
+                <h1 className="font-black text-brand glow-text">Setup Wizard</h1>
                 <p className="text-xs text-gray-500">{storeName}{isDemo && ' · DEMO MODE'}</p>
               </div>
               <span className="text-xs text-gray-500">{step + 1} / {STEPS.length}</span>
             </div>
             <div className="flex gap-1">
               {STEPS.map((_, i) => (
-                <div key={i} className={`h-1.5 flex-1 rounded-full transition-colors ${i <= step ? 'bg-brand' : 'bg-gray-700'}`} />
+                <div key={i} className={`h-1.5 flex-1 rounded-full transition-all ${i <= step ? 'bg-brand' : 'bg-gray-700'}`}
+                  style={i <= step ? { boxShadow: '0 0 6px rgba(46,168,255,0.5)' } : {}} />
               ))}
             </div>
           </div>
@@ -185,20 +232,20 @@ export default function SetupWizard() {
               <div className="card space-y-3">
                 <p className="text-xs font-bold text-gray-500 uppercase tracking-widest">What we&apos;ll cover</p>
                 <div className="space-y-3 text-sm">
-                  {['Business & shipping info', 'Storefront photo', 'Window hours', 'Terms & agreement', isDemo ? 'Kit purchase (skipped in demo)' : 'Kit purchase — $349'].map((label, i) => (
+                  {['Business & shipping info', 'Storefront photo', 'Shelf inventory photos', 'Window hours', 'Terms & agreement', isDemo ? 'Kit purchase (skipped in demo)' : 'Kit purchase — $349'].map((label, i) => (
                     <div key={i} className="flex items-center gap-3">
                       <span className="w-6 h-6 rounded-full bg-brand/20 text-brand text-xs flex items-center justify-center font-bold shrink-0">{i + 1}</span>
-                      <span className={isDemo && i === 4 ? 'text-gray-600 line-through' : ''}>{label}</span>
+                      <span className={isDemo && i === 5 ? 'text-gray-600 line-through' : ''}>{label}</span>
                     </div>
                   ))}
                 </div>
               </div>
-              {isDemo && <p className="text-xs text-center text-yellow-500 bg-yellow-900/20 rounded-xl p-3">Demo mode — payment step is skipped. Reset anytime from admin.</p>}
-              <button onClick={() => setStep(1)} className="btn-primary w-full">Let&apos;s Go →</button>
+              {isDemo && <p className="text-xs text-center text-yellow-500 bg-yellow-900/20 rounded-xl p-3">Demo mode — payment step is skipped.</p>}
+              <button onClick={() => setStep(1)} className="btn-primary">Let&apos;s Go →</button>
             </div>
           )}
 
-          {/* Step 1: Business Info */}
+          {/* Step 1: Business */}
           {step === 1 && (
             <div className="space-y-4">
               <div>
@@ -214,38 +261,20 @@ export default function SetupWizard() {
               </div>
               <div className="card space-y-3">
                 <p className="text-xs font-bold text-gray-500 uppercase tracking-widest">Kit Shipping Address</p>
-                <div>
-                  <label className="text-xs text-gray-500 block mb-1">Street Address</label>
-                  <input type="text" value={address} onChange={e => setAddress(e.target.value)} placeholder="123 Main St" className="input" />
-                </div>
+                <input type="text" value={address} onChange={e => setAddress(e.target.value)} placeholder="Street Address" className="input" />
                 <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-xs text-gray-500 block mb-1">City</label>
-                    <input type="text" value={city} onChange={e => setCity(e.target.value)} placeholder="Chicago" className="input" />
-                  </div>
-                  <div>
-                    <label className="text-xs text-gray-500 block mb-1">State</label>
-                    <input type="text" value={state} onChange={e => setState(e.target.value)} placeholder="IL" maxLength={2} className="input uppercase" />
-                  </div>
+                  <input type="text" value={city} onChange={e => setCity(e.target.value)} placeholder="City" className="input" />
+                  <input type="text" value={stateVal} onChange={e => setStateVal(e.target.value)} placeholder="State" maxLength={2} className="input uppercase" />
                 </div>
-                <div>
-                  <label className="text-xs text-gray-500 block mb-1">ZIP Code</label>
-                  <input type="text" value={zip} onChange={e => setZip(e.target.value)} placeholder="60601" maxLength={5} className="input" />
-                </div>
+                <input type="text" value={zip} onChange={e => setZip(e.target.value)} placeholder="ZIP Code" maxLength={5} className="input" />
               </div>
               <div className="card space-y-3">
                 <p className="text-xs font-bold text-gray-500 uppercase tracking-widest">Tax Information</p>
-                <div>
-                  <label className="text-xs text-gray-500 block mb-1">Business Legal Name</label>
-                  <input type="text" value={businessLegalName} onChange={e => setBusinessLegalName(e.target.value)} placeholder="Your LLC or legal name" className="input" />
-                </div>
-                <div>
-                  <label className="text-xs text-gray-500 block mb-1">Business Type</label>
-                  <select value={businessType} onChange={e => setBusinessType(e.target.value)} className="input">
-                    <option value="">Select type…</option>
-                    {BUSINESS_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
-                  </select>
-                </div>
+                <input type="text" value={businessLegalName} onChange={e => setBusinessLegalName(e.target.value)} placeholder="Business Legal Name" className="input" />
+                <select value={businessType} onChange={e => setBusinessType(e.target.value)} className="input">
+                  <option value="">Business Type…</option>
+                  {BUSINESS_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+                </select>
                 <div>
                   <label className="text-xs text-gray-500 block mb-1">EIN / Tax ID <span className="text-gray-600">(or last 4 of SSN if sole prop)</span></label>
                   <input type="text" value={ein} onChange={e => setEin(e.target.value)} placeholder="XX-XXXXXXX" className="input" />
@@ -253,13 +282,12 @@ export default function SetupWizard() {
               </div>
               <div className="flex gap-3">
                 <button onClick={() => setStep(0)} className="btn-secondary flex-1">Back</button>
-                <button onClick={saveBusinessInfo} disabled={!address || !city || !state || !zip} className="btn-primary flex-1">Save &amp; Continue →</button>
+                <button onClick={saveBusinessInfo} disabled={!address || !city || !stateVal || !zip} className="btn-primary flex-1">Save & Continue →</button>
               </div>
-              <p className="text-xs text-gray-600 text-center">Tax info is stored securely and used only for compliance reporting.</p>
             </div>
           )}
 
-          {/* Step 2: Photo */}
+          {/* Step 2: Storefront Photo */}
           {step === 2 && (
             <div className="space-y-4">
               <div>
@@ -268,7 +296,7 @@ export default function SetupWizard() {
               </div>
               {logoUrl
                 ? <img src={logoUrl} alt="Preview" className="w-full max-h-52 object-cover rounded-2xl" />
-                : <div className="w-full h-40 rounded-2xl bg-gray-800 flex items-center justify-center text-gray-600">No photo yet</div>
+                : <div className="w-full h-40 rounded-2xl glass flex items-center justify-center text-gray-600">No photo yet</div>
               }
               <label className={`btn-primary flex items-center justify-center gap-2 cursor-pointer ${logoSaving ? 'opacity-60 pointer-events-none' : ''}`}>
                 {logoSaving ? 'Saving…' : logoUrl ? '📷 Retake Photo' : '📷 Take / Choose Photo'}
@@ -281,8 +309,106 @@ export default function SetupWizard() {
             </div>
           )}
 
-          {/* Step 3: Hours */}
+          {/* Step 3: Shelf Photos */}
           {step === 3 && (
+            <div className="space-y-4">
+              <div>
+                <h2 className="font-black text-xl">Shelf Inventory</h2>
+                <p className="text-gray-400 text-sm mt-1">Take photos of your shelves — we&apos;ll use AI to build your menu automatically.</p>
+              </div>
+
+              <div className="card space-y-3">
+                <p className="text-xs font-bold text-gray-500 uppercase tracking-widest">📸 Tips for best results</p>
+                <ul className="space-y-2 text-sm text-gray-400">
+                  <li>• Stand 2–3 feet back so the full shelf is in frame</li>
+                  <li>• Take one photo per shelf section or aisle</li>
+                  <li>• Make sure labels are readable — good lighting helps</li>
+                  <li>• Cover all sections: drinks, snacks, beer, tobacco, etc.</li>
+                  <li>• Up to 6 photos total</li>
+                </ul>
+              </div>
+
+              {/* Photo grid */}
+              {shelfPhotos.length > 0 && (
+                <div className="grid grid-cols-3 gap-2">
+                  {shelfPhotos.map((img, i) => (
+                    <div key={i} className="relative aspect-square rounded-xl overflow-hidden">
+                      <img src={img} alt={`Shelf ${i + 1}`} className="w-full h-full object-cover" />
+                      <button
+                        onClick={() => { setShelfPhotos(p => p.filter((_, j) => j !== i)); setSuggestions([]); setItemsAdded(false) }}
+                        className="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/70 text-white text-xs flex items-center justify-center"
+                      >×</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {shelfPhotos.length < 6 && (
+                <label className="btn-secondary flex items-center justify-center gap-2 cursor-pointer">
+                  📷 {shelfPhotos.length === 0 ? 'Take Shelf Photos' : `Add More (${shelfPhotos.length}/6)`}
+                  <input type="file" accept="image/*" capture="environment" multiple className="hidden" onChange={handleShelfPhoto} />
+                </label>
+              )}
+
+              {shelfPhotos.length > 0 && !itemsAdded && (
+                <button onClick={analyzeShelf} disabled={analyzing} className="btn-primary">
+                  {analyzing ? '🔍 Analyzing shelves…' : `✨ Identify Products (${shelfPhotos.length} photo${shelfPhotos.length !== 1 ? 's' : ''})`}
+                </button>
+              )}
+
+              {analyzing && (
+                <div className="card text-center py-6 space-y-2">
+                  <p className="text-brand animate-pulse font-semibold">Scanning your shelves…</p>
+                  <p className="text-xs text-gray-500">This takes 15–30 seconds</p>
+                </div>
+              )}
+
+              {suggestions.length > 0 && !itemsAdded && (
+                <div className="card space-y-3">
+                  <div className="flex items-center justify-between">
+                    <p className="font-bold text-sm">Found {suggestions.length} products</p>
+                    <div className="flex gap-3 text-xs">
+                      <button onClick={() => setSuggestions(p => p.map(s => ({ ...s, selected: true })))} className="text-brand underline">All</button>
+                      <button onClick={() => setSuggestions(p => p.map(s => ({ ...s, selected: false })))} className="text-gray-500 underline">None</button>
+                    </div>
+                  </div>
+                  <div className="space-y-2 max-h-64 overflow-y-auto">
+                    {suggestions.map((s, i) => (
+                      <label key={i} className="flex items-center gap-3 cursor-pointer py-1">
+                        <input type="checkbox" checked={s.selected}
+                          onChange={e => setSuggestions(p => p.map((x, j) => j === i ? { ...x, selected: e.target.checked } : x))}
+                          className="accent-brand w-4 h-4 shrink-0" />
+                        <div className="min-w-0">
+                          <p className="text-sm font-semibold truncate">{s.name}</p>
+                          <p className="text-xs text-gray-500">{s.category}{s.restricted ? ' · 21+' : ''}</p>
+                        </div>
+                      </label>
+                    ))}
+                  </div>
+                  <button onClick={addSelectedItems} disabled={addingItems || selectedCount === 0} className="btn-primary">
+                    {addingItems ? 'Adding items…' : `Add ${selectedCount} item${selectedCount !== 1 ? 's' : ''} to Menu`}
+                  </button>
+                </div>
+              )}
+
+              {itemsAdded && (
+                <div className="card text-center py-4 space-y-1" style={{ borderColor: 'rgba(46,168,255,0.4)' }}>
+                  <p className="text-brand font-bold">✓ {selectedCount} items added to your menu</p>
+                  <p className="text-xs text-gray-500">You can add more items anytime from your dashboard.</p>
+                </div>
+              )}
+
+              <div className="flex gap-3">
+                <button onClick={() => setStep(2)} className="btn-secondary flex-1">Back</button>
+                <button onClick={() => setStep(4)} className="btn-primary flex-1">
+                  {shelfPhotos.length === 0 ? 'Skip for Now →' : 'Next →'}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Step 4: Hours */}
+          {step === 4 && (
             <div className="space-y-4">
               <div>
                 <h2 className="font-black text-xl">Window Hours</h2>
@@ -300,33 +426,28 @@ export default function SetupWizard() {
               </div>
               <p className="text-xs text-gray-600">You can change these anytime from your admin dashboard.</p>
               <div className="flex gap-3">
-                <button onClick={() => setStep(2)} className="btn-secondary flex-1">Back</button>
+                <button onClick={() => setStep(3)} className="btn-secondary flex-1">Back</button>
                 <button onClick={saveHours} className="btn-primary flex-1">Next →</button>
               </div>
             </div>
           )}
 
-          {/* Step 4: Terms */}
-          {step === 4 && (
+          {/* Step 5: Terms */}
+          {step === 5 && (
             <div className="space-y-4">
               <div>
-                <h2 className="font-black text-xl">Terms &amp; Agreement</h2>
+                <h2 className="font-black text-xl">Terms & Agreement</h2>
                 <p className="text-gray-400 text-sm mt-1">Please review before purchasing.</p>
               </div>
-
-              {/* How payments work */}
               <div className="card space-y-3">
                 <p className="font-bold text-sm">How Customer Payments Work</p>
                 <div className="space-y-2 text-xs text-gray-400">
-                  <p>① Customer places an order and their card is <strong className="text-gray-200">authorized</strong> (hold placed, no charge yet).</p>
+                  <p>① Customer orders and their card is <strong className="text-gray-200">authorized</strong> (hold placed, not charged yet).</p>
                   <p>② You fulfill the order and mark items found or unavailable.</p>
-                  <p>③ When you mark the order ready, the final amount is <strong className="text-gray-200">captured</strong> (charged to their card).</p>
-                  <p>④ If an order is voided or canceled, the authorization is <strong className="text-gray-200">released</strong> — the customer is never charged.</p>
-                  <p>⑤ Substitutions, if allowed, are reflected in the final captured amount.</p>
+                  <p>③ Final amount is <strong className="text-gray-200">captured</strong> when you mark the order ready.</p>
+                  <p>④ Voided or canceled orders are fully <strong className="text-gray-200">released</strong> — customer is never charged.</p>
                 </div>
               </div>
-
-              {/* Platform fees */}
               <div className="card space-y-3">
                 <p className="font-bold text-sm">Platform Fees</p>
                 <div className="space-y-1 text-xs text-gray-400">
@@ -336,25 +457,20 @@ export default function SetupWizard() {
                   <p>• Cancel with 30 days notice. No refunds on kit hardware.</p>
                 </div>
               </div>
-
-              {/* Checkboxes */}
               <div className="card space-y-4">
-                <label className="flex items-start gap-3 cursor-pointer">
-                  <input type="checkbox" checked={tosChecked} onChange={e => setTosChecked(e.target.checked)} className="mt-0.5 accent-brand w-4 h-4 shrink-0" />
-                  <span className="text-xs text-gray-300">I have read and agree to the <strong>Terms of Service</strong> and <strong>Privacy Policy</strong>. I understand how customer payment authorization and capture works as described above.</span>
-                </label>
-                <label className="flex items-start gap-3 cursor-pointer">
-                  <input type="checkbox" checked={billingChecked} onChange={e => setBillingChecked(e.target.checked)} className="mt-0.5 accent-brand w-4 h-4 shrink-0" />
-                  <span className="text-xs text-gray-300">I authorize WendOS to charge my card <strong>$99/month</strong> after my kit ships. I can cancel with 30 days written notice.</span>
-                </label>
-                <label className="flex items-start gap-3 cursor-pointer">
-                  <input type="checkbox" checked={authorizedChecked} onChange={e => setAuthorizedChecked(e.target.checked)} className="mt-0.5 accent-brand w-4 h-4 shrink-0" />
-                  <span className="text-xs text-gray-300">I confirm I am <strong>authorized</strong> to enter this agreement on behalf of the business listed above.</span>
-                </label>
+                {[
+                  { key: 'tos', checked: tosChecked, set: setTosChecked, label: 'I have read and agree to the Terms of Service and Privacy Policy. I understand how customer payment authorization and capture works.' },
+                  { key: 'billing', checked: billingChecked, set: setBillingChecked, label: 'I authorize WendOS to charge my card $99/month after my kit ships. I can cancel with 30 days written notice.' },
+                  { key: 'auth', checked: authorizedChecked, set: setAuthorizedChecked, label: 'I confirm I am authorized to enter this agreement on behalf of the business listed above.' },
+                ].map(({ key, checked, set, label }) => (
+                  <label key={key} className="flex items-start gap-3 cursor-pointer">
+                    <input type="checkbox" checked={checked} onChange={e => set(e.target.checked)} className="mt-0.5 accent-brand w-4 h-4 shrink-0" />
+                    <span className="text-xs text-gray-300">{label}</span>
+                  </label>
+                ))}
               </div>
-
               <div className="flex gap-3">
-                <button onClick={() => setStep(3)} className="btn-secondary flex-1">Back</button>
+                <button onClick={() => setStep(4)} className="btn-secondary flex-1">Back</button>
                 <button onClick={acceptTerms} disabled={!canAcceptTerms} className="btn-primary flex-1">
                   {isDemo ? 'Accept & Finish Demo →' : 'Accept & Purchase →'}
                 </button>
@@ -362,8 +478,8 @@ export default function SetupWizard() {
             </div>
           )}
 
-          {/* Step 5: Purchase (skipped for demo) */}
-          {step === 5 && (
+          {/* Step 6: Purchase */}
+          {step === 6 && (
             <div className="space-y-4">
               <div>
                 <h2 className="font-black text-xl">Starter Kit</h2>
@@ -376,7 +492,7 @@ export default function SetupWizard() {
                   <li>📱 Dedicated fulfillment tablet</li>
                   <li>🔧 Tablet stand / mount</li>
                   <li>🪟 Custom window decal</li>
-                  <li>⚙️ Platform setup &amp; onboarding</li>
+                  <li>⚙️ Platform setup & onboarding</li>
                 </ul>
                 <div className="border-t border-gray-700 pt-3 flex justify-between items-end">
                   <div>
@@ -389,22 +505,21 @@ export default function SetupWizard() {
                   </div>
                 </div>
               </div>
-              <p className="text-xs text-gray-500">Shipping to: {address}, {city}, {state} {zip}</p>
+              <p className="text-xs text-gray-500">Shipping to: {address}, {city}, {stateVal} {zip}</p>
               <div id="sq-card" className="min-h-[100px] rounded-xl overflow-hidden" />
               {payError && <p className="text-red-400 text-sm">{payError}</p>}
               {!squareLoaded && <p className="text-xs text-gray-500 text-center">Loading payment form…</p>}
               <div className="flex gap-3">
-                <button onClick={() => setStep(4)} className="btn-secondary flex-1" disabled={paying}>Back</button>
+                <button onClick={() => setStep(5)} className="btn-secondary flex-1" disabled={paying}>Back</button>
                 <button onClick={handlePurchase} className="btn-primary flex-1" disabled={paying || !squareLoaded}>
                   {paying ? 'Processing…' : 'Pay $349 →'}
                 </button>
               </div>
-              <p className="text-xs text-gray-600 text-center">Monthly billing starts after your kit ships.</p>
             </div>
           )}
 
-          {/* Step 6: Done */}
-          {step === 6 && (
+          {/* Step 7: Done */}
+          {step === 7 && (
             <div className="text-center space-y-6">
               <div>
                 <p className="text-6xl">🎉</p>
@@ -429,7 +544,7 @@ export default function SetupWizard() {
                   <img src={qrUrl} alt="QR Code" className="w-40 h-40 mx-auto rounded-xl bg-white p-2" />
                 </div>
               )}
-              <button onClick={() => router.push(`/admin/${storeId}`)} className="btn-primary w-full">
+              <button onClick={() => router.push(`/admin/${storeId}`)} className="btn-primary">
                 Go to Dashboard →
               </button>
             </div>

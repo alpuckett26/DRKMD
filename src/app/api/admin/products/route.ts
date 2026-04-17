@@ -6,7 +6,7 @@ const ProductSchema = z.object({
   storeId: z.string(),
   name: z.string().min(1),
   category: z.string().optional(),
-  price: z.number().int().positive(),
+  price: z.number().int().min(0).default(0),
   nighttimeAvailable: z.boolean().default(true),
   restrictedFlag: z.boolean().default(false),
   imageUrl: z.string().url().optional(),
