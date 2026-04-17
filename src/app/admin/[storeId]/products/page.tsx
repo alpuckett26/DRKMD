@@ -71,6 +71,7 @@ export default function ProductsPage() {
             <h1 className="font-bold text-lg">Night Menu</h1>
           </div>
           <div className="flex gap-3 items-center">
+            <Link href={`/admin/${storeId}/scan`} className="text-gray-400 text-sm font-semibold underline">Scan Shelf</Link>
             <Link href={`/admin/${storeId}/import`} className="text-gray-400 text-sm font-semibold underline">Import</Link>
             <button onClick={() => setShowAdd(v => !v)} className="text-brand text-sm font-semibold">
               {showAdd ? 'Cancel' : '+ Add Item'}
