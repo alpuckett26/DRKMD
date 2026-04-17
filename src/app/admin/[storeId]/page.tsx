@@ -17,6 +17,7 @@ export default function AdminDashboard() {
   const [logoSaving, setLogoSaving] = useState(false)
   const [migrating, setMigrating] = useState(false)
   const [migrateResult, setMigrateResult] = useState<string | null>(null)
+  const [onboardingComplete, setOnboardingComplete] = useState(true)
 
   async function handlePhotoCapture(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
@@ -40,7 +41,8 @@ export default function AdminDashboard() {
         setWindowModeEnabled(s.windowModeEnabled)
         setWindowStart(s.windowModeStart ?? '22:00')
         setWindowEnd(s.windowModeEnd ?? '06:00')
-        setLogoUrl((s as StoreInfo & { logoUrl?: string }).logoUrl ?? '')
+        setLogoUrl(s.logoUrl ?? '')
+        setOnboardingComplete(s.onboardingComplete ?? true)
       })
     fetch(`/api/qr/${storeId}`)
       .then(r => r.json())
@@ -93,6 +95,15 @@ export default function AdminDashboard() {
           </div>
         </div>
       </div>
+
+      {!onboardingComplete && (
+        <div className="bg-brand/10 border-b border-brand/30 px-4 py-3">
+          <div className="max-w-2xl mx-auto flex items-center justify-between gap-4">
+            <p className="text-sm text-brand font-semibold">⚠️ Setup not complete — your kit hasn&apos;t been ordered yet.</p>
+            <Link href={`/admin/${storeId}/setup`} className="btn-primary text-xs shrink-0">Complete Setup →</Link>
+          </div>
+        </div>
+      )}
 
       <div className="max-w-2xl mx-auto px-4 pt-4 space-y-4">
         {/* Window Mode Toggle */}

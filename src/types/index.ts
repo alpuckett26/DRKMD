@@ -34,6 +34,10 @@ export interface StoreInfo {
   windowModeStart: string | null
   windowModeEnd: string | null
   timezone: string
+  logoUrl?: string | null
+  onboardingComplete: boolean
+  ownerName?: string | null
+  ownerEmail?: string | null
 }
 
 export interface ProductInfo {
