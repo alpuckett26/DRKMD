@@ -16,7 +16,6 @@ export async function POST(req: Request) {
   const message = await client.messages.create({
     model: 'claude-opus-4-7',
     max_tokens: 1024,
-    thinking: { type: 'adaptive' },
     messages: [
       {
         role: 'user',
