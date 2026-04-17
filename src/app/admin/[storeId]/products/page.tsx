@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
 import type { ProductInfo } from '@/types'
 
 interface ExtendedProduct extends ProductInfo {
@@ -180,6 +181,12 @@ function ProductRow({
       className="card flex items-center gap-3"
       style={product.promoted ? { borderColor: 'rgba(46,168,255,0.45)', boxShadow: '0 0 12px rgba(46,168,255,0.12)' } : {}}
     >
+      <div className="w-10 h-10 rounded-lg bg-gray-800 shrink-0 overflow-hidden flex items-center justify-center">
+        {product.imageUrl
+          ? <Image src={product.imageUrl} alt={product.name} width={40} height={40} className="object-contain" unoptimized />
+          : <span className="text-lg">🛒</span>
+        }
+      </div>
       <div className="flex-1 min-w-0">
         <p className="font-semibold text-sm">{product.name}</p>
         <div className="flex items-center gap-2 mt-0.5">

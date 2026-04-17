@@ -190,6 +190,7 @@ export default function MenuPage() {
 }
 
 function ImpulseCard({ product, qty, onAdd }: { product: ProductInfo; qty: number; onAdd: () => void }) {
+  const [imgError, setImgError] = useState(false)
   return (
     <div
       className="shrink-0 w-36 rounded-2xl overflow-hidden flex flex-col"
@@ -200,8 +201,8 @@ function ImpulseCard({ product, qty, onAdd }: { product: ProductInfo; qty: numbe
       }}
     >
       <div className="relative aspect-square bg-gray-800/50">
-        {product.imageUrl ? (
-          <Image src={product.imageUrl} alt={product.name} fill className="object-contain p-2" unoptimized />
+        {product.imageUrl && !imgError ? (
+          <Image src={product.imageUrl} alt={product.name} fill className="object-contain p-2" unoptimized onError={() => setImgError(true)} />
         ) : (
           <div className="w-full h-full flex items-center justify-center text-3xl">
             {CAT_ICON[product.category ?? ''] ?? '🛒'}
@@ -233,11 +234,12 @@ function ImpulseCard({ product, qty, onAdd }: { product: ProductInfo; qty: numbe
 }
 
 function ProductCard({ product, qty, onAdd }: { product: ProductInfo; qty: number; onAdd: () => void }) {
+  const [imgError, setImgError] = useState(false)
   return (
     <div className="product-card">
       <div className="relative aspect-square bg-gray-800">
-        {product.imageUrl ? (
-          <Image src={product.imageUrl} alt={product.name} fill className="object-contain p-2" unoptimized />
+        {product.imageUrl && !imgError ? (
+          <Image src={product.imageUrl} alt={product.name} fill className="object-contain p-2" unoptimized onError={() => setImgError(true)} />
         ) : (
           <div className="w-full h-full flex items-center justify-center text-4xl">
             {CAT_ICON[product.category ?? ''] ?? '🛒'}

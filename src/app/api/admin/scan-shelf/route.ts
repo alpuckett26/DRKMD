@@ -68,11 +68,11 @@ Identify as many products as you can clearly see.`,
       try {
         const res = await fetch(
           `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(p.name)}&search_simple=1&action=process&json=1&page_size=3`,
-          { headers: { 'User-Agent': 'WendOS/1.0' } },
+          { headers: { 'User-Agent': 'WendOS inventory app - support@wendos.com' } },
         )
         const data = await res.json() as { products?: { image_front_url?: string; image_url?: string }[] }
-        const match = data.products?.find(x => x.image_front_url || x.image_url)
-        return { ...p, imageUrl: match?.image_front_url ?? match?.image_url ?? null }
+        const img = data.products?.map(x => x.image_front_url ?? x.image_url).find(u => u?.startsWith('https://'))
+        return { ...p, imageUrl: img ?? null }
       } catch {
         return { ...p, imageUrl: null }
       }
