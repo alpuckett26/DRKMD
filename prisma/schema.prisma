@@ -1,0 +1,120 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Store {
+  id                String    @id @default(cuid())
+  name              String
+  location          String?
+  windowModeEnabled Boolean   @default(false)
+  windowModeStart   String?
+  windowModeEnd     String?
+  timezone          String    @default("America/Chicago")
+  products          Product[]
+  orders            Order[]
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+}
+
+model Product {
+  id                 String      @id @default(cuid())
+  storeId            String
+  store              Store       @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  name               String
+  category           String?
+  price              Int
+  nighttimeAvailable Boolean     @default(true)
+  restrictedFlag     Boolean     @default(false)
+  imageUrl           String?
+  active             Boolean     @default(true)
+  orderItems         OrderItem[]
+  createdAt          DateTime    @default(now())
+  updatedAt          DateTime    @updatedAt
+}
+
+model Order {
+  id                     String                 @id @default(cuid())
+  storeId                String
+  store                  Store                  @relation(fields: [storeId], references: [id])
+  customerName           String
+  customerPhone          String?
+  status                 OrderStatus            @default(submitted)
+  estimatedTotal         Int
+  finalTotal             Int?
+  paymentAuthId          String?
+  paymentCaptureId       String?
+  substitutionPreference SubstitutionPreference @default(none)
+  pickupCode             String
+  pickupCodeQr           String?
+  createdAt              DateTime               @default(now())
+  completedAt            DateTime?
+  items                  OrderItem[]
+  events                 OrderEvent[]
+}
+
+model OrderItem {
+  id                 String     @id @default(cuid())
+  orderId            String
+  order              Order      @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId          String?
+  product            Product?   @relation(fields: [productId], references: [id])
+  requestedName      String
+  requestedPrice     Int
+  qtyRequested       Int
+  qtyFound           Int        @default(0)
+  finalPrice         Int?
+  status             ItemStatus @default(requested)
+  substitutionReason String?
+  createdAt          DateTime   @default(now())
+}
+
+model OrderEvent {
+  id        String    @id @default(cuid())
+  orderId   String
+  order     Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  eventType EventType
+  notes     String?
+  createdAt DateTime  @default(now())
+}
+
+enum OrderStatus {
+  submitted
+  authorized
+  picking
+  ready
+  partially_ready
+  captured
+  completed
+  voided
+  canceled
+}
+
+enum ItemStatus {
+  requested
+  found
+  unavailable
+  substituted
+  refused_restricted
+}
+
+enum SubstitutionPreference {
+  none
+  allow_similar
+}
+
+enum EventType {
+  submitted
+  authorized
+  picking_started
+  item_marked
+  ready
+  captured
+  completed
+  voided
+  canceled
+}
