@@ -1,63 +1,56 @@
-import { Client, Environment } from 'squareup'
 import { randomUUID } from 'crypto'
 
-const environment =
+const BASE_URL =
   process.env.SQUARE_ENVIRONMENT === 'production'
-    ? Environment.Production
-    : Environment.Sandbox
+    ? 'https://connect.squareup.com'
+    : 'https://connect.squareupsandbox.com'
 
-export const squareClient = new Client({
-  accessToken: process.env.SQUARE_ACCESS_TOKEN!,
-  environment,
-})
+async function squareFetch(path: string, method: string, body?: object) {
+  const res = await fetch(`${BASE_URL}${path}`, {
+    method,
+    headers: {
+      'Square-Version': '2024-01-18',
+      'Authorization': `Bearer ${process.env.SQUARE_ACCESS_TOKEN}`,
+      'Content-Type': 'application/json',
+    },
+    body: body ? JSON.stringify(body) : undefined,
+  })
+  const data = await res.json() as Record<string, unknown>
+  if (!res.ok) throw new Error(JSON.stringify(data))
+  return data
+}
 
 export async function authorizePayment(
   sourceId: string,
   amountCents: number,
   note: string,
-): Promise<{ paymentId: string; versionToken: string | undefined }> {
-  const { result } = await squareClient.paymentsApi.createPayment({
-    sourceId,
-    idempotencyKey: randomUUID(),
-    amountMoney: {
-      amount: BigInt(amountCents),
-      currency: 'USD',
-    },
+): Promise<{ paymentId: string }> {
+  const data = await squareFetch('/v2/payments', 'POST', {
+    source_id: sourceId,
+    idempotency_key: randomUUID(),
+    amount_money: { amount: amountCents, currency: 'USD' },
     autocomplete: false,
     note,
   })
-
-  if (!result.payment?.id) throw new Error('Square: no payment ID returned')
-
-  return {
-    paymentId: result.payment.id,
-    versionToken: result.payment.versionToken,
-  }
+  const payment = (data as { payment: { id: string } }).payment
+  if (!payment?.id) throw new Error('Square: no payment ID returned')
+  return { paymentId: payment.id }
 }
 
 export async function capturePayment(
   paymentId: string,
   finalAmountCents: number,
 ): Promise<string> {
-  // Update to adjusted amount before completing
-  const { result: updated } = await squareClient.paymentsApi.updatePayment(
-    paymentId,
-    {
-      idempotencyKey: randomUUID(),
-      payment: {
-        amountMoney: {
-          amount: BigInt(finalAmountCents),
-          currency: 'USD',
-        },
-      },
+  await squareFetch(`/v2/payments/${paymentId}`, 'PUT', {
+    idempotency_key: randomUUID(),
+    payment: {
+      amount_money: { amount: finalAmountCents, currency: 'USD' },
     },
-  )
-
-  await squareClient.paymentsApi.completePayment(paymentId, {})
-
-  return updated.payment?.id ?? paymentId
+  })
+  await squareFetch(`/v2/payments/${paymentId}/complete`, 'POST', {})
+  return paymentId
 }
 
 export async function voidPayment(paymentId: string): Promise<void> {
-  await squareClient.paymentsApi.cancelPayment(paymentId)
+  await squareFetch(`/v2/payments/${paymentId}/cancel`, 'POST', {})
 }
