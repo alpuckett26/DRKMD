@@ -59,6 +59,18 @@ export default function ProductsPage() {
     fetchProducts()
   }
 
+  async function togglePromoted(productId: string, promoted: boolean) {
+    await fetch(`/api/admin/products/${productId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ promoted }),
+    })
+    setProducts(prev => prev.map(p => p.id === productId ? { ...p, promoted } : p))
+  }
+
+  const featured = products.filter(p => p.promoted)
+  const regular = products.filter(p => !p.promoted)
+
   return (
     <div className="min-h-screen pb-10">
       <div className="panel sticky top-0 z-10">
@@ -112,29 +124,83 @@ export default function ProductsPage() {
             <p className="text-xs text-gray-600">Add items above or use Scan Shelf to photo your shelves.</p>
           </div>
         ) : (
-          <div className="space-y-2">
-            {products.map(product => (
-              <div key={product.id} className="card flex items-center gap-3">
-                <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-sm">{product.name}</p>
-                  <div className="flex items-center gap-2 mt-0.5">
-                    {product.category && <span className="text-xs text-gray-500">{product.category}</span>}
-                    {product.restrictedFlag && <span className="badge bg-red-900 text-red-400">21+</span>}
-                    {product.price === 0
-                      ? <span className="text-xs text-yellow-600">Pricing pending</span>
-                      : <span className="text-xs text-gray-600">Active</span>
-                    }
-                  </div>
+          <div className="space-y-6">
+            {featured.length > 0 && (
+              <div>
+                <div className="flex items-center gap-2 mb-2">
+                  <span>⚡</span>
+                  <h2 className="text-xs font-black uppercase tracking-widest text-brand">Featured / Hot Picks</h2>
                 </div>
-                <button onClick={() => toggleProduct(product.id, false)}
-                  className="text-xs text-red-400 hover:text-red-300 transition-colors">
-                  Remove
-                </button>
+                <div className="space-y-2">
+                  {featured.map(product => (
+                    <ProductRow
+                      key={product.id}
+                      product={product}
+                      onRemove={() => toggleProduct(product.id, false)}
+                      onToggleFeature={() => togglePromoted(product.id, false)}
+                    />
+                  ))}
+                </div>
               </div>
-            ))}
+            )}
+
+            <div>
+              {featured.length > 0 && (
+                <h2 className="text-xs font-black uppercase tracking-widest text-gray-500 mb-2">All Items</h2>
+              )}
+              <div className="space-y-2">
+                {regular.map(product => (
+                  <ProductRow
+                    key={product.id}
+                    product={product}
+                    onRemove={() => toggleProduct(product.id, false)}
+                    onToggleFeature={() => togglePromoted(product.id, true)}
+                  />
+                ))}
+              </div>
+            </div>
           </div>
         )}
       </div>
+    </div>
+  )
+}
+
+function ProductRow({
+  product,
+  onRemove,
+  onToggleFeature,
+}: {
+  product: ExtendedProduct
+  onRemove: () => void
+  onToggleFeature: () => void
+}) {
+  return (
+    <div
+      className="card flex items-center gap-3"
+      style={product.promoted ? { borderColor: 'rgba(46,168,255,0.45)', boxShadow: '0 0 12px rgba(46,168,255,0.12)' } : {}}
+    >
+      <div className="flex-1 min-w-0">
+        <p className="font-semibold text-sm">{product.name}</p>
+        <div className="flex items-center gap-2 mt-0.5">
+          {product.category && <span className="text-xs text-gray-500">{product.category}</span>}
+          {product.restrictedFlag && <span className="badge bg-red-900 text-red-400">21+</span>}
+          {product.price === 0
+            ? <span className="text-xs text-yellow-600">Pricing pending</span>
+            : <span className="text-xs text-gray-600">Active</span>
+          }
+        </div>
+      </div>
+      <button
+        onClick={onToggleFeature}
+        className={`text-xs font-semibold transition-colors ${product.promoted ? 'text-brand' : 'text-gray-600 hover:text-brand'}`}
+      >
+        {product.promoted ? '⚡ Featured' : 'Feature'}
+      </button>
+      <button onClick={onRemove}
+        className="text-xs text-red-400 hover:text-red-300 transition-colors">
+        Remove
+      </button>
     </div>
   )
 }

@@ -35,6 +35,7 @@ export default function MenuPage() {
     ]).then(([s, p]) => { setStore(s); setProducts(p); setLoading(false) })
   }, [storeId])
 
+  const promoted = products.filter(p => p.promoted && p.price > 0)
   const categories = ['All', ...Array.from(new Set(products.map(p => p.category ?? 'Other')))]
 
   const filtered = products.filter(p => {
@@ -124,8 +125,29 @@ export default function MenuPage() {
         )}
       </div>
 
-      {/* Product grid */}
       <div className="max-w-lg mx-auto px-4 pt-4 space-y-6">
+        {/* Hot Picks impulse strip */}
+        {promoted.length > 0 && !search && activeCategory === 'All' && (
+          <div>
+            <div className="flex items-center gap-2 mb-3">
+              <span className="text-lg">⚡</span>
+              <h2 className="font-black text-sm uppercase tracking-widest text-gray-300">Hot Picks</h2>
+              <span className="text-xs text-brand font-semibold">Staff favorites</span>
+            </div>
+            <div className="flex gap-3 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
+              {promoted.map(product => (
+                <ImpulseCard
+                  key={product.id}
+                  product={product}
+                  qty={items.find(i => i.productId === product.id)?.qty ?? 0}
+                  onAdd={() => addItem({ productId: product.id, name: product.name, price: product.price, restricted: product.restrictedFlag })}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Product grid */}
         {Object.keys(grouped).length === 0 && (
           <p className="text-center text-gray-500 pt-16">No products found.</p>
         )}
@@ -167,6 +189,49 @@ export default function MenuPage() {
   )
 }
 
+function ImpulseCard({ product, qty, onAdd }: { product: ProductInfo; qty: number; onAdd: () => void }) {
+  return (
+    <div
+      className="shrink-0 w-36 rounded-2xl overflow-hidden flex flex-col"
+      style={{
+        background: 'rgba(46,168,255,0.08)',
+        border: '1px solid rgba(46,168,255,0.4)',
+        boxShadow: '0 0 20px rgba(46,168,255,0.15), inset 0 1px 0 rgba(255,255,255,0.06)',
+      }}
+    >
+      <div className="relative aspect-square bg-gray-800/50">
+        {product.imageUrl ? (
+          <Image src={product.imageUrl} alt={product.name} fill className="object-contain p-2" unoptimized />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center text-3xl">
+            {CAT_ICON[product.category ?? ''] ?? '🛒'}
+          </div>
+        )}
+        {qty > 0 && (
+          <span className="absolute top-2 right-2 w-5 h-5 rounded-full bg-brand text-white text-xs font-bold flex items-center justify-center">{qty}</span>
+        )}
+      </div>
+      <div className="p-2 flex flex-col gap-1.5">
+        <p className="text-xs font-semibold leading-snug line-clamp-2">{product.name}</p>
+        <div className="flex items-center justify-between">
+          <span className="text-brand font-black text-sm">{formatCents(product.price)}</span>
+          <button
+            onClick={onAdd}
+            className="w-7 h-7 rounded-full font-bold text-xs flex items-center justify-center transition-all shrink-0"
+            style={{
+              background: qty > 0 ? '#2EA8FF' : 'rgba(46,168,255,0.2)',
+              color: qty > 0 ? 'white' : '#2EA8FF',
+              border: '1px solid rgba(46,168,255,0.5)',
+            }}
+          >
+            +
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function ProductCard({ product, qty, onAdd }: { product: ProductInfo; qty: number; onAdd: () => void }) {
   return (
     <div className="product-card">
@@ -180,6 +245,9 @@ function ProductCard({ product, qty, onAdd }: { product: ProductInfo; qty: numbe
         )}
         {product.restrictedFlag && (
           <span className="absolute top-2 left-2 badge bg-red-900 text-red-400 text-xs">21+</span>
+        )}
+        {product.promoted && (
+          <span className="absolute top-2 right-2 text-xs">⚡</span>
         )}
       </div>
       <div className="p-2.5 flex flex-col flex-1 justify-between gap-2">

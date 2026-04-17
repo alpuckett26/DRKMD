@@ -167,6 +167,8 @@ export async function POST() {
       `ALTER TABLE "Store" ADD COLUMN IF NOT EXISTS "state" TEXT`,
       `ALTER TABLE "Store" ADD COLUMN IF NOT EXISTS "zip" TEXT`,
       `ALTER TABLE "Store" ADD COLUMN IF NOT EXISTS "tosAcceptedAt" TIMESTAMP(3)`,
+      // Product columns
+      `ALTER TABLE "Product" ADD COLUMN IF NOT EXISTS "promoted" BOOLEAN NOT NULL DEFAULT false`,
       // Order columns
       `ALTER TABLE "Order" ADD COLUMN IF NOT EXISTS "staffId" TEXT`,
       // OrderEvent columns

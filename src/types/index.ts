@@ -48,6 +48,7 @@ export interface ProductInfo {
   nighttimeAvailable: boolean
   restrictedFlag: boolean
   imageUrl: string | null
+  promoted: boolean
 }
 
 export interface OrderSummary {

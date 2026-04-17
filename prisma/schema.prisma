@@ -95,6 +95,7 @@ model Product {
   restrictedFlag     Boolean     @default(false)
   imageUrl           String?
   active             Boolean     @default(true)
+  promoted           Boolean     @default(false)
   orderItems         OrderItem[]
   createdAt          DateTime    @default(now())
   updatedAt          DateTime    @updatedAt

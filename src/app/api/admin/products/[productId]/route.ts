@@ -10,6 +10,7 @@ const UpdateSchema = z.object({
   restrictedFlag: z.boolean().optional(),
   imageUrl: z.string().url().optional().nullable(),
   active: z.boolean().optional(),
+  promoted: z.boolean().optional(),
 })
 
 export async function PATCH(req: Request, { params }: { params: { productId: string } }) {

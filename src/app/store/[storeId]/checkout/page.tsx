@@ -3,9 +3,11 @@
 import { useEffect, useRef, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
 import Script from 'next/script'
 import { useCart } from '@/context/CartContext'
 import { formatCents } from '@/lib/utils'
+import type { ProductInfo } from '@/types'
 
 declare global {
   interface Window {
@@ -23,6 +25,75 @@ interface SquareCard {
   attach: (selector: string) => Promise<void>
   tokenize: () => Promise<{ status: string; token?: string; errors?: unknown[] }>
   destroy: () => Promise<void>
+}
+
+const CAT_ICON: Record<string, string> = {
+  'Drinks': '🥤', 'Energy': '⚡', 'Coffee & Tea': '☕',
+  'Beer': '🍺', 'Wine & Spirits': '🍷',
+  'Snacks': '🍿', 'Candy & Chocolate': '🍬',
+  'Food': '🌮', 'Health': '💊', 'Health & Beauty': '🧴',
+  'Tobacco': '🚬', 'Electronics': '🔋',
+  'Household': '🏠', 'Baby': '👶', 'General': '🛒',
+}
+
+function ImpulseBuySection({ storeId }: { storeId: string }) {
+  const { items, addItem } = useCart()
+  const [promoted, setPromoted] = useState<ProductInfo[]>([])
+
+  useEffect(() => {
+    fetch(`/api/stores/${storeId}/menu`)
+      .then(r => r.json())
+      .then((all: ProductInfo[]) => {
+        const cartIds = new Set(items.map(i => i.productId))
+        setPromoted(all.filter(p => p.promoted && p.price > 0 && !cartIds.has(p.id)).slice(0, 5))
+      })
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [storeId])
+
+  if (promoted.length === 0) return null
+
+  return (
+    <div
+      className="rounded-2xl overflow-hidden"
+      style={{
+        background: 'rgba(46,168,255,0.06)',
+        border: '1px solid rgba(46,168,255,0.3)',
+        boxShadow: '0 0 24px rgba(46,168,255,0.08)',
+      }}
+    >
+      <div className="px-4 pt-3 pb-2 flex items-center gap-2">
+        <span>⚡</span>
+        <p className="font-black text-sm uppercase tracking-widest text-gray-300">Add to your order</p>
+      </div>
+      <div className="flex gap-3 overflow-x-auto px-4 pb-4" style={{ scrollbarWidth: 'none' }}>
+        {promoted.map(product => (
+          <button
+            key={product.id}
+            onClick={() => addItem({ productId: product.id, name: product.name, price: product.price, restricted: product.restrictedFlag })}
+            className="shrink-0 w-28 rounded-xl overflow-hidden text-left transition-transform active:scale-95"
+            style={{
+              background: 'rgba(255,255,255,0.04)',
+              border: '1px solid rgba(46,168,255,0.25)',
+            }}
+          >
+            <div className="relative aspect-square bg-gray-800/50">
+              {product.imageUrl ? (
+                <Image src={product.imageUrl} alt={product.name} fill className="object-contain p-1.5" unoptimized />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-2xl">
+                  {CAT_ICON[product.category ?? ''] ?? '🛒'}
+                </div>
+              )}
+            </div>
+            <div className="p-2">
+              <p className="text-xs font-semibold leading-tight line-clamp-2 mb-1">{product.name}</p>
+              <p className="text-brand font-black text-xs">{formatCents(product.price)}</p>
+            </div>
+          </button>
+        ))}
+      </div>
+    </div>
+  )
 }
 
 export default function CheckoutPage() {
@@ -168,6 +239,9 @@ export default function CheckoutPage() {
               <span className="text-brand">{formatCents(total)}</span>
             </div>
           </div>
+
+          <ImpulseBuySection storeId={storeId} />
+
           <div className="card space-y-2 border border-yellow-800/50">
             <p className="text-yellow-400 text-xs font-semibold">🎭 Demo Mode — no payment required</p>
             <p className="text-gray-500 text-xs">Orders flow through the full fulfillment process without charging a card.</p>
@@ -228,6 +302,9 @@ export default function CheckoutPage() {
               <span className="text-brand">{formatCents(total)}</span>
             </div>
           </div>
+
+          {/* Impulse upsells */}
+          <ImpulseBuySection storeId={storeId} />
 
           {/* Payment */}
           <div className="card space-y-3">
