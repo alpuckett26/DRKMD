@@ -41,16 +41,20 @@ export async function POST(req: Request) {
   const pickupCodeQr = await generatePickupQR(pickupCode)
 
   let paymentAuthId: string | undefined
-  try {
-    const { paymentId } = await authorizePayment(
-      paymentToken,
-      estimatedTotal,
-      `Order at ${store.name} – code ${pickupCode}`,
-    )
-    paymentAuthId = paymentId
-  } catch (err) {
-    console.error('Square auth error:', err)
-    return NextResponse.json({ error: 'Payment authorization failed' }, { status: 402 })
+  if (storeId === 'store_demo' && paymentToken === 'demo') {
+    paymentAuthId = 'demo'
+  } else {
+    try {
+      const { paymentId } = await authorizePayment(
+        paymentToken,
+        estimatedTotal,
+        `Order at ${store.name} – code ${pickupCode}`,
+      )
+      paymentAuthId = paymentId
+    } catch (err) {
+      console.error('Square auth error:', err)
+      return NextResponse.json({ error: 'Payment authorization failed' }, { status: 402 })
+    }
   }
 
   const order = await db.order.create({

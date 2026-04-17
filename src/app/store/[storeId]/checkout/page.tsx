@@ -29,6 +29,7 @@ export default function CheckoutPage() {
   const { storeId } = useParams<{ storeId: string }>()
   const router = useRouter()
   const { items, total, substitutionPreference, clearCart } = useCart()
+  const isDemo = storeId === 'store_demo'
 
   const [name, setName] = useState('')
   const [phone, setPhone] = useState('')
@@ -62,6 +63,35 @@ export default function CheckoutPage() {
   if (items.length === 0 && !submitted) {
     router.replace(`/store/${storeId}`)
     return null
+  }
+
+  async function handleDemoSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    if (!name.trim()) { setError('Please enter your name.'); return }
+    setSubmitting(true)
+    setError('')
+    const res = await fetch('/api/orders', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        storeId,
+        customerName: name.trim(),
+        customerPhone: phone.trim() || undefined,
+        substitutionPreference,
+        items: items.map(i => ({ productId: i.productId, name: i.name, price: i.price, qty: i.qty })),
+        paymentToken: 'demo',
+      }),
+    })
+    if (!res.ok) {
+      const data = await res.json()
+      setError(data.error ?? 'Order failed.')
+      setSubmitting(false)
+      return
+    }
+    const order = await res.json()
+    setSubmitted(true)
+    clearCart()
+    router.push(`/store/${storeId}/order/${order.id}`)
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -110,12 +140,53 @@ export default function CheckoutPage() {
     router.push(`/store/${storeId}/order/${order.id}`)
   }
 
+  if (isDemo) {
+    return (
+      <div className="min-h-screen pb-10">
+        <div className="panel sticky top-0 z-10">
+          <div className="max-w-lg mx-auto px-4 py-4 flex items-center gap-3">
+            <Link href={`/store/${storeId}/cart`} className="text-gray-400 text-2xl leading-none">‹</Link>
+            <h1 className="font-bold text-lg">Checkout</h1>
+          </div>
+        </div>
+        <form onSubmit={handleDemoSubmit} className="max-w-lg mx-auto px-4 pt-4 space-y-4">
+          <div className="card space-y-3">
+            <h2 className="font-semibold text-sm text-gray-400 uppercase tracking-wide">Your Info</h2>
+            <input type="text" placeholder="Name *" value={name} onChange={e => setName(e.target.value)} required className="input" />
+            <input type="tel" placeholder="Phone (optional)" value={phone} onChange={e => setPhone(e.target.value)} className="input" />
+          </div>
+          <div className="card space-y-2">
+            <h2 className="font-semibold text-sm text-gray-400 uppercase tracking-wide">Order Summary</h2>
+            {items.map(i => (
+              <div key={i.productId} className="flex justify-between text-sm">
+                <span className="text-gray-300">{i.name} × {i.qty}</span>
+                <span className="text-gray-300">{formatCents(i.price * i.qty)}</span>
+              </div>
+            ))}
+            <div className="border-t border-gray-700 pt-2 flex justify-between font-bold">
+              <span>Estimated Total</span>
+              <span className="text-brand">{formatCents(total)}</span>
+            </div>
+          </div>
+          <div className="card space-y-2 border border-yellow-800/50">
+            <p className="text-yellow-400 text-xs font-semibold">🎭 Demo Mode — no payment required</p>
+            <p className="text-gray-500 text-xs">Orders flow through the full fulfillment process without charging a card.</p>
+          </div>
+          {error && <p className="text-red-400 text-sm text-center bg-red-900/20 rounded-xl px-4 py-3">{error}</p>}
+          <button type="submit" disabled={submitting} className="btn-primary">
+            {submitting ? 'Placing order…' : `Place Demo Order – ${formatCents(total)}`}
+          </button>
+        </form>
+      </div>
+    )
+  }
+
   return (
     <>
       <Script src={squareSrc} onLoad={initSquare} />
 
       <div className="min-h-screen pb-10">
-        <div className="bg-gray-900 border-b border-gray-800 sticky top-0 z-10">
+        <div className="panel sticky top-0 z-10">
           <div className="max-w-lg mx-auto px-4 py-4 flex items-center gap-3">
             <Link href={`/store/${storeId}/cart`} className="text-gray-400 text-2xl leading-none">‹</Link>
             <h1 className="font-bold text-lg">Checkout</h1>

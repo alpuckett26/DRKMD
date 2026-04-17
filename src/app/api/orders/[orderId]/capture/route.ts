@@ -26,8 +26,10 @@ export async function POST(_req: Request, { params }: { params: { orderId: strin
     })),
   )
 
+  const isDemo = order.paymentAuthId === 'demo'
+
   if (finalTotal === 0 || order.status === 'voided') {
-    await voidPayment(order.paymentAuthId)
+    if (!isDemo) await voidPayment(order.paymentAuthId)
     await db.order.update({
       where: { id: params.orderId },
       data: { status: 'voided', finalTotal: 0 },
@@ -38,7 +40,7 @@ export async function POST(_req: Request, { params }: { params: { orderId: strin
     return NextResponse.json({ status: 'voided', finalTotal: 0 })
   }
 
-  const captureId = await capturePayment(order.paymentAuthId, finalTotal)
+  const captureId = isDemo ? 'demo-capture' : await capturePayment(order.paymentAuthId, finalTotal)
 
   await db.order.update({
     where: { id: params.orderId },
