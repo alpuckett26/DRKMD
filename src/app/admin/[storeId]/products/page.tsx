@@ -70,9 +70,12 @@ export default function ProductsPage() {
             <Link href={`/admin/${storeId}`} className="text-gray-400 text-2xl">‹</Link>
             <h1 className="font-bold text-lg">Night Menu</h1>
           </div>
-          <button onClick={() => setShowAdd(v => !v)} className="text-brand text-sm font-semibold">
-            {showAdd ? 'Cancel' : '+ Add Item'}
-          </button>
+          <div className="flex gap-3 items-center">
+            <Link href={`/admin/${storeId}/import`} className="text-gray-400 text-sm font-semibold underline">Import</Link>
+            <button onClick={() => setShowAdd(v => !v)} className="text-brand text-sm font-semibold">
+              {showAdd ? 'Cancel' : '+ Add Item'}
+            </button>
+          </div>
         </div>
       </div>
 
