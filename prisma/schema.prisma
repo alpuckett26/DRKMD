@@ -17,9 +17,18 @@ model Store {
   windowModeEnd     String?
   timezone          String    @default("America/Chicago")
   logoUrl           String?
-  onboardingComplete Boolean  @default(false)
+  onboardingComplete Boolean   @default(false)
   ownerName          String?
   ownerEmail         String?
+  phone              String?
+  businessLegalName  String?
+  businessType       String?
+  ein                String?
+  address            String?
+  city               String?
+  state              String?
+  zip                String?
+  tosAcceptedAt      DateTime?
   products          Product[]
   orders            Order[]
   createdAt         DateTime  @default(now())

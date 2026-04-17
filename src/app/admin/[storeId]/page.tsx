@@ -18,6 +18,8 @@ export default function AdminDashboard() {
   const [migrating, setMigrating] = useState(false)
   const [migrateResult, setMigrateResult] = useState<string | null>(null)
   const [onboardingComplete, setOnboardingComplete] = useState(true)
+  const [demoResetting, setDemoResetting] = useState(false)
+  const isDemo = storeId === 'store_demo'
 
   async function handlePhotoCapture(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
@@ -62,6 +64,13 @@ export default function AdminDashboard() {
       }),
     })
     setSaving(false)
+  }
+
+  async function resetDemo() {
+    setDemoResetting(true)
+    await fetch('/api/admin/demo-reset', { method: 'POST' })
+    setOnboardingComplete(false)
+    setDemoResetting(false)
   }
 
   async function runMigrate() {
@@ -195,6 +204,20 @@ export default function AdminDashboard() {
             <p className="text-xs text-gray-500">Open on dedicated fulfillment tablet – live queue + audio alerts</p>
           </Link>
         </div>
+        {/* Demo Controls */}
+        {isDemo && (
+          <div className="card space-y-2 border border-yellow-800">
+            <h2 className="font-bold text-yellow-400">Demo Controls</h2>
+            <p className="text-xs text-gray-500">Reset the demo store to run through the setup wizard again.</p>
+            <button onClick={resetDemo} disabled={demoResetting} className="btn-secondary w-full">
+              {demoResetting ? 'Resetting…' : '🔄 Reset Demo & Rerun Setup'}
+            </button>
+            <Link href={`/admin/${storeId}/setup`} className="btn-primary block text-center w-full">
+              ▶ Run Setup Wizard
+            </Link>
+          </div>
+        )}
+
         {/* DB Migration */}
         <div className="card space-y-2">
           <h2 className="font-bold">Database</h2>

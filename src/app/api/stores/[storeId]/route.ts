@@ -17,6 +17,15 @@ export async function PATCH(req: Request, { params }: { params: { storeId: strin
       ...(body.windowModeEnd !== undefined && { windowModeEnd: body.windowModeEnd }),
       ...(body.logoUrl !== undefined && { logoUrl: body.logoUrl }),
       ...(body.name !== undefined && { name: body.name }),
+      ...(body.phone !== undefined && { phone: body.phone }),
+      ...(body.businessLegalName !== undefined && { businessLegalName: body.businessLegalName }),
+      ...(body.businessType !== undefined && { businessType: body.businessType }),
+      ...(body.ein !== undefined && { ein: body.ein }),
+      ...(body.address !== undefined && { address: body.address }),
+      ...(body.city !== undefined && { city: body.city }),
+      ...(body.state !== undefined && { state: body.state }),
+      ...(body.zip !== undefined && { zip: body.zip }),
+      ...(body.tosAcceptedAt !== undefined && { tosAcceptedAt: body.tosAcceptedAt }),
     },
   })
   return NextResponse.json(store)
