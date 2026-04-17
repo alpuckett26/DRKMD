@@ -3,10 +3,15 @@ import { db } from '@/lib/db'
 
 export async function POST() {
   try {
-    await db.$executeRawUnsafe(`CREATE TYPE IF NOT EXISTS "OrderStatus" AS ENUM ('submitted','authorized','picking','ready','partially_ready','captured','completed','voided','canceled')`)
-    await db.$executeRawUnsafe(`CREATE TYPE IF NOT EXISTS "ItemStatus" AS ENUM ('requested','found','unavailable','substituted','refused_restricted')`)
-    await db.$executeRawUnsafe(`CREATE TYPE IF NOT EXISTS "SubstitutionPreference" AS ENUM ('none','allow_similar')`)
-    await db.$executeRawUnsafe(`CREATE TYPE IF NOT EXISTS "EventType" AS ENUM ('submitted','authorized','picking_started','item_marked','ready','captured','completed','voided','canceled')`)
+    // Create enums (ignore error if already exists)
+    for (const sql of [
+      `DO $$ BEGIN CREATE TYPE "OrderStatus" AS ENUM ('submitted','authorized','picking','ready','partially_ready','captured','completed','voided','canceled'); EXCEPTION WHEN duplicate_object THEN null; END $$`,
+      `DO $$ BEGIN CREATE TYPE "ItemStatus" AS ENUM ('requested','found','unavailable','substituted','refused_restricted'); EXCEPTION WHEN duplicate_object THEN null; END $$`,
+      `DO $$ BEGIN CREATE TYPE "SubstitutionPreference" AS ENUM ('none','allow_similar'); EXCEPTION WHEN duplicate_object THEN null; END $$`,
+      `DO $$ BEGIN CREATE TYPE "EventType" AS ENUM ('submitted','authorized','picking_started','item_marked','ready','captured','completed','voided','canceled'); EXCEPTION WHEN duplicate_object THEN null; END $$`,
+    ]) {
+      await db.$executeRawUnsafe(sql)
+    }
 
     await db.$executeRawUnsafe(`
       CREATE TABLE IF NOT EXISTS "Store" (
