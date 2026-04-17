@@ -1,0 +1,95 @@
+-- CreateEnum
+DO $$ BEGIN CREATE TYPE "OrderStatus" AS ENUM ('submitted','authorized','picking','ready','partially_ready','captured','completed','voided','canceled'); EXCEPTION WHEN duplicate_object THEN null; END $$;
+
+-- CreateEnum
+DO $$ BEGIN CREATE TYPE "ItemStatus" AS ENUM ('requested','found','unavailable','substituted','refused_restricted'); EXCEPTION WHEN duplicate_object THEN null; END $$;
+
+-- CreateEnum
+DO $$ BEGIN CREATE TYPE "SubstitutionPreference" AS ENUM ('none','allow_similar'); EXCEPTION WHEN duplicate_object THEN null; END $$;
+
+-- CreateEnum
+DO $$ BEGIN CREATE TYPE "EventType" AS ENUM ('submitted','authorized','picking_started','item_marked','ready','captured','completed','voided','canceled'); EXCEPTION WHEN duplicate_object THEN null; END $$;
+
+-- CreateTable
+CREATE TABLE IF NOT EXISTS "Store" (
+    "id" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "location" TEXT,
+    "windowModeEnabled" BOOLEAN NOT NULL DEFAULT false,
+    "windowModeStart" TEXT,
+    "windowModeEnd" TEXT,
+    "timezone" TEXT NOT NULL DEFAULT 'America/Chicago',
+    "logoUrl" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "Store_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE IF NOT EXISTS "Product" (
+    "id" TEXT NOT NULL,
+    "storeId" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "category" TEXT,
+    "price" INTEGER NOT NULL,
+    "nighttimeAvailable" BOOLEAN NOT NULL DEFAULT true,
+    "restrictedFlag" BOOLEAN NOT NULL DEFAULT false,
+    "imageUrl" TEXT,
+    "active" BOOLEAN NOT NULL DEFAULT true,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "Product_pkey" PRIMARY KEY ("id"),
+    CONSTRAINT "Product_storeId_fkey" FOREIGN KEY ("storeId") REFERENCES "Store"("id") ON DELETE CASCADE
+);
+
+-- CreateTable
+CREATE TABLE IF NOT EXISTS "Order" (
+    "id" TEXT NOT NULL,
+    "storeId" TEXT NOT NULL,
+    "customerName" TEXT NOT NULL,
+    "customerPhone" TEXT,
+    "status" "OrderStatus" NOT NULL DEFAULT 'submitted',
+    "estimatedTotal" INTEGER NOT NULL,
+    "finalTotal" INTEGER,
+    "paymentAuthId" TEXT,
+    "paymentCaptureId" TEXT,
+    "substitutionPreference" "SubstitutionPreference" NOT NULL DEFAULT 'none',
+    "pickupCode" TEXT NOT NULL,
+    "pickupCodeQr" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "completedAt" TIMESTAMP(3),
+    CONSTRAINT "Order_pkey" PRIMARY KEY ("id"),
+    CONSTRAINT "Order_storeId_fkey" FOREIGN KEY ("storeId") REFERENCES "Store"("id")
+);
+
+-- CreateTable
+CREATE TABLE IF NOT EXISTS "OrderItem" (
+    "id" TEXT NOT NULL,
+    "orderId" TEXT NOT NULL,
+    "productId" TEXT,
+    "requestedName" TEXT NOT NULL,
+    "requestedPrice" INTEGER NOT NULL,
+    "qtyRequested" INTEGER NOT NULL,
+    "qtyFound" INTEGER NOT NULL DEFAULT 0,
+    "finalPrice" INTEGER,
+    "status" "ItemStatus" NOT NULL DEFAULT 'requested',
+    "substitutionReason" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "OrderItem_pkey" PRIMARY KEY ("id"),
+    CONSTRAINT "OrderItem_orderId_fkey" FOREIGN KEY ("orderId") REFERENCES "Order"("id") ON DELETE CASCADE,
+    CONSTRAINT "OrderItem_productId_fkey" FOREIGN KEY ("productId") REFERENCES "Product"("id")
+);
+
+-- CreateTable
+CREATE TABLE IF NOT EXISTS "OrderEvent" (
+    "id" TEXT NOT NULL,
+    "orderId" TEXT NOT NULL,
+    "eventType" "EventType" NOT NULL,
+    "notes" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "OrderEvent_pkey" PRIMARY KEY ("id"),
+    CONSTRAINT "OrderEvent_orderId_fkey" FOREIGN KEY ("orderId") REFERENCES "Order"("id") ON DELETE CASCADE
+);
+
+-- CreateIndex
+CREATE UNIQUE INDEX IF NOT EXISTS "Product_storeId_name_key" ON "Product"("storeId", "name");
