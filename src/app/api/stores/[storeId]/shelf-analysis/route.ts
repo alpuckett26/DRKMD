@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
+import { fetchProductImage } from '@/lib/productImage'
 
 export const maxDuration = 60
 
@@ -59,21 +60,8 @@ Return ONLY a JSON array, no other text:
     return true
   })
 
-  // Enrich with Open Food Facts images in parallel
   const enriched = await Promise.all(
-    products.map(async p => {
-      try {
-        const res = await fetch(
-          `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(p.name)}&search_simple=1&action=process&json=1&page_size=3`,
-          { headers: { 'User-Agent': 'WendOS inventory app - support@wendos.com' } },
-        )
-        const data = await res.json() as { products?: { image_front_url?: string; image_url?: string }[] }
-        const img = data.products?.map(x => x.image_front_url ?? x.image_url).find(u => u?.startsWith('https://'))
-        return { ...p, imageUrl: img ?? null }
-      } catch {
-        return { ...p, imageUrl: null }
-      }
-    }),
+    products.map(async p => ({ ...p, imageUrl: await fetchProductImage(p.name) })),
   )
 
   return NextResponse.json({ products: enriched })
