@@ -72,7 +72,7 @@ export default function FulfillmentTablet() {
     )
     if (incoming.length > 0) {
       playBeep()
-      setNewOrderIds(prev => new Set([...prev, ...incoming.map(o => o.id)]))
+      setNewOrderIds(prev => new Set(Array.from(prev).concat(incoming.map(o => o.id))))
       setTimeout(() => {
         setNewOrderIds(prev => {
           const next = new Set(prev)
