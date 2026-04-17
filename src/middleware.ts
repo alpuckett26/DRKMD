@@ -4,8 +4,8 @@ import type { NextRequest } from 'next/server'
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
-  // Protect all /admin routes
-  if (pathname.startsWith('/admin')) {
+  // Protect all /admin routes except the demo store
+  if (pathname.startsWith('/admin') && !pathname.startsWith('/admin/store_demo')) {
     const session = request.cookies.get('adminSession')?.value
     if (!session) {
       const loginUrl = new URL('/login', request.url)
