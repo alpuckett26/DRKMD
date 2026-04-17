@@ -33,6 +33,7 @@ export default function CheckoutPage() {
   const [name, setName] = useState('')
   const [phone, setPhone] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  const [submitted, setSubmitted] = useState(false)
   const [error, setError] = useState('')
   const [squareReady, setSquareReady] = useState(false)
   const cardRef = useRef<SquareCard | null>(null)
@@ -58,7 +59,7 @@ export default function CheckoutPage() {
     }
   }
 
-  if (items.length === 0) {
+  if (items.length === 0 && !submitted) {
     router.replace(`/store/${storeId}`)
     return null
   }
@@ -104,8 +105,9 @@ export default function CheckoutPage() {
     }
 
     const order = await res.json()
-    router.push(`/store/${storeId}/order/${order.id}`)
+    setSubmitted(true)
     clearCart()
+    router.push(`/store/${storeId}/order/${order.id}`)
   }
 
   return (
