@@ -16,7 +16,7 @@ export async function POST(
     const { paymentId } = await authorizePayment(
       sourceId,
       34900,
-      'Window Mode Starter Kit',
+      'WendOS Starter Kit',
     )
 
     await capturePayment(paymentId, 34900)

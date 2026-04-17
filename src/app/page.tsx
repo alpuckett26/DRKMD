@@ -3,7 +3,7 @@ export default function Home() {
     <main className="min-h-screen flex flex-col items-center justify-center p-6 text-center">
       <div className="max-w-sm w-full space-y-6">
         <div className="space-y-2">
-          <h1 className="text-4xl font-black tracking-tight text-brand">WINDOW MODE</h1>
+          <h1 className="text-4xl font-black tracking-tight text-brand">WendOS</h1>
           <p className="text-gray-400 text-sm">Scan the QR code at the store window to begin your order.</p>
         </div>
         <div className="card space-y-3 text-left text-sm text-gray-400">

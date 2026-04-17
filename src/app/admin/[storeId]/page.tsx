@@ -116,11 +116,11 @@ export default function AdminDashboard() {
       )}
 
       <div className="max-w-2xl mx-auto px-4 pt-4 space-y-4">
-        {/* Window Mode Toggle */}
+        {/* WendOS Toggle */}
         <div className="card space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="font-bold">Window Mode</h2>
+              <h2 className="font-bold">WendOS</h2>
               <p className="text-xs text-gray-500">Enable to allow orders through window only</p>
             </div>
             <button
@@ -160,7 +160,7 @@ export default function AdminDashboard() {
           {qrUrl && (
             <a
               href={qrUrl}
-              download={`window-mode-qr-${storeId}.png`}
+              download={`wendos-qr-${storeId}.png`}
               className="btn-secondary block"
             >
               Download QR Code

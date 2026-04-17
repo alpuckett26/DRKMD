@@ -27,7 +27,7 @@ export default function LoginPage() {
     <div className="min-h-screen bg-gray-950 flex items-center justify-center px-4">
       <div className="w-full max-w-sm space-y-6">
         <div className="text-center">
-          <h1 className="font-black text-3xl text-brand">WINDOW MODE</h1>
+          <h1 className="font-black text-3xl text-brand">WendOS</h1>
           <p className="text-gray-500 text-sm mt-1">Store Admin Login</p>
         </div>
         <form onSubmit={handleSubmit} className="card space-y-4">

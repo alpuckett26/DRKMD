@@ -158,7 +158,7 @@ export default function FulfillmentTablet() {
       {/* Header bar */}
       <div className="bg-gray-900 border-b border-gray-800 px-6 py-3 flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <span className="font-black text-brand text-xl">WINDOW MODE</span>
+          <span className="font-black text-brand text-xl">WendOS</span>
           <span className="text-gray-500 text-sm">{storeName}</span>
           <span className="badge bg-green-900 text-green-400 text-xs">● FULFILLMENT</span>
         </div>

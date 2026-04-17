@@ -59,7 +59,7 @@ export default function OrderStatusPage() {
     <div className="min-h-screen pb-10">
       <div className="bg-gray-900 border-b border-gray-800">
         <div className="max-w-lg mx-auto px-4 py-4">
-          <h1 className="font-black text-lg text-brand">WINDOW MODE</h1>
+          <h1 className="font-black text-lg text-brand">WendOS</h1>
         </div>
       </div>
 

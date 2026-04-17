@@ -45,8 +45,8 @@ export default function SignupPage() {
       <div className="w-full max-w-md space-y-6">
         <div className="text-center space-y-2">
           <p className="text-5xl">🪟</p>
-          <h1 className="font-black text-3xl text-brand">DRKMD</h1>
-          <p className="text-gray-400 text-sm">C-store window ordering — set up your store in minutes.</p>
+          <h1 className="font-black text-3xl text-brand">WendOS</h1>
+          <p className="text-gray-400 text-sm">Window ordering, powered by WendOS — set up your store in minutes.</p>
         </div>
 
         <div className="card space-y-5">

@@ -345,7 +345,7 @@ export default function SetupWizard() {
                 </label>
                 <label className="flex items-start gap-3 cursor-pointer">
                   <input type="checkbox" checked={billingChecked} onChange={e => setBillingChecked(e.target.checked)} className="mt-0.5 accent-brand w-4 h-4 shrink-0" />
-                  <span className="text-xs text-gray-300">I authorize Window Mode to charge my card <strong>$99/month</strong> after my kit ships. I can cancel with 30 days written notice.</span>
+                  <span className="text-xs text-gray-300">I authorize WendOS to charge my card <strong>$99/month</strong> after my kit ships. I can cancel with 30 days written notice.</span>
                 </label>
                 <label className="flex items-start gap-3 cursor-pointer">
                   <input type="checkbox" checked={authorizedChecked} onChange={e => setAuthorizedChecked(e.target.checked)} className="mt-0.5 accent-brand w-4 h-4 shrink-0" />
@@ -370,7 +370,7 @@ export default function SetupWizard() {
                 <p className="text-gray-400 text-sm mt-1">Everything you need to start taking window orders.</p>
               </div>
               <div className="card space-y-3">
-                <p className="font-bold text-brand">Window Mode Starter Kit</p>
+                <p className="font-bold text-brand">WendOS Starter Kit</p>
                 <ul className="space-y-2 text-sm text-gray-300">
                   <li>💡 Lighted window sign with QR code</li>
                   <li>📱 Dedicated fulfillment tablet</li>

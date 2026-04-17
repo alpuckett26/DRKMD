@@ -3,7 +3,7 @@ import { CartProvider } from '@/context/CartContext'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'Window Mode – Order Safely',
+  title: 'WendOS – Order Safely',
   description: 'Scan & order through the window. No entry required.',
 }
 

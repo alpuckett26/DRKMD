@@ -87,7 +87,7 @@ export default function StaffLogin() {
     return (
       <div className="min-h-screen bg-gray-950 flex flex-col items-center justify-center gap-8 px-4">
         <div className="text-center">
-          <h1 className="font-black text-2xl text-brand">WINDOW MODE</h1>
+          <h1 className="font-black text-2xl text-brand">WendOS</h1>
           <p className="text-gray-500 text-sm mt-1">Staff Login — Who are you?</p>
         </div>
 
@@ -130,7 +130,7 @@ export default function StaffLogin() {
   return (
     <div className="min-h-screen bg-gray-950 flex flex-col items-center justify-center gap-8 px-4">
       <div className="text-center">
-        <h1 className="font-black text-2xl text-brand">WINDOW MODE</h1>
+        <h1 className="font-black text-2xl text-brand">WendOS</h1>
         <p className="text-gray-400 text-base mt-1 font-semibold">{selectedStaff.name}</p>
         <p className="text-gray-600 text-sm">Enter your PIN</p>
       </div>

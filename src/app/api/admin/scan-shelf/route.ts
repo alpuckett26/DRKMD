@@ -68,7 +68,7 @@ Identify as many products as you can clearly see.`,
       try {
         const res = await fetch(
           `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(p.name)}&search_simple=1&action=process&json=1&page_size=3`,
-          { headers: { 'User-Agent': 'DRKMD/1.0' } },
+          { headers: { 'User-Agent': 'WendOS/1.0' } },
         )
         const data = await res.json() as { products?: { image_front_url?: string; image_url?: string }[] }
         const match = data.products?.find(x => x.image_front_url || x.image_url)

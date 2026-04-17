@@ -8,7 +8,7 @@ export async function GET(req: Request) {
   try {
     const res = await fetch(
       `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(name)}&search_simple=1&action=process&json=1&page_size=5`,
-      { headers: { 'User-Agent': 'DRKMD/1.0' } },
+      { headers: { 'User-Agent': 'WendOS/1.0' } },
     )
     const data = await res.json() as { products?: { image_front_url?: string; image_url?: string }[] }
     const product = data.products?.find(p => p.image_front_url || p.image_url)
