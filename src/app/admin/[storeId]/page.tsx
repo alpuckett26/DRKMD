@@ -14,6 +14,8 @@ export default function AdminDashboard() {
   const [windowStart, setWindowStart] = useState('22:00')
   const [windowEnd, setWindowEnd] = useState('06:00')
   const [logoUrl, setLogoUrl] = useState('')
+  const [migrating, setMigrating] = useState(false)
+  const [migrateResult, setMigrateResult] = useState<string | null>(null)
 
   useEffect(() => {
     fetch(`/api/stores/${storeId}`)
@@ -43,6 +45,19 @@ export default function AdminDashboard() {
       }),
     })
     setSaving(false)
+  }
+
+  async function runMigrate() {
+    setMigrating(true)
+    setMigrateResult(null)
+    try {
+      const r = await fetch('/api/migrate', { method: 'POST' })
+      const d = await r.json()
+      setMigrateResult(d.ok ? '✅ Migration complete' : `❌ ${d.error}`)
+    } catch {
+      setMigrateResult('❌ Network error')
+    }
+    setMigrating(false)
   }
 
   if (!store) return <div className="min-h-screen flex items-center justify-center"><p className="text-gray-500 animate-pulse">Loading…</p></div>
@@ -153,6 +168,15 @@ export default function AdminDashboard() {
             <p className="font-semibold text-sm">Fulfillment Tablet</p>
             <p className="text-xs text-gray-500">Open on dedicated fulfillment tablet – live queue + audio alerts</p>
           </Link>
+        </div>
+        {/* DB Migration */}
+        <div className="card space-y-2">
+          <h2 className="font-bold">Database</h2>
+          <p className="text-xs text-gray-500">Run if you see column/table errors after an update.</p>
+          <button onClick={runMigrate} disabled={migrating} className="btn-secondary w-full">
+            {migrating ? 'Running…' : '🛠 Run Migration'}
+          </button>
+          {migrateResult && <p className="text-sm text-center">{migrateResult}</p>}
         </div>
       </div>
     </div>
