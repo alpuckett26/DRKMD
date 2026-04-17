@@ -98,6 +98,16 @@ export async function POST() {
       )`)
 
     await db.$executeRawUnsafe(`ALTER TABLE "Store" ADD COLUMN IF NOT EXISTS "logoUrl" TEXT`)
+
+    // Remove duplicate products, keeping the most recently updated one
+    await db.$executeRawUnsafe(`
+      DELETE FROM "Product" WHERE id IN (
+        SELECT id FROM (
+          SELECT id, ROW_NUMBER() OVER (PARTITION BY "storeId", name ORDER BY "updatedAt" DESC) AS rn
+          FROM "Product"
+        ) t WHERE rn > 1
+      )`)
+
     await db.$executeRawUnsafe(`CREATE UNIQUE INDEX IF NOT EXISTS "Product_storeId_name_key" ON "Product"("storeId", "name")`)
 
     return NextResponse.json({ ok: true, message: 'All tables created' })
