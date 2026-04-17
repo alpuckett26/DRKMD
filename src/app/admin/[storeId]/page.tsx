@@ -99,6 +99,7 @@ export default function AdminDashboard() {
           <div className="flex gap-3 text-sm">
             <Link href={`/admin/${storeId}/products`} className="text-brand underline">Products</Link>
             <Link href={`/admin/${storeId}/orders`} className="text-brand underline">Orders</Link>
+            <Link href={`/admin/${storeId}/staff`} className="text-brand underline">Staff</Link>
             <Link href={`/staff/${storeId}/orders`} className="text-gray-400 underline">Staff View</Link>
             <Link href={`/fulfillment/${storeId}`} className="text-gray-400 underline">Fulfillment Tablet</Link>
           </div>
@@ -197,6 +198,11 @@ export default function AdminDashboard() {
             <p className="text-2xl">📋</p>
             <p className="font-semibold text-sm">Orders</p>
             <p className="text-xs text-gray-500">View all orders</p>
+          </Link>
+          <Link href={`/admin/${storeId}/staff`} className="card text-center space-y-1 hover:bg-gray-800 transition-colors">
+            <p className="text-2xl">👥</p>
+            <p className="font-semibold text-sm">Staff</p>
+            <p className="text-xs text-gray-500">Manage logins & shifts</p>
           </Link>
           <Link href={`/fulfillment/${storeId}`} className="card text-center space-y-1 hover:bg-gray-800 transition-colors col-span-2">
             <p className="text-2xl">🖥️</p>

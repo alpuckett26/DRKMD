@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { useParams } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { formatCents } from '@/lib/utils'
 
@@ -49,10 +49,19 @@ function playBeep() {
   tone(0.4)
 }
 
+interface StaffSession {
+  id: string
+  name: string
+  role: string
+}
+
 export default function FulfillmentTablet() {
   const { storeId } = useParams<{ storeId: string }>()
+  const router = useRouter()
   const [orders, setOrders] = useState<Order[]>([])
   const [storeName, setStoreName] = useState('')
+  const [staffSession, setStaffSession] = useState<StaffSession | null>(null)
+  const [endingShift, setEndingShift] = useState(false)
   const [newOrderIds, setNewOrderIds] = useState<Set<string>>(new Set())
   const knownIds = useRef<Set<string>>(new Set())
   // Track when each unacknowledged order was first seen and how many reminders sent
@@ -63,7 +72,15 @@ export default function FulfillmentTablet() {
     fetch(`/api/stores/${storeId}`)
       .then(r => r.json())
       .then(s => setStoreName(s.name))
+    fetch(`/api/staff/${storeId}/session`)
+      .then(r => r.json())
+      .then(data => setStaffSession(data))
   }, [storeId])
+
+  async function endShift() {
+    setEndingShift(true)
+    router.push(`/staff/${storeId}/shift-end`)
+  }
 
   // Keep screen awake on tablet
   useEffect(() => {
@@ -147,6 +164,20 @@ export default function FulfillmentTablet() {
         </div>
         <div className="flex items-center gap-4 text-xs text-gray-500">
           {lastPoll && <span>Updated {lastPoll.toLocaleTimeString()}</span>}
+          {staffSession ? (
+            <div className="flex items-center gap-2">
+              <span className="text-gray-300">{staffSession.name}</span>
+              <button
+                onClick={endShift}
+                disabled={endingShift}
+                className="bg-gray-700 hover:bg-gray-600 text-white text-xs px-3 py-1.5 rounded-lg transition-colors"
+              >
+                {endingShift ? '…' : 'End Shift'}
+              </button>
+            </div>
+          ) : (
+            <Link href={`/staff/${storeId}/login`} className="text-gray-600 underline">Staff Login</Link>
+          )}
           <Link href={`/admin/${storeId}`} className="text-gray-600 underline">Admin</Link>
         </div>
       </div>
