@@ -14,8 +14,23 @@ export default function AdminDashboard() {
   const [windowStart, setWindowStart] = useState('22:00')
   const [windowEnd, setWindowEnd] = useState('06:00')
   const [logoUrl, setLogoUrl] = useState('')
+  const [logoSaving, setLogoSaving] = useState(false)
   const [migrating, setMigrating] = useState(false)
   const [migrateResult, setMigrateResult] = useState<string | null>(null)
+
+  async function handlePhotoCapture(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setLogoSaving(true)
+    const base64 = await compressImage(file, 800, 0.75)
+    setLogoUrl(base64)
+    await fetch(`/api/stores/${storeId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ logoUrl: base64 }),
+    })
+    setLogoSaving(false)
+  }
 
   useEffect(() => {
     fetch(`/api/stores/${storeId}`)
@@ -135,20 +150,20 @@ export default function AdminDashboard() {
         {/* Storefront Photo */}
         <div className="card space-y-3">
           <h2 className="font-bold">Storefront Photo</h2>
-          <p className="text-xs text-gray-500">Paste a URL to your store photo or logo. Shown to customers on the menu.</p>
-          <input
-            type="url"
-            placeholder="https://example.com/photo.jpg"
-            value={logoUrl}
-            onChange={e => setLogoUrl(e.target.value)}
-            className="input"
-          />
+          <p className="text-xs text-gray-500">Take or choose a photo — shown to customers on the menu.</p>
           {logoUrl && (
-            <img src={logoUrl} alt="Storefront preview" className="w-full max-h-40 object-cover rounded-xl" />
+            <img src={logoUrl} alt="Storefront" className="w-full max-h-48 object-cover rounded-xl" />
           )}
-          <button onClick={saveSettings} disabled={saving} className="btn-primary">
-            {saving ? 'Saving…' : 'Save Photo'}
-          </button>
+          <label className={`btn-primary flex items-center justify-center gap-2 cursor-pointer ${logoSaving ? 'opacity-60 pointer-events-none' : ''}`}>
+            {logoSaving ? 'Saving…' : logoUrl ? '📷 Retake Photo' : '📷 Take / Choose Photo'}
+            <input
+              type="file"
+              accept="image/*"
+              capture="environment"
+              className="hidden"
+              onChange={handlePhotoCapture}
+            />
+          </label>
         </div>
 
         {/* Quick links */}
@@ -181,4 +196,21 @@ export default function AdminDashboard() {
       </div>
     </div>
   )
+}
+
+function compressImage(file: File, maxSize: number, quality: number): Promise<string> {
+  return new Promise(resolve => {
+    const img = new Image()
+    const url = URL.createObjectURL(file)
+    img.onload = () => {
+      const scale = Math.min(1, maxSize / Math.max(img.width, img.height))
+      const canvas = document.createElement('canvas')
+      canvas.width = Math.round(img.width * scale)
+      canvas.height = Math.round(img.height * scale)
+      canvas.getContext('2d')!.drawImage(img, 0, 0, canvas.width, canvas.height)
+      URL.revokeObjectURL(url)
+      resolve(canvas.toDataURL('image/jpeg', quality))
+    }
+    img.src = url
+  })
 }
