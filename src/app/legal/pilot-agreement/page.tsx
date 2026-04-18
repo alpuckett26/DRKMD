@@ -1,11 +1,12 @@
 import Link from 'next/link'
+import BackButton from '../BackButton'
 
 export default function PilotAgreement() {
   return (
     <div className="min-h-screen pb-16">
       <div className="panel sticky top-0 z-10">
         <div className="max-w-2xl mx-auto px-4 py-4 flex items-center gap-3">
-          <Link href="/" className="text-gray-400 text-2xl leading-none">‹</Link>
+          <BackButton />
           <div>
             <h1 className="font-bold text-base">WendOS Pilot Program Agreement</h1>
             <p className="text-xs text-gray-500">For 14-day and 30-day trial participants</p>

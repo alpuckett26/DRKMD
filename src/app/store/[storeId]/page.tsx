@@ -26,8 +26,10 @@ export default function MenuPage() {
   const [search, setSearch] = useState('')
   const [activeCategory, setActiveCategory] = useState('All')
   const [selectedProduct, setSelectedProduct] = useState<ProductInfo | null>(null)
+  const [searchFocused, setSearchFocused] = useState(false)
   const { addItem, items, itemCount, total } = useCart()
   const catRefs = useRef<Record<string, HTMLDivElement | null>>({})
+  const searchRef = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => {
     Promise.all([
@@ -35,6 +37,23 @@ export default function MenuPage() {
       fetch(`/api/stores/${storeId}/menu`).then(r => r.json()),
     ]).then(([s, p]) => { setStore(s); setProducts(p); setLoading(false) })
   }, [storeId])
+
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
+        setSearchFocused(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [])
+
+  const searchSuggestions = search.length > 0
+    ? products.filter(p =>
+        p.name.toLowerCase().includes(search.toLowerCase()) ||
+        (p.category ?? '').toLowerCase().includes(search.toLowerCase())
+      ).slice(0, 8)
+    : []
 
   const promoted = products.filter(p => p.promoted && p.price > 0)
   const categories = ['All', ...Array.from(new Set(products.map(p => p.category ?? 'Other')))]
@@ -97,15 +116,39 @@ export default function MenuPage() {
           </div>
 
           {/* Search */}
-          <div className="relative mb-2">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">🔍</span>
+          <div className="relative mb-2" ref={searchRef}>
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm z-10">🔍</span>
             <input
               type="search"
               placeholder="Search products…"
               value={search}
               onChange={e => { setSearch(e.target.value); setActiveCategory('All') }}
+              onFocus={() => setSearchFocused(true)}
               className="input pl-9 py-2.5 text-sm"
             />
+
+            {/* Predictive suggestions dropdown */}
+            {searchFocused && searchSuggestions.length > 0 && (
+              <div
+                className="absolute top-full left-0 right-0 mt-1 rounded-2xl overflow-hidden z-50"
+                style={{
+                  background: 'rgba(10,16,28,0.97)',
+                  border: '1px solid rgba(46,168,255,0.25)',
+                  backdropFilter: 'blur(20px)',
+                  boxShadow: '0 8px 32px rgba(0,0,0,0.6)',
+                }}
+              >
+                {searchSuggestions.map(p => (
+                  <SearchSuggestionRow
+                    key={p.id}
+                    product={p}
+                    qty={items.find(i => i.productId === p.id)?.qty ?? 0}
+                    onAdd={() => { addItem({ productId: p.id, name: p.name, price: p.price, restricted: p.restrictedFlag }); setSearchFocused(false) }}
+                    onOpen={() => { setSelectedProduct(p); setSearchFocused(false); setSearch('') }}
+                  />
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
@@ -212,6 +255,43 @@ export default function MenuPage() {
           onSelectVariety={p => setSelectedProduct(p)}
         />
       )}
+    </div>
+  )
+}
+
+function SearchSuggestionRow({ product, qty, onAdd, onOpen }: { product: ProductInfo; qty: number; onAdd: () => void; onOpen: () => void }) {
+  const [imgError, setImgError] = useState(false)
+  return (
+    <div
+      onClick={onOpen}
+      className="flex items-center gap-3 px-3 py-2.5 cursor-pointer transition-colors active:bg-white/5 hover:bg-white/5"
+      style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}
+    >
+      <div className="w-10 h-10 rounded-xl overflow-hidden bg-gray-800 flex items-center justify-center relative shrink-0">
+        {product.imageUrl && !imgError ? (
+          <Image src={product.imageUrl} alt={product.name} fill className="object-contain p-1" unoptimized onError={() => setImgError(true)} />
+        ) : (
+          <span className="text-xl">{CAT_ICON[product.category ?? ''] ?? '🛒'}</span>
+        )}
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-semibold truncate">{product.name}</p>
+        <p className="text-xs text-gray-500 truncate">{product.category ?? 'General'}{product.restrictedFlag ? ' · 21+' : ''}</p>
+      </div>
+      <div className="flex items-center gap-2 shrink-0">
+        <span className="text-brand font-black text-sm">{formatCents(product.price)}</span>
+        <button
+          onClick={e => { e.stopPropagation(); onAdd() }}
+          className="w-7 h-7 rounded-full font-bold text-xs flex items-center justify-center transition-all"
+          style={{
+            background: qty > 0 ? '#2EA8FF' : 'rgba(46,168,255,0.2)',
+            color: qty > 0 ? 'white' : '#2EA8FF',
+            border: '1px solid rgba(46,168,255,0.5)',
+          }}
+        >
+          {qty > 0 ? qty : '+'}
+        </button>
+      </div>
     </div>
   )
 }
