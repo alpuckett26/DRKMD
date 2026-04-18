@@ -7,6 +7,7 @@ import Image from 'next/image'
 import { useCart } from '@/context/CartContext'
 import { formatCents } from '@/lib/utils'
 import type { ProductInfo, StoreInfo } from '@/types'
+import type { UpcDetail } from '@/app/api/upc-lookup/route'
 
 const CAT_ICON: Record<string, string> = {
   'Drinks': '🥤', 'Energy': '⚡', 'Coffee & Tea': '☕',
@@ -24,9 +25,9 @@ export default function MenuPage() {
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [activeCategory, setActiveCategory] = useState('All')
+  const [selectedProduct, setSelectedProduct] = useState<ProductInfo | null>(null)
   const { addItem, items, itemCount, total } = useCart()
   const catRefs = useRef<Record<string, HTMLDivElement | null>>({})
-  const catBarRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     Promise.all([
@@ -107,7 +108,7 @@ export default function MenuPage() {
 
         {/* Category chips */}
         {!search && (
-          <div ref={catBarRef} className="flex gap-2 overflow-x-auto px-4 pb-3 scrollbar-hide" style={{ scrollbarWidth: 'none' }}>
+          <div className="flex gap-2 overflow-x-auto px-4 pb-3 scrollbar-hide" style={{ scrollbarWidth: 'none' }}>
             {categories.map(cat => (
               <button
                 key={cat}
@@ -141,6 +142,7 @@ export default function MenuPage() {
                   product={product}
                   qty={items.find(i => i.productId === product.id)?.qty ?? 0}
                   onAdd={() => addItem({ productId: product.id, name: product.name, price: product.price, restricted: product.restrictedFlag })}
+                  onOpen={() => setSelectedProduct(product)}
                 />
               ))}
             </div>
@@ -166,6 +168,7 @@ export default function MenuPage() {
                   product={product}
                   qty={items.find(i => i.productId === product.id)?.qty ?? 0}
                   onAdd={() => addItem({ productId: product.id, name: product.name, price: product.price, restricted: product.restrictedFlag })}
+                  onOpen={() => setSelectedProduct(product)}
                 />
               ))}
             </div>
@@ -185,15 +188,26 @@ export default function MenuPage() {
           </div>
         </div>
       )}
+
+      {/* Product detail sheet */}
+      {selectedProduct && (
+        <ProductDetailSheet
+          product={selectedProduct}
+          qty={items.find(i => i.productId === selectedProduct.id)?.qty ?? 0}
+          onAdd={() => addItem({ productId: selectedProduct.id, name: selectedProduct.name, price: selectedProduct.price, restricted: selectedProduct.restrictedFlag })}
+          onClose={() => setSelectedProduct(null)}
+        />
+      )}
     </div>
   )
 }
 
-function ImpulseCard({ product, qty, onAdd }: { product: ProductInfo; qty: number; onAdd: () => void }) {
+function ImpulseCard({ product, qty, onAdd, onOpen }: { product: ProductInfo; qty: number; onAdd: () => void; onOpen: () => void }) {
   const [imgError, setImgError] = useState(false)
   return (
     <div
-      className="shrink-0 w-36 rounded-2xl overflow-hidden flex flex-col"
+      onClick={onOpen}
+      className="shrink-0 w-36 rounded-2xl overflow-hidden flex flex-col cursor-pointer active:scale-95 transition-transform"
       style={{
         background: 'rgba(46,168,255,0.08)',
         border: '1px solid rgba(46,168,255,0.4)',
@@ -217,7 +231,7 @@ function ImpulseCard({ product, qty, onAdd }: { product: ProductInfo; qty: numbe
         <div className="flex items-center justify-between">
           <span className="text-brand font-black text-sm">{formatCents(product.price)}</span>
           <button
-            onClick={onAdd}
+            onClick={e => { e.stopPropagation(); onAdd() }}
             className="w-7 h-7 rounded-full font-bold text-xs flex items-center justify-center transition-all shrink-0"
             style={{
               background: qty > 0 ? '#2EA8FF' : 'rgba(46,168,255,0.2)',
@@ -233,10 +247,10 @@ function ImpulseCard({ product, qty, onAdd }: { product: ProductInfo; qty: numbe
   )
 }
 
-function ProductCard({ product, qty, onAdd }: { product: ProductInfo; qty: number; onAdd: () => void }) {
+function ProductCard({ product, qty, onAdd, onOpen }: { product: ProductInfo; qty: number; onAdd: () => void; onOpen: () => void }) {
   const [imgError, setImgError] = useState(false)
   return (
-    <div className="product-card">
+    <div onClick={onOpen} className="product-card cursor-pointer active:scale-95 transition-transform">
       <div className="relative aspect-square bg-gray-800">
         {product.imageUrl && !imgError ? (
           <Image src={product.imageUrl} alt={product.name} fill className="object-contain p-2" unoptimized onError={() => setImgError(true)} />
@@ -257,7 +271,7 @@ function ProductCard({ product, qty, onAdd }: { product: ProductInfo; qty: numbe
         <div className="flex items-center justify-between">
           <span className="text-brand font-black text-sm">{formatCents(product.price)}</span>
           <button
-            onClick={onAdd}
+            onClick={e => { e.stopPropagation(); onAdd() }}
             className={`w-8 h-8 rounded-full font-bold text-sm flex items-center justify-center transition-colors shrink-0 ${
               qty > 0 ? 'bg-brand text-white' : 'bg-gray-700 text-gray-300 hover:bg-brand hover:text-white'
             }`}
@@ -267,5 +281,114 @@ function ProductCard({ product, qty, onAdd }: { product: ProductInfo; qty: numbe
         </div>
       </div>
     </div>
+  )
+}
+
+function ProductDetailSheet({
+  product,
+  qty,
+  onAdd,
+  onClose,
+}: {
+  product: ProductInfo
+  qty: number
+  onAdd: () => void
+  onClose: () => void
+}) {
+  const [detail, setDetail] = useState<UpcDetail | null>(null)
+  const [loadingDetail, setLoadingDetail] = useState(true)
+  const [imgError, setImgError] = useState(false)
+
+  useEffect(() => {
+    setLoadingDetail(true)
+    setDetail(null)
+    setImgError(false)
+    fetch(`/api/upc-lookup?name=${encodeURIComponent(product.name)}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { setDetail(d); setLoadingDetail(false) })
+      .catch(() => setLoadingDetail(false))
+  }, [product.id])
+
+  const displayImage = detail?.image ?? product.imageUrl
+  const brand = detail?.brand
+  const description = detail?.description
+  const size = detail?.size
+
+  return (
+    <>
+      <div className="fixed inset-0 bg-black/70 z-40" onClick={onClose} />
+      <div
+        className="fixed bottom-0 left-0 right-0 z-50 max-w-lg mx-auto bg-gray-900 rounded-t-3xl"
+        style={{ maxHeight: '88vh', overflowY: 'auto' }}
+      >
+        {/* Handle */}
+        <div className="flex justify-center pt-3 pb-1">
+          <div className="w-10 h-1 rounded-full bg-gray-700" />
+        </div>
+
+        {/* Image */}
+        <div
+          className="mx-4 mt-2 rounded-2xl overflow-hidden bg-gray-800 flex items-center justify-center relative"
+          style={{ height: 220 }}
+        >
+          {displayImage && !imgError ? (
+            <Image
+              src={displayImage}
+              alt={product.name}
+              fill
+              className="object-contain p-4"
+              unoptimized
+              onError={() => setImgError(true)}
+            />
+          ) : (
+            <span className="text-7xl">{CAT_ICON[product.category ?? ''] ?? '🛒'}</span>
+          )}
+          {product.restrictedFlag && (
+            <span className="absolute top-3 left-3 badge bg-red-900 text-red-400">21+ ID Required</span>
+          )}
+        </div>
+
+        {/* Info */}
+        <div className="px-4 pt-4 pb-6 space-y-4">
+          {/* Name + price */}
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex-1">
+              <h2 className="font-black text-xl leading-tight">{product.name}</h2>
+              {brand && <p className="text-sm text-gray-400 mt-0.5">{brand}{size ? ` · ${size}` : ''}</p>}
+            </div>
+            <span className="text-brand font-black text-2xl shrink-0">{formatCents(product.price)}</span>
+          </div>
+
+          {/* Description */}
+          {loadingDetail && (
+            <p className="text-sm text-gray-600 animate-pulse">Loading product info…</p>
+          )}
+          {description && (
+            <p className="text-sm text-gray-400 leading-relaxed">{description}</p>
+          )}
+
+          {/* Category tag */}
+          {product.category && (
+            <div className="flex items-center gap-2">
+              <span className="text-lg">{CAT_ICON[product.category] ?? '🛒'}</span>
+              <span className="text-xs text-gray-500 font-semibold uppercase tracking-wider">{product.category}</span>
+            </div>
+          )}
+
+          {/* Add to cart */}
+          <button
+            onClick={() => { onAdd(); onClose() }}
+            className="btn-primary w-full flex items-center justify-between px-6"
+          >
+            <span className="text-base font-black">Add to Cart</span>
+            <span className="text-base font-black">{formatCents(product.price)}</span>
+          </button>
+
+          {qty > 0 && (
+            <p className="text-center text-xs text-gray-500">{qty} already in your cart</p>
+          )}
+        </div>
+      </div>
+    </>
   )
 }
