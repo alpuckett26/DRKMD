@@ -26,6 +26,7 @@ export default function ProductsPage() {
   })
   const [saving, setSaving] = useState(false)
   const [refreshing, setRefreshing] = useState(false)
+  const [refreshProgress, setRefreshProgress] = useState({ done: 0, total: 0 })
 
   async function fetchProducts() {
     const res = await fetch(`/api/stores/${storeId}/menu`)
@@ -55,8 +56,11 @@ export default function ProductsPage() {
   async function refreshAllImages() {
     setRefreshing(true)
     const current = await fetch(`/api/stores/${storeId}/menu`).then(r => r.json()) as ExtendedProduct[]
-    for (const p of current) {
+    setRefreshProgress({ done: 0, total: current.length })
+    for (let i = 0; i < current.length; i++) {
+      const p = current[i]
       const r = await fetch(`/api/admin/products/image-lookup?name=${encodeURIComponent(p.name)}`)
+      setRefreshProgress({ done: i + 1, total: current.length })
       if (!r.ok) continue
       const { imageUrl } = await r.json()
       if (!imageUrl) continue
@@ -161,8 +165,13 @@ export default function ProductsPage() {
               </>
             ) : (
               <>
-                <button onClick={refreshAllImages} disabled={refreshing} className="text-gray-400 text-sm font-semibold">
-                  {refreshing ? '⟳…' : '⟳ Pics'}
+                <button onClick={refreshAllImages} disabled={refreshing} className="text-gray-400 text-sm font-semibold flex items-center gap-1.5">
+                  {refreshing ? (
+                    <>
+                      <span className="inline-block w-3 h-3 rounded-full border-2 border-gray-600 border-t-brand animate-spin" />
+                      <span className="text-xs tabular-nums">{refreshProgress.done}/{refreshProgress.total}</span>
+                    </>
+                  ) : '⟳ Pics'}
                 </button>
                 <Link href={`/admin/${storeId}/scan`} className="text-gray-400 text-sm font-semibold underline">Scan</Link>
                 <Link href={`/admin/${storeId}/import`} className="text-gray-400 text-sm font-semibold underline">Import</Link>

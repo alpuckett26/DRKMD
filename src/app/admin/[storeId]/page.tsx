@@ -157,12 +157,11 @@ export default function AdminDashboard() {
             </button>
           </div>
 
-          <div className="flex items-end gap-3">
+          <div className="flex gap-3">
             <div className="flex-1">
               <label className="text-xs text-gray-500 block mb-1">Opens</label>
               <input type="time" value={windowStart} onChange={e => setWindowStart(e.target.value)} className="input text-sm py-2" />
             </div>
-            <span className="text-gray-600 text-lg pb-2 shrink-0">→</span>
             <div className="flex-1">
               <label className="text-xs text-gray-500 block mb-1">Closes</label>
               <input type="time" value={windowEnd} onChange={e => setWindowEnd(e.target.value)} className="input text-sm py-2" />
