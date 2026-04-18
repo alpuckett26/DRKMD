@@ -121,25 +121,46 @@ export default function ScanShelfPage() {
   const selectedCount = products.filter(p => p.selected && p.customPrice).length
 
   return (
-    <div className="min-h-screen pb-10">
-      <div className="bg-gray-900 border-b border-gray-800 sticky top-0 z-10">
+    <div className="min-h-screen flex flex-col">
+      <div className="panel sticky top-0 z-10">
         <div className="max-w-2xl mx-auto px-4 py-4 flex items-center gap-3">
-          <Link href={`/admin/${storeId}/products`} className="text-gray-400 text-2xl">‹</Link>
+          <Link href={`/admin/${storeId}/products`} className="text-gray-400 text-2xl leading-none">‹</Link>
           <h1 className="font-bold text-lg">Shelf Scanner</h1>
         </div>
       </div>
 
-      <div className="max-w-2xl mx-auto px-4 pt-4 space-y-4">
+      <div className="flex-1 flex flex-col max-w-2xl mx-auto w-full px-4">
         {error && (
-          <div className="bg-red-900/20 text-red-400 text-sm px-4 py-3 rounded-xl">{error}</div>
+          <div className="mt-4 bg-red-900/20 text-red-400 text-sm px-4 py-3 rounded-xl">{error}</div>
         )}
 
-        {/* Capture stage */}
-        {(stage === 'capture') && (
-          <div className="card space-y-4">
-            <p className="text-sm text-gray-400">
-              Take a photo of a shelf or upload one. Claude Vision will identify the products and look up prices and images automatically.
-            </p>
+        {/* Capture stage — idle (no photo yet) */}
+        {stage === 'capture' && !preview && (
+          <div className="flex-1 flex flex-col pb-6">
+            {/* Diagram fills available space */}
+            <div className="flex-1 flex flex-col items-center justify-center py-6">
+              <ShelfDiagram />
+
+              {/* Tips */}
+              <div className="flex gap-2 mt-6 flex-wrap justify-center">
+                {[
+                  { icon: '📐', label: '3–4 ft back' },
+                  { icon: '💡', label: 'Good lighting' },
+                  { icon: '👀', label: 'Full shelf visible' },
+                ].map(({ icon, label }) => (
+                  <span key={label} className="text-xs px-3 py-1.5 rounded-full font-medium"
+                    style={{ background: 'rgba(46,168,255,0.08)', border: '1px solid rgba(46,168,255,0.25)', color: '#94a3b8' }}>
+                    {icon} {label}
+                  </span>
+                ))}
+              </div>
+
+              <p className="text-xs text-gray-600 text-center mt-4 max-w-xs">
+                Claude Vision reads every product on the shelf and auto-fills names, categories &amp; prices.
+              </p>
+            </div>
+
+            {/* CTA pinned to bottom */}
             <input
               ref={fileRef}
               type="file"
@@ -148,36 +169,44 @@ export default function ScanShelfPage() {
               onChange={onFileChange}
               className="hidden"
             />
-            {preview ? (
-              <div className="space-y-3">
-                <div className="relative w-full rounded-xl overflow-hidden bg-gray-800" style={{ aspectRatio: '4/3' }}>
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={preview} alt="Shelf preview" className="w-full h-full object-contain" />
-                </div>
-                <div className="flex gap-2">
-                  <button onClick={() => fileRef.current?.click()} className="flex-1 btn-secondary text-sm">
-                    Retake
-                  </button>
-                  <button onClick={scan} className="flex-1 btn-primary text-sm">
-                    Scan Products
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <button
-                onClick={() => fileRef.current?.click()}
-                className="w-full rounded-xl border-2 border-dashed border-gray-700 py-12 text-gray-500 text-sm flex flex-col items-center gap-2 hover:border-brand hover:text-brand transition-colors"
-              >
-                <span className="text-4xl">📷</span>
-                <span>Tap to take photo or upload</span>
+            <button
+              onClick={() => fileRef.current?.click()}
+              className="btn-primary flex items-center justify-center gap-2 text-base"
+            >
+              <span>📷</span> Open Camera
+            </button>
+          </div>
+        )}
+
+        {/* Capture stage — photo selected */}
+        {stage === 'capture' && preview && (
+          <div className="pt-4 space-y-3 pb-6">
+            <input
+              ref={fileRef}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              onChange={onFileChange}
+              className="hidden"
+            />
+            <div className="relative w-full rounded-xl overflow-hidden bg-gray-800" style={{ aspectRatio: '4/3' }}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={preview} alt="Shelf preview" className="w-full h-full object-contain" />
+            </div>
+            <div className="flex gap-2">
+              <button onClick={() => fileRef.current?.click()} className="flex-1 btn-secondary text-sm">
+                Retake
               </button>
-            )}
+              <button onClick={scan} className="flex-1 btn-primary text-sm">
+                Scan Products
+              </button>
+            </div>
           </div>
         )}
 
         {/* Scanning stage */}
         {stage === 'scanning' && (
-          <div className="card flex flex-col items-center gap-4 py-10">
+          <div className="flex-1 flex flex-col items-center justify-center gap-4 py-10">
             <div className="w-10 h-10 border-4 border-brand border-t-transparent rounded-full animate-spin" />
             <p className="text-gray-400 text-sm animate-pulse">Analyzing shelf with Claude Vision…</p>
           </div>
@@ -185,7 +214,7 @@ export default function ScanShelfPage() {
 
         {/* Review stage */}
         {stage === 'review' && products.length > 0 && (
-          <>
+          <div className="pt-4 space-y-4 pb-6">
             <div className="flex items-center justify-between">
               <p className="text-sm text-gray-400">{products.length} products identified · {selectedCount} selected</p>
               <button onClick={reset} className="text-xs text-gray-500 underline">Start over</button>
@@ -240,12 +269,12 @@ export default function ScanShelfPage() {
             >
               Import {selectedCount} Product{selectedCount !== 1 ? 's' : ''}
             </button>
-          </>
+          </div>
         )}
 
         {/* Importing stage */}
         {stage === 'importing' && (
-          <div className="card flex flex-col items-center gap-4 py-10">
+          <div className="flex-1 flex flex-col items-center justify-center gap-4 py-10">
             <div className="w-10 h-10 border-4 border-brand border-t-transparent rounded-full animate-spin" />
             <p className="text-gray-400 text-sm animate-pulse">Importing products…</p>
           </div>
@@ -253,18 +282,88 @@ export default function ScanShelfPage() {
 
         {/* Done stage */}
         {stage === 'done' && importResult && (
-          <div className="card space-y-4 text-center py-8">
-            <p className="text-4xl">✅</p>
-            <p className="font-bold text-lg">{importResult.created} product{importResult.created !== 1 ? 's' : ''} added!</p>
-            <div className="flex gap-3">
-              <button onClick={reset} className="flex-1 btn-secondary">Scan Another Shelf</button>
-              <Link href={`/admin/${storeId}/products`} className="flex-1 btn-primary text-center">
-                View Products
-              </Link>
+          <div className="flex-1 flex flex-col items-center justify-center pb-6">
+            <div className="card space-y-4 text-center py-8 w-full">
+              <p className="text-4xl">✅</p>
+              <p className="font-bold text-lg">{importResult.created} product{importResult.created !== 1 ? 's' : ''} added!</p>
+              <div className="flex gap-3">
+                <button onClick={reset} className="flex-1 btn-secondary">Scan Another Shelf</button>
+                <Link href={`/admin/${storeId}/products`} className="flex-1 btn-primary text-center">
+                  View Products
+                </Link>
+              </div>
             </div>
           </div>
         )}
       </div>
+    </div>
+  )
+}
+
+function ShelfDiagram() {
+  return (
+    <div className="w-full max-w-xs">
+      <svg viewBox="0 0 240 230" className="w-full" fill="none" xmlns="http://www.w3.org/2000/svg">
+        {/* Phone — floats with CSS animation */}
+        <g style={{ animation: 'shelfFloat 2.4s ease-in-out infinite', transformOrigin: '120px 44px' }}>
+          {/* Phone body */}
+          <rect x="96" y="4" width="48" height="76" rx="8"
+            fill="rgba(46,168,255,0.12)" stroke="rgba(46,168,255,0.55)" strokeWidth="1.5" />
+          {/* Camera lens ring */}
+          <circle cx="120" cy="24" r="11"
+            fill="rgba(5,10,18,1)" stroke="rgba(46,168,255,0.5)" strokeWidth="1.5" />
+          {/* Lens inner */}
+          <circle cx="120" cy="24" r="6" fill="rgba(46,168,255,0.25)" />
+          <circle cx="120" cy="24" r="2.5" fill="rgba(46,168,255,0.6)" />
+          {/* Screen */}
+          <rect x="102" y="42" width="36" height="28" rx="3"
+            fill="rgba(46,168,255,0.06)" stroke="rgba(46,168,255,0.18)" strokeWidth="1" />
+          {/* Shutter button hint */}
+          <rect x="112" y="74" width="16" height="3" rx="1.5" fill="rgba(46,168,255,0.3)" />
+        </g>
+
+        {/* Dashed distance line */}
+        <line x1="120" y1="84" x2="120" y2="108"
+          stroke="rgba(46,168,255,0.35)" strokeWidth="1.5" strokeDasharray="4 3" />
+        {/* Distance label */}
+        <rect x="126" y="90" width="42" height="16" rx="4" fill="rgba(46,168,255,0.08)" />
+        <text x="147" y="101" fill="rgba(148,163,184,0.85)" fontSize="9" textAnchor="middle" fontFamily="system-ui, sans-serif" fontWeight="600">3–4 ft</text>
+
+        {/* Focus frame corners around shelf area */}
+        <path d="M28 113 L28 106 L38 106" stroke="rgba(46,168,255,0.7)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+        <path d="M212 106 L202 106 L202 113" stroke="rgba(46,168,255,0.7)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+        <path d="M28 210 L28 217 L38 217" stroke="rgba(46,168,255,0.4)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+        <path d="M212 217 L202 217 L202 210" stroke="rgba(46,168,255,0.4)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+
+        {/* Shelf board 1 */}
+        <rect x="24" y="132" width="192" height="5" rx="2" fill="rgba(46,168,255,0.35)" />
+        {/* Products shelf 1 */}
+        {[28, 50, 72, 96, 118, 142, 164, 186].map((x, i) => (
+          <rect key={i} x={x} y={132 - 18 - (i % 3) * 4} width={16} height={18 + (i % 3) * 4} rx="2"
+            fill={`rgba(255,255,255,${0.04 + (i % 2) * 0.02})`}
+            stroke={`rgba(255,255,255,${0.1 + (i % 2) * 0.05})`} strokeWidth="1" />
+        ))}
+
+        {/* Shelf board 2 */}
+        <rect x="24" y="192" width="192" height="5" rx="2" fill="rgba(46,168,255,0.22)" />
+        {/* Products shelf 2 */}
+        {[30, 54, 76, 100, 122, 146, 168, 190].map((x, i) => (
+          <rect key={i} x={x} y={192 - 20 - (i % 2) * 3} width={15} height={20 + (i % 2) * 3} rx="2"
+            fill={`rgba(255,255,255,0.03)`}
+            stroke={`rgba(255,255,255,0.08)`} strokeWidth="1" />
+        ))}
+
+        {/* Shelf board 3 bottom edge */}
+        <rect x="24" y="226" width="192" height="4" rx="2" fill="rgba(46,168,255,0.12)" />
+      </svg>
+
+      {/* Keyframe animation injected inline */}
+      <style>{`
+        @keyframes shelfFloat {
+          0%, 100% { transform: translateY(0px); }
+          50% { transform: translateY(-8px); }
+        }
+      `}</style>
     </div>
   )
 }
