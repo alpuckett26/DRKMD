@@ -16,6 +16,7 @@ export default function ProductsPage() {
   const [products, setProducts] = useState<ExtendedProduct[]>([])
   const [loading, setLoading] = useState(true)
   const [showAdd, setShowAdd] = useState(false)
+  const [selected, setSelected] = useState<ExtendedProduct | null>(null)
   const [form, setForm] = useState({
     name: '', category: '',
     nighttimeAvailable: true, restrictedFlag: false,
@@ -70,22 +71,9 @@ export default function ProductsPage() {
     fetchProducts()
   }
 
-  async function toggleProduct(productId: string, active: boolean) {
-    await fetch(`/api/admin/products/${productId}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ active }),
-    })
-    fetchProducts()
-  }
-
-  async function togglePromoted(productId: string, promoted: boolean) {
-    await fetch(`/api/admin/products/${productId}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ promoted }),
-    })
-    setProducts(prev => prev.map(p => p.id === productId ? { ...p, promoted } : p))
+  function updateSelected(updated: ExtendedProduct) {
+    setSelected(updated)
+    setProducts(prev => prev.map(p => p.id === updated.id ? updated : p))
   }
 
   const featured = products.filter(p => p.promoted)
@@ -153,12 +141,7 @@ export default function ProductsPage() {
                 </div>
                 <div className="space-y-2">
                   {featured.map(product => (
-                    <ProductRow
-                      key={product.id}
-                      product={product}
-                      onRemove={() => toggleProduct(product.id, false)}
-                      onToggleFeature={() => togglePromoted(product.id, false)}
-                    />
+                    <ProductRow key={product.id} product={product} onOpen={() => setSelected(product)} />
                   ))}
                 </div>
               </div>
@@ -170,63 +153,217 @@ export default function ProductsPage() {
               )}
               <div className="space-y-2">
                 {regular.map(product => (
-                  <ProductRow
-                    key={product.id}
-                    product={product}
-                    onRemove={() => toggleProduct(product.id, false)}
-                    onToggleFeature={() => togglePromoted(product.id, true)}
-                  />
+                  <ProductRow key={product.id} product={product} onOpen={() => setSelected(product)} />
                 ))}
               </div>
             </div>
           </div>
         )}
       </div>
+
+      {selected && (
+        <ProductDetailSheet
+          product={selected}
+          onClose={() => { setSelected(null); fetchProducts() }}
+          onUpdate={updateSelected}
+        />
+      )}
     </div>
   )
 }
 
-function ProductRow({
-  product,
-  onRemove,
-  onToggleFeature,
-}: {
-  product: ExtendedProduct
-  onRemove: () => void
-  onToggleFeature: () => void
-}) {
+function ProductRow({ product, onOpen }: { product: ExtendedProduct; onOpen: () => void }) {
   return (
-    <div
-      className="card flex items-center gap-3"
+    <button
+      onClick={onOpen}
+      className="card flex items-center gap-3 w-full text-left active:opacity-70 transition-opacity"
       style={product.promoted ? { borderColor: 'rgba(46,168,255,0.45)', boxShadow: '0 0 12px rgba(46,168,255,0.12)' } : {}}
     >
-      <div className="w-10 h-10 rounded-lg bg-gray-800 shrink-0 overflow-hidden flex items-center justify-center">
+      <div className="w-12 h-12 rounded-xl bg-gray-800 shrink-0 overflow-hidden flex items-center justify-center">
         {product.imageUrl
-          ? <Image src={product.imageUrl} alt={product.name} width={40} height={40} className="object-contain" unoptimized />
-          : <span className="text-lg">🛒</span>
+          ? <Image src={product.imageUrl} alt={product.name} width={48} height={48} className="object-cover w-full h-full" unoptimized />
+          : <span className="text-xl">🛒</span>
         }
       </div>
       <div className="flex-1 min-w-0">
-        <p className="font-semibold text-sm">{product.name}</p>
+        <p className="font-semibold text-sm truncate">{product.name}</p>
         <div className="flex items-center gap-2 mt-0.5">
           {product.category && <span className="text-xs text-gray-500">{product.category}</span>}
           {product.restrictedFlag && <span className="badge bg-red-900 text-red-400">21+</span>}
+          {product.promoted && <span className="badge bg-blue-900 text-brand">⚡ Featured</span>}
           {product.price === 0
             ? <span className="text-xs text-yellow-600">Pricing pending</span>
-            : <span className="text-xs text-gray-600">Active</span>
+            : <span className="text-xs text-gray-600">${(product.price / 100).toFixed(2)}</span>
           }
         </div>
       </div>
-      <button
-        onClick={onToggleFeature}
-        className={`text-xs font-semibold transition-colors ${product.promoted ? 'text-brand' : 'text-gray-600 hover:text-brand'}`}
+      <span className="text-gray-600 text-lg">›</span>
+    </button>
+  )
+}
+
+function ProductDetailSheet({
+  product,
+  onClose,
+  onUpdate,
+}: {
+  product: ExtendedProduct
+  onClose: () => void
+  onUpdate: (p: ExtendedProduct) => void
+}) {
+  const [draft, setDraft] = useState(product)
+  const [saving, setSaving] = useState(false)
+  const [refreshingImage, setRefreshingImage] = useState(false)
+  const [imgError, setImgError] = useState(false)
+
+  async function save() {
+    setSaving(true)
+    await fetch(`/api/admin/products/${draft.id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: draft.name,
+        category: draft.category,
+        price: draft.price,
+        nighttimeAvailable: draft.nighttimeAvailable,
+        restrictedFlag: draft.restrictedFlag,
+        promoted: draft.promoted,
+        imageUrl: draft.imageUrl,
+      }),
+    })
+    setSaving(false)
+    onUpdate(draft)
+    onClose()
+  }
+
+  async function remove() {
+    await fetch(`/api/admin/products/${draft.id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ active: false }),
+    })
+    onClose()
+  }
+
+  async function refreshImage() {
+    setRefreshingImage(true)
+    setImgError(false)
+    const r = await fetch(`/api/admin/products/image-lookup?name=${encodeURIComponent(draft.name)}`)
+    if (r.ok) {
+      const { imageUrl } = await r.json()
+      if (imageUrl) setDraft(d => ({ ...d, imageUrl }))
+    }
+    setRefreshingImage(false)
+  }
+
+  return (
+    <>
+      {/* Backdrop */}
+      <div
+        className="fixed inset-0 bg-black/60 z-40"
+        onClick={onClose}
+      />
+
+      {/* Sheet */}
+      <div className="fixed bottom-0 left-0 right-0 z-50 max-w-2xl mx-auto bg-gray-900 rounded-t-3xl overflow-hidden"
+        style={{ maxHeight: '90vh', overflowY: 'auto' }}
       >
-        {product.promoted ? '⚡ Featured' : 'Feature'}
-      </button>
-      <button onClick={onRemove}
-        className="text-xs text-red-400 hover:text-red-300 transition-colors">
-        Remove
-      </button>
-    </div>
+        {/* Drag handle */}
+        <div className="flex justify-center pt-3 pb-1">
+          <div className="w-10 h-1 rounded-full bg-gray-700" />
+        </div>
+
+        {/* Image */}
+        <div className="relative mx-4 mt-2 rounded-2xl overflow-hidden bg-gray-800 flex items-center justify-center"
+          style={{ height: 200 }}
+        >
+          {draft.imageUrl && !imgError
+            ? <Image
+                src={draft.imageUrl}
+                alt={draft.name}
+                fill
+                className="object-contain"
+                unoptimized
+                onError={() => setImgError(true)}
+              />
+            : <span className="text-6xl">🛒</span>
+          }
+          <button
+            onClick={refreshImage}
+            disabled={refreshingImage}
+            className="absolute bottom-2 right-2 bg-black/60 text-white text-xs px-3 py-1.5 rounded-full font-semibold backdrop-blur-sm"
+          >
+            {refreshingImage ? 'Searching…' : '↺ Refresh Image'}
+          </button>
+        </div>
+
+        {/* Fields */}
+        <div className="px-4 pt-4 pb-8 space-y-4">
+          <div className="space-y-3">
+            <div>
+              <label className="text-xs text-gray-500 uppercase tracking-wider">Product Name</label>
+              <input
+                value={draft.name}
+                onChange={e => setDraft(d => ({ ...d, name: e.target.value }))}
+                className="input mt-1"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs text-gray-500 uppercase tracking-wider">Category</label>
+                <input
+                  value={draft.category ?? ''}
+                  onChange={e => setDraft(d => ({ ...d, category: e.target.value }))}
+                  placeholder="e.g. Drinks"
+                  className="input mt-1"
+                />
+              </div>
+              <div>
+                <label className="text-xs text-gray-500 uppercase tracking-wider">Price ($)</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={draft.price === 0 ? '' : (draft.price / 100).toFixed(2)}
+                  onChange={e => setDraft(d => ({ ...d, price: Math.round(parseFloat(e.target.value || '0') * 100) }))}
+                  placeholder="0.00"
+                  className="input mt-1"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Toggles */}
+          <div className="card space-y-3">
+            {([
+              ['nighttimeAvailable', 'Night Menu', 'Show on after-hours menu'],
+              ['restrictedFlag', '21+ Age Restricted', 'Requires ID check at pickup'],
+              ['promoted', '⚡ Featured / Hot Pick', 'Shown in impulse buy strip'],
+            ] as [keyof ExtendedProduct, string, string][]).map(([key, label, desc]) => (
+              <label key={key} className="flex items-center justify-between cursor-pointer">
+                <div>
+                  <p className="text-sm font-semibold">{label}</p>
+                  <p className="text-xs text-gray-500">{desc}</p>
+                </div>
+                <div
+                  onClick={() => setDraft(d => ({ ...d, [key]: !d[key] }))}
+                  className={`w-11 h-6 rounded-full transition-colors relative ${draft[key] ? 'bg-brand' : 'bg-gray-700'}`}
+                >
+                  <div className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${draft[key] ? 'translate-x-5' : 'translate-x-0.5'}`} />
+                </div>
+              </label>
+            ))}
+          </div>
+
+          {/* Actions */}
+          <button onClick={save} disabled={saving} className="btn-primary w-full">
+            {saving ? 'Saving…' : 'Save Changes'}
+          </button>
+          <button onClick={remove} className="w-full text-center text-red-400 text-sm font-semibold py-2">
+            Remove from Menu
+          </button>
+        </div>
+      </div>
+    </>
   )
 }
