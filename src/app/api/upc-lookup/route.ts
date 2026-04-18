@@ -1,16 +1,5 @@
 import { NextResponse } from 'next/server'
 
-interface UpcItem {
-  title: string
-  brand: string
-  description: string
-  size: string
-  category: string
-  images: string[]
-  lowest_recorded_price: number
-  highest_recorded_price: number
-}
-
 export interface UpcDetail {
   title: string
   brand: string | null
@@ -22,6 +11,16 @@ export interface UpcDetail {
   highestPrice: number | null
 }
 
+interface OFFProduct {
+  product_name?: string
+  brands?: string
+  quantity?: string
+  categories?: string
+  ingredients_text?: string
+  image_front_url?: string
+  image_url?: string
+}
+
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url)
   const name = searchParams.get('name')
@@ -29,23 +28,33 @@ export async function GET(req: Request) {
 
   try {
     const res = await fetch(
-      `https://api.upcitemdb.com/prod/trial/search?s=${encodeURIComponent(name)}&type=product`,
-      { headers: { 'User-Agent': 'WendOS/1.0 (https://drkmd.vercel.app)' } },
+      `https://world.openfoodfacts.org/api/v2/search?search_terms=${encodeURIComponent(name)}&fields=product_name,brands,quantity,categories,ingredients_text,image_front_url,image_url&page_size=5&json=1&countries_tags_en=united-states&sort_by=unique_scans_n`,
+      {
+        headers: {
+          'User-Agent': 'WendOS/1.0 (https://drkmd.vercel.app)',
+          'Accept': 'application/json',
+        },
+      },
     )
     if (!res.ok) return NextResponse.json(null)
-    const data = await res.json() as { items?: UpcItem[] }
-    const item = data.items?.[0]
+    const ct = res.headers.get('content-type') ?? ''
+    if (!ct.includes('application/json')) return NextResponse.json(null)
+
+    const data = await res.json() as { products?: OFFProduct[] }
+    const item = data.products?.[0]
     if (!item) return NextResponse.json(null)
 
+    const topCategory = item.categories?.split(',')[0]?.trim() ?? null
+
     const detail: UpcDetail = {
-      title: item.title,
-      brand: item.brand || null,
-      description: item.description || null,
-      size: item.size || null,
-      category: item.category || null,
-      image: item.images?.[0] ?? null,
-      lowestPrice: item.lowest_recorded_price ?? null,
-      highestPrice: item.highest_recorded_price ?? null,
+      title: item.product_name ?? name,
+      brand: item.brands?.split(',')[0]?.trim() ?? null,
+      description: item.ingredients_text?.slice(0, 200) ?? null,
+      size: item.quantity ?? null,
+      category: topCategory,
+      image: item.image_front_url ?? item.image_url ?? null,
+      lowestPrice: null,
+      highestPrice: null,
     }
     return NextResponse.json(detail)
   } catch {
