@@ -123,9 +123,9 @@ const PRESET_CATALOG: ProductRow[] = [
 export default function ImportPage() {
   const { storeId } = useParams<{ storeId: string }>()
   const router = useRouter()
-  const [catalog, setCatalog] = useState<ProductRow[]>(PRESET_CATALOG)
+  const [catalog, setCatalog] = useState<ProductRow[]>([])
   const [selected, setSelected] = useState<Set<number>>(new Set())
-  const [existingNames, setExistingNames] = useState<Set<string>>(new Set())
+  const [loadingCatalog, setLoadingCatalog] = useState(true)
   const [csvText, setCsvText] = useState('')
   const [loading, setLoading] = useState(false)
   const [fetchingImages, setFetchingImages] = useState(false)
@@ -137,28 +137,22 @@ export default function ImportPage() {
       .then(r => r.json())
       .then((products: { name: string }[]) => {
         const names = new Set(products.map(p => p.name.toLowerCase()))
-        setExistingNames(names)
-        // Pre-select only items not already in the store
-        const notImported = new Set(
-          PRESET_CATALOG.map((p, i) => ({ p, i }))
-            .filter(({ p }) => !names.has(p.name.toLowerCase()))
-            .map(({ i }) => i)
-        )
-        setSelected(notImported)
+        const available = PRESET_CATALOG.filter(p => !names.has(p.name.toLowerCase()))
+        setCatalog(available)
+        setSelected(new Set(available.map((_, i) => i)))
       })
-      .catch(() => setSelected(new Set(PRESET_CATALOG.map((_, i) => i))))
+      .catch(() => {
+        setCatalog(PRESET_CATALOG)
+        setSelected(new Set(PRESET_CATALOG.map((_, i) => i)))
+      })
+      .finally(() => setLoadingCatalog(false))
   }, [storeId])
 
-  const availableIndexes = PRESET_CATALOG
-    .map((p, i) => ({ p, i }))
-    .filter(({ p }) => !existingNames.has(p.name.toLowerCase()))
-    .map(({ i }) => i)
-
   function toggleAll() {
-    if (selected.size === availableIndexes.length) {
+    if (selected.size === catalog.length) {
       setSelected(new Set())
     } else {
-      setSelected(new Set(availableIndexes))
+      setSelected(new Set(catalog.map((_, i) => i)))
     }
   }
 
@@ -214,7 +208,7 @@ export default function ImportPage() {
     setLoading(false)
   }
 
-  const categories = Array.from(new Set(PRESET_CATALOG.map(p => p.category)))
+  const categories = Array.from(new Set(catalog.map(p => p.category)))
 
   return (
     <div className="min-h-screen pb-32">
@@ -236,10 +230,22 @@ export default function ImportPage() {
           </div>
         )}
 
-        {tab === 'preset' && (
+        {tab === 'preset' && loadingCatalog && (
+          <p className="text-center text-gray-500 animate-pulse pt-8">Checking your existing products…</p>
+        )}
+
+        {tab === 'preset' && !loadingCatalog && catalog.length === 0 && (
+          <div className="text-center pt-12 space-y-2">
+            <p className="text-4xl">✅</p>
+            <p className="font-bold text-gray-300">All preset products already imported</p>
+            <p className="text-sm text-gray-500">Add custom items via CSV or the products page.</p>
+          </div>
+        )}
+
+        {tab === 'preset' && !loadingCatalog && catalog.length > 0 && (
           <>
             <div className="flex items-center justify-between">
-              <p className="text-sm text-gray-400">{selected.size} of {availableIndexes.length} new selected{existingNames.size > 0 ? ` · ${existingNames.size} already imported` : ''}</p>
+              <p className="text-sm text-gray-400">{selected.size} of {catalog.length} selected</p>
               <div className="flex gap-3">
                 <button onClick={fetchImages} disabled={fetchingImages || loading} className="text-sm text-brand underline">
                   {fetchingImages ? 'Fetching…' : '🖼 Fetch Images'}
@@ -258,17 +264,13 @@ export default function ImportPage() {
               <div key={cat} className="space-y-1">
                 <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-widest">{cat}</h3>
                 {catalog.map((p, i) => p.category !== cat ? null : (
-                  <label key={i} className={`card flex items-center gap-3 ${existingNames.has(p.name.toLowerCase()) ? 'opacity-40 cursor-default' : `cursor-pointer ${selected.has(i) ? 'border border-brand/40' : ''}`}`}>
-                    {existingNames.has(p.name.toLowerCase()) ? (
-                      <span className="w-4 h-4 flex-shrink-0 text-green-500 text-xs font-bold">✓</span>
-                    ) : (
-                      <input
-                        type="checkbox"
-                        checked={selected.has(i)}
-                        onChange={() => toggleItem(i)}
-                        className="accent-brand w-4 h-4 flex-shrink-0"
-                      />
-                    )}
+                  <label key={i} className={`card flex items-center gap-3 cursor-pointer ${selected.has(i) ? 'border border-brand/40' : 'opacity-50'}`}>
+                    <input
+                      type="checkbox"
+                      checked={selected.has(i)}
+                      onChange={() => toggleItem(i)}
+                      className="accent-brand w-4 h-4 flex-shrink-0"
+                    />
                     {p.imageUrl ? (
                       <img src={p.imageUrl} alt={p.name} className="w-10 h-10 rounded-lg object-contain bg-white flex-shrink-0" />
                     ) : (
@@ -288,7 +290,7 @@ export default function ImportPage() {
           </>
         )}
 
-        {tab === 'csv' && (
+        {tab === 'csv' && !loadingCatalog && (
           <div className="space-y-3">
             <div className="card text-xs text-gray-400 space-y-1">
               <p className="font-semibold text-gray-300">CSV Format (first row = headers):</p>
