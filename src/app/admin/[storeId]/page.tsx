@@ -111,6 +111,7 @@ export default function AdminDashboard() {
           )}
         </div>
         {/* Nav strip */}
+        <div className="max-w-2xl mx-auto">
         <div className="flex gap-2 overflow-x-auto px-4 pb-3" style={{ scrollbarWidth: 'none' }}>
           {[
             { href: `/admin/${storeId}/products`, label: '📦 Products' },
@@ -125,13 +126,14 @@ export default function AdminDashboard() {
             </Link>
           ))}
         </div>
+        </div>
       </div>
 
       {!onboardingComplete && (
         <div className="max-w-2xl mx-auto px-4 pt-4">
           <div className="rounded-2xl p-4 space-y-3" style={{ background: 'rgba(46,168,255,0.08)', border: '1px solid rgba(46,168,255,0.3)' }}>
-            <div className="flex items-start gap-3">
-              <span className="text-xl mt-0.5">⚠️</span>
+            <div className="flex items-center gap-3">
+              <span className="text-xl shrink-0">⚠️</span>
               <div>
                 <p className="font-bold text-sm text-white">Setup not complete</p>
                 <p className="text-xs text-gray-400 mt-0.5">Your starter kit hasn&apos;t been ordered yet. Finish setup to go live.</p>
