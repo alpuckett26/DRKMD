@@ -145,29 +145,27 @@ export default function AdminDashboard() {
       )}
 
       <div className="max-w-2xl mx-auto px-4 pt-4 space-y-4">
-        {/* WendOS Toggle */}
+        {/* Window Ordering */}
         <div className="card space-y-4">
           <div className="flex items-center justify-between">
-            <div>
-              <h2 className="font-bold">Window Ordering</h2>
-              <p className="text-xs text-gray-500">Enable to allow orders through window only</p>
-            </div>
+            <h2 className="font-bold">Window Ordering</h2>
             <button
               onClick={() => setWindowModeEnabled(v => !v)}
-              className={`relative w-14 h-7 rounded-full transition-colors ${windowModeEnabled ? 'bg-brand' : 'bg-gray-700'}`}
+              className={`relative w-14 h-7 rounded-full transition-colors shrink-0 ${windowModeEnabled ? 'bg-brand' : 'bg-gray-700'}`}
             >
               <span className={`absolute top-0.5 left-0.5 w-6 h-6 rounded-full bg-white shadow transition-transform ${windowModeEnabled ? 'translate-x-7' : ''}`} />
             </button>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="text-xs text-gray-500 block mb-1">Window Opens</label>
-              <input type="time" value={windowStart} onChange={e => setWindowStart(e.target.value)} className="input" />
+          <div className="flex items-end gap-3">
+            <div className="flex-1">
+              <label className="text-xs text-gray-500 block mb-1">Opens</label>
+              <input type="time" value={windowStart} onChange={e => setWindowStart(e.target.value)} className="input text-sm py-2" />
             </div>
-            <div>
-              <label className="text-xs text-gray-500 block mb-1">Window Closes</label>
-              <input type="time" value={windowEnd} onChange={e => setWindowEnd(e.target.value)} className="input" />
+            <span className="text-gray-600 text-lg pb-2 shrink-0">→</span>
+            <div className="flex-1">
+              <label className="text-xs text-gray-500 block mb-1">Closes</label>
+              <input type="time" value={windowEnd} onChange={e => setWindowEnd(e.target.value)} className="input text-sm py-2" />
             </div>
           </div>
 
