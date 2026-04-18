@@ -208,9 +208,37 @@ export default function MenuPage() {
           qty={items.find(i => i.productId === selectedProduct.id)?.qty ?? 0}
           onAdd={() => addItem({ productId: selectedProduct.id, name: selectedProduct.name, price: selectedProduct.price, restricted: selectedProduct.restrictedFlag })}
           onClose={() => setSelectedProduct(null)}
+          allProducts={products}
+          onSelectVariety={p => setSelectedProduct(p)}
         />
       )}
     </div>
+  )
+}
+
+function VarietyChip({ product, onSelect }: { product: ProductInfo; onSelect: () => void }) {
+  const [imgError, setImgError] = useState(false)
+  return (
+    <button
+      onClick={onSelect}
+      className="shrink-0 flex flex-col items-center gap-1.5 p-2 rounded-2xl text-center active:scale-95 transition-transform"
+      style={{
+        background: 'rgba(255,255,255,0.05)',
+        border: '1px solid rgba(255,255,255,0.1)',
+        minWidth: 80,
+        maxWidth: 96,
+      }}
+    >
+      <div className="w-14 h-14 rounded-xl overflow-hidden bg-gray-800 flex items-center justify-center relative shrink-0">
+        {product.imageUrl && !imgError ? (
+          <Image src={product.imageUrl} alt={product.name} fill className="object-contain p-1" unoptimized onError={() => setImgError(true)} />
+        ) : (
+          <span className="text-2xl">{CAT_ICON[product.category ?? ''] ?? '🛒'}</span>
+        )}
+      </div>
+      <p className="text-xs font-semibold leading-tight line-clamp-2 w-full">{product.name}</p>
+      <span className="text-brand text-xs font-black">{formatCents(product.price)}</span>
+    </button>
   )
 }
 
@@ -296,20 +324,31 @@ function ProductCard({ product, qty, onAdd, onOpen }: { product: ProductInfo; qt
   )
 }
 
+function getVarieties(product: ProductInfo, allProducts: ProductInfo[]): ProductInfo[] {
+  const firstWord = product.name.split(/\s+/)[0].toLowerCase()
+  if (firstWord.length < 3) return []
+  return allProducts.filter(p => p.id !== product.id && p.name.toLowerCase().startsWith(firstWord))
+}
+
 function ProductDetailSheet({
   product,
   qty,
   onAdd,
   onClose,
+  allProducts,
+  onSelectVariety,
 }: {
   product: ProductInfo
   qty: number
   onAdd: () => void
   onClose: () => void
+  allProducts: ProductInfo[]
+  onSelectVariety: (p: ProductInfo) => void
 }) {
   const [detail, setDetail] = useState<UpcDetail | null>(null)
   const [loadingDetail, setLoadingDetail] = useState(true)
   const [imgError, setImgError] = useState(false)
+  const varieties = getVarieties(product, allProducts)
 
   useEffect(() => {
     setLoadingDetail(true)
@@ -384,6 +423,18 @@ function ProductDetailSheet({
             <div className="flex items-center gap-2">
               <span className="text-lg">{CAT_ICON[product.category] ?? '🛒'}</span>
               <span className="text-xs text-gray-500 font-semibold uppercase tracking-wider">{product.category}</span>
+            </div>
+          )}
+
+          {/* Varieties */}
+          {varieties.length > 0 && (
+            <div>
+              <p className="text-xs font-bold uppercase tracking-widest text-gray-500 mb-2">More varieties</p>
+              <div className="flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
+                {varieties.map(v => (
+                  <VarietyChip key={v.id} product={v} onSelect={() => onSelectVariety(v)} />
+                ))}
+              </div>
             </div>
           )}
 
