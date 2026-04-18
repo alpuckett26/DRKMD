@@ -90,7 +90,10 @@ export default function MenuPage() {
                 <p className="text-xs text-gray-500">Tap items • Pay at checkout • Show code at window</p>
               </div>
             </div>
-            <span className="badge bg-green-900 text-green-400 text-xs shrink-0">● OPEN</span>
+            {storeId === 'store_demo' || store?.windowModeEnabled
+              ? <span className="badge bg-green-900 text-green-400 text-xs shrink-0">● OPEN</span>
+              : <span className="badge bg-red-900 text-red-400 text-xs shrink-0">● CLOSED</span>
+            }
           </div>
 
           {/* Search */}
@@ -125,6 +128,15 @@ export default function MenuPage() {
           </div>
         )}
       </div>
+
+      {storeId === 'store_demo' && (
+        <div className="max-w-lg mx-auto px-4 pt-3">
+          <div className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold"
+            style={{ background: 'rgba(168,85,247,0.15)', border: '1px solid rgba(168,85,247,0.4)', color: '#c084fc' }}>
+            🎭 DEMO MODE — No real payment required
+          </div>
+        </div>
+      )}
 
       <div className="max-w-lg mx-auto px-4 pt-4 space-y-6">
         {/* Hot Picks impulse strip */}

@@ -6,7 +6,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import Script from 'next/script'
 import { useCart } from '@/context/CartContext'
-import { formatCents } from '@/lib/utils'
+import { formatCents, calcServiceFee } from '@/lib/utils'
 import type { ProductInfo } from '@/types'
 
 declare global {
@@ -101,6 +101,8 @@ export default function CheckoutPage() {
   const router = useRouter()
   const { items, total, substitutionPreference, clearCart } = useCart()
   const isDemo = storeId === 'store_demo'
+  const serviceFee = calcServiceFee(total)
+  const grandTotal = total + serviceFee
 
   const [name, setName] = useState('')
   const [phone, setPhone] = useState('')
@@ -234,9 +236,19 @@ export default function CheckoutPage() {
                 <span className="text-gray-300">{formatCents(i.price * i.qty)}</span>
               </div>
             ))}
-            <div className="border-t border-gray-700 pt-2 flex justify-between font-bold">
-              <span>Estimated Total</span>
-              <span className="text-brand">{formatCents(total)}</span>
+            <div className="border-t border-gray-700 pt-2 space-y-1">
+              <div className="flex justify-between text-sm text-gray-400">
+                <span>Subtotal</span>
+                <span>{formatCents(total)}</span>
+              </div>
+              <div className="flex justify-between text-sm text-gray-400">
+                <span>Convenience Fee (25%)</span>
+                <span>{formatCents(serviceFee)}</span>
+              </div>
+              <div className="flex justify-between font-bold pt-1 border-t border-gray-700">
+                <span>Estimated Total</span>
+                <span className="text-brand">{formatCents(grandTotal)}</span>
+              </div>
             </div>
           </div>
 
@@ -248,7 +260,7 @@ export default function CheckoutPage() {
           </div>
           {error && <p className="text-red-400 text-sm text-center bg-red-900/20 rounded-xl px-4 py-3">{error}</p>}
           <button type="submit" disabled={submitting} className="btn-primary">
-            {submitting ? 'Placing order…' : `Place Demo Order – ${formatCents(total)}`}
+            {submitting ? 'Placing order…' : `Place Demo Order – ${formatCents(grandTotal)}`}
           </button>
         </form>
       </div>
@@ -297,9 +309,19 @@ export default function CheckoutPage() {
                 <span className="text-gray-300">{formatCents(i.price * i.qty)}</span>
               </div>
             ))}
-            <div className="border-t border-gray-700 pt-2 flex justify-between font-bold">
-              <span>Estimated Total</span>
-              <span className="text-brand">{formatCents(total)}</span>
+            <div className="border-t border-gray-700 pt-2 space-y-1">
+              <div className="flex justify-between text-sm text-gray-400">
+                <span>Subtotal</span>
+                <span>{formatCents(total)}</span>
+              </div>
+              <div className="flex justify-between text-sm text-gray-400">
+                <span>Convenience Fee (25%)</span>
+                <span>{formatCents(serviceFee)}</span>
+              </div>
+              <div className="flex justify-between font-bold pt-1 border-t border-gray-700">
+                <span>Estimated Total</span>
+                <span className="text-brand">{formatCents(grandTotal)}</span>
+              </div>
             </div>
           </div>
 
@@ -332,7 +354,7 @@ export default function CheckoutPage() {
             disabled={submitting || !squareReady}
             className="btn-primary"
           >
-            {submitting ? 'Processing…' : `Place Order & Authorize ${formatCents(total)}`}
+            {submitting ? 'Processing…' : `Place Order & Authorize ${formatCents(grandTotal)}`}
           </button>
 
           <p className="text-xs text-gray-600 text-center pb-6">

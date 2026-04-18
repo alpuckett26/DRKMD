@@ -1,3 +1,9 @@
+export const SERVICE_FEE_PCT = 0.25
+
+export function calcServiceFee(subtotal: number): number {
+  return Math.round(subtotal * SERVICE_FEE_PCT)
+}
+
 export function formatCents(cents: number): string {
   return `$${(cents / 100).toFixed(2)}`
 }

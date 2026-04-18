@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { authorizePayment } from '@/lib/square'
 import { generatePickupQR } from '@/lib/qr'
+import { calcServiceFee } from '@/lib/utils'
 import { z } from 'zod'
 
 const CreateOrderSchema = z.object({
@@ -36,12 +37,18 @@ export async function POST(req: Request) {
   const store = await db.store.findUnique({ where: { id: storeId } })
   if (!store) return NextResponse.json({ error: 'Store not found' }, { status: 404 })
 
-  const estimatedTotal = items.reduce((s, i) => s + i.price * i.qty, 0)
+  const isDemo = storeId === 'store_demo'
+  if (!isDemo && !store.windowModeEnabled) {
+    return NextResponse.json({ error: 'Store is not currently accepting orders.' }, { status: 409 })
+  }
+
+  const itemsSubtotal = items.reduce((s, i) => s + i.price * i.qty, 0)
+  const estimatedTotal = itemsSubtotal + calcServiceFee(itemsSubtotal)
   const pickupCode = generatePickupCode()
   const pickupCodeQr = await generatePickupQR(pickupCode)
 
   let paymentAuthId: string | undefined
-  if (storeId === 'store_demo' && paymentToken === 'demo') {
+  if (isDemo && paymentToken === 'demo') {
     paymentAuthId = 'demo'
   } else {
     try {

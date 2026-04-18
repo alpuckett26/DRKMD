@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { capturePayment, voidPayment } from '@/lib/square'
-import { calcFinalTotal } from '@/lib/utils'
+import { calcFinalTotal, calcServiceFee } from '@/lib/utils'
 
 export async function POST(_req: Request, { params }: { params: { orderId: string } }) {
   const order = await db.order.findUnique({
@@ -17,7 +17,7 @@ export async function POST(_req: Request, { params }: { params: { orderId: strin
     return NextResponse.json({ error: 'No payment authorization on file' }, { status: 409 })
   }
 
-  const finalTotal = calcFinalTotal(
+  const itemsTotal = calcFinalTotal(
     order.items.map(i => ({
       status: i.status,
       qtyFound: i.qtyFound,
@@ -25,6 +25,7 @@ export async function POST(_req: Request, { params }: { params: { orderId: strin
       finalPrice: i.finalPrice,
     })),
   )
+  const finalTotal = itemsTotal + calcServiceFee(itemsTotal)
 
   const isDemo = order.paymentAuthId === 'demo'
 

@@ -1,13 +1,23 @@
 import { NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
+import { db } from '@/lib/db'
 import { fetchProductImage } from '@/lib/productImage'
 
 export const maxDuration = 60
 
 const client = new Anthropic()
 
-export async function POST(req: Request) {
+function tooSimilar(a: string, b: string): boolean {
+  const words = (s: string) => s.toLowerCase().replace(/[^a-z0-9\s]/g, '').split(/\s+/).filter(w => w.length > 3)
+  const wa = words(a), wb = words(b)
+  if (!wa.length || !wb.length) return false
+  const shared = wa.filter(w => wb.includes(w)).length
+  return shared / Math.max(wa.length, wb.length) >= 0.7
+}
+
+export async function POST(req: Request, { params }: { params: { storeId: string } }) {
   const { images } = await req.json() as { images: string[] }
+  const storeId = params.storeId
   if (!images?.length) return NextResponse.json({ error: 'No images provided' }, { status: 400 })
 
   const imageBlocks = images.slice(0, 6).map(img => ({
@@ -51,7 +61,7 @@ Return ONLY a JSON array, no other text:
     try { products = JSON.parse(match[0]) } catch {}
   }
 
-  // Deduplicate by name
+  // Deduplicate within scan results
   const seen = new Set<string>()
   products = products.filter(p => {
     const key = p.name.toLowerCase()
@@ -59,6 +69,10 @@ Return ONLY a JSON array, no other text:
     seen.add(key)
     return true
   })
+
+  // Filter out products too similar to existing ones in DB
+  const existing = await db.product.findMany({ where: { storeId, active: true }, select: { name: true } })
+  products = products.filter(p => !existing.some(e => tooSimilar(p.name, e.name)))
 
   const enriched = await Promise.all(
     products.map(async p => ({ ...p, imageUrl: await fetchProductImage(p.name) })),

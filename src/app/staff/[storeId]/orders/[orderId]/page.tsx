@@ -14,6 +14,7 @@ interface OrderItem {
   finalPrice: number | null
   status: string
   substitutionReason: string | null
+  product?: { restrictedFlag: boolean } | null
 }
 
 interface Order {
@@ -140,18 +141,14 @@ export default function PickingPage() {
                       ↔ Substitute
                     </button>
                   )}
-                  {item.requestedName.toLowerCase().includes('beer') ||
-                    item.requestedName.toLowerCase().includes('wine') ||
-                    item.requestedName.toLowerCase().includes('whiskey') ||
-                    item.requestedName.toLowerCase().includes('cigarette') ||
-                    item.requestedName.toLowerCase().includes('tobacco') ? (
+                  {item.product?.restrictedFlag && (
                     <button
                       onClick={() => markItem(item.id, 'refused_restricted', 0)}
                       className="bg-gray-700 text-gray-300 font-semibold py-2 rounded-xl text-sm active:bg-gray-600"
                     >
                       ⛔ Refused (ID)
                     </button>
-                  ) : null}
+                  )}
                 </div>
               )}
             </div>
