@@ -172,15 +172,6 @@ export default function MenuPage() {
         )}
       </div>
 
-      {storeId === 'store_demo' && (
-        <div className="max-w-lg mx-auto px-4 pt-3">
-          <div className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold"
-            style={{ background: 'rgba(168,85,247,0.15)', border: '1px solid rgba(168,85,247,0.4)', color: '#c084fc' }}>
-            🎭 DEMO MODE — No real payment required
-          </div>
-        </div>
-      )}
-
       <div className="max-w-lg mx-auto px-4 pt-4 space-y-6">
         {/* Hot Picks impulse strip */}
         {promoted.length > 0 && !search && activeCategory === 'All' && (
