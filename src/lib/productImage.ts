@@ -12,24 +12,29 @@ function isRelevantMatch(query: string, productName: string): boolean {
 
 async function tryOpenFoodFacts(name: string): Promise<string | null> {
   try {
+    const params = new URLSearchParams({
+      search_terms: name,
+      search_simple: '1',
+      json: '1',
+      fields: 'product_name,image_front_url',
+      page_size: '5',
+      tagtype_0: 'countries',
+      tag_contains_0: 'contains',
+      tag_0: 'en:united-states',
+    })
     const res = await fetch(
-      `https://world.openfoodfacts.org/api/v2/search?search_terms=${encodeURIComponent(name)}&fields=product_name,image_front_url,image_url&page_size=5&json=1&countries_tags_en=united-states&sort_by=unique_scans_n`,
-      {
-        headers: {
-          'User-Agent': 'WendOS/1.0 (https://drkmd.vercel.app)',
-          'Accept': 'application/json',
-        },
-      },
+      `https://world.openfoodfacts.org/cgi/search.pl?${params}`,
+      { headers: { 'User-Agent': 'WendOS/1.0 (https://drkmd.vercel.app)' } },
     )
     if (!res.ok) return null
     const ct = res.headers.get('content-type') ?? ''
-    if (!ct.includes('application/json')) return null
-    const data = await res.json() as { products?: { product_name?: string; image_front_url?: string; image_url?: string }[] }
+    if (!ct.includes('application/json') && !ct.includes('text/plain')) return null
+    const data = await res.json() as { products?: { product_name?: string; image_front_url?: string }[] }
     const product = data.products?.find(p =>
-      (p.image_front_url || p.image_url) &&
+      p.image_front_url &&
       isRelevantMatch(name, p.product_name ?? ''),
     )
-    return product?.image_front_url ?? product?.image_url ?? null
+    return product?.image_front_url ?? null
   } catch {
     return null
   }
