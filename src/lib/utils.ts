@@ -1,4 +1,4 @@
-export const SERVICE_FEE_PCT = 0.25
+export const SERVICE_FEE_PCT = 0.125
 
 export function calcServiceFee(subtotal: number): number {
   return Math.round(subtotal * SERVICE_FEE_PCT)

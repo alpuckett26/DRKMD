@@ -242,7 +242,7 @@ export default function CheckoutPage() {
                 <span>{formatCents(total)}</span>
               </div>
               <div className="flex justify-between text-sm text-gray-400">
-                <span>Convenience Fee (25%)</span>
+                <span>Convenience Fee (12.5%)</span>
                 <span>{formatCents(serviceFee)}</span>
               </div>
               <div className="flex justify-between font-bold pt-1 border-t border-gray-700">
@@ -315,7 +315,7 @@ export default function CheckoutPage() {
                 <span>{formatCents(total)}</span>
               </div>
               <div className="flex justify-between text-sm text-gray-400">
-                <span>Convenience Fee (25%)</span>
+                <span>Convenience Fee (12.5%)</span>
                 <span>{formatCents(serviceFee)}</span>
               </div>
               <div className="flex justify-between font-bold pt-1 border-t border-gray-700">

@@ -12,7 +12,7 @@ function tooSimilar(a: string, b: string): boolean {
   const wa = words(a), wb = words(b)
   if (!wa.length || !wb.length) return false
   const shared = wa.filter(w => wb.includes(w)).length
-  return shared / Math.max(wa.length, wb.length) >= 0.7
+  return shared / Math.max(wa.length, wb.length) >= 0.85
 }
 
 export async function POST(req: Request, { params }: { params: { storeId: string } }) {
