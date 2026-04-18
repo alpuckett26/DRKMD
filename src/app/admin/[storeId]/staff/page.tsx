@@ -111,9 +111,7 @@ export default function StaffPage() {
             <h1 className="font-black text-lg text-brand">Staff Management</h1>
             <p className="text-sm text-gray-400">{activeStaff.length} active member{activeStaff.length !== 1 ? 's' : ''}</p>
           </div>
-          <div className="flex gap-3 text-sm">
-            <Link href={`/admin/${storeId}`} className="text-brand underline">Admin</Link>
-          </div>
+          <Link href={`/admin/${storeId}`} className="text-gray-400 text-2xl leading-none">‹</Link>
         </div>
       </div>
 
