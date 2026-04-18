@@ -1,17 +1,15 @@
-const GOOGLE_KEY = process.env.GOOGLE_SEARCH_API_KEY
-const GOOGLE_CX = process.env.GOOGLE_SEARCH_ENGINE_ID
+const PIXABAY_KEY = process.env.PIXABAY_API_KEY
 
 export async function fetchProductImage(name: string): Promise<string | null> {
-  if (!GOOGLE_KEY || !GOOGLE_CX) return null
+  if (!PIXABAY_KEY) return null
   try {
-    const q = encodeURIComponent(name + ' product packshot')
+    const q = encodeURIComponent(name)
     const res = await fetch(
-      `https://www.googleapis.com/customsearch/v1?key=${GOOGLE_KEY}&cx=${GOOGLE_CX}&q=${q}&searchType=image&num=3&imgSize=medium&safe=active`,
+      `https://pixabay.com/api/?key=${PIXABAY_KEY}&q=${q}&image_type=photo&per_page=3&safesearch=true`,
     )
     if (!res.ok) return null
-    const data = await res.json() as { items?: { link?: string }[] }
-    const img = data.items?.find(i => i.link?.startsWith('https://'))
-    return img?.link ?? null
+    const data = await res.json() as { hits?: { webformatURL?: string }[] }
+    return data.hits?.[0]?.webformatURL ?? null
   } catch {
     return null
   }
