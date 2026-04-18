@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { isRestrictedProduct } from '@/lib/restrictedKeywords'
 import { z } from 'zod'
 
 const UpdateSchema = z.object({
@@ -18,9 +19,12 @@ export async function PATCH(req: Request, { params }: { params: { productId: str
   const parsed = UpdateSchema.safeParse(body)
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 })
 
+  const updates = { ...parsed.data }
+  if (updates.name) updates.restrictedFlag = updates.restrictedFlag || isRestrictedProduct(updates.name)
+
   const product = await db.product.update({
     where: { id: params.productId },
-    data: parsed.data,
+    data: updates,
   })
   return NextResponse.json(product)
 }

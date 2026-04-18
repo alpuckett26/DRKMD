@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { isRestrictedProduct } from '@/lib/restrictedKeywords'
 import { z } from 'zod'
 
 const ProductSchema = z.object({
@@ -18,10 +19,14 @@ export async function POST(req: Request) {
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 })
 
   const { storeId, name, ...rest } = parsed.data
+  // Auto-flag if name matches any restricted keyword, regardless of what was passed
+  const restrictedFlag = rest.restrictedFlag || isRestrictedProduct(name)
+  const data = { ...rest, restrictedFlag }
+
   const product = await db.product.upsert({
     where: { storeId_name: { storeId, name } },
-    update: { ...rest, active: true },
-    create: { storeId, name, ...rest, active: true },
+    update: { ...data, active: true },
+    create: { storeId, name, ...data, active: true },
   })
   return NextResponse.json(product, { status: 201 })
 }
