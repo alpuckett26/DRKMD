@@ -24,8 +24,27 @@ export default function ProductsPage() {
 
   async function fetchProducts() {
     const res = await fetch(`/api/stores/${storeId}/menu`)
-    if (res.ok) setProducts(await res.json())
+    if (res.ok) {
+      const prods: ExtendedProduct[] = await res.json()
+      setProducts(prods)
+      refreshMissingImages(prods)
+    }
     setLoading(false)
+  }
+
+  async function refreshMissingImages(prods: ExtendedProduct[]) {
+    for (const p of prods.filter(x => !x.imageUrl)) {
+      const r = await fetch(`/api/admin/products/image-lookup?name=${encodeURIComponent(p.name)}`)
+      if (!r.ok) continue
+      const { imageUrl } = await r.json()
+      if (!imageUrl) continue
+      fetch(`/api/admin/products/${p.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ imageUrl }),
+      })
+      setProducts(prev => prev.map(x => x.id === p.id ? { ...x, imageUrl } : x))
+    }
   }
 
   useEffect(() => { fetchProducts() }, [storeId])
