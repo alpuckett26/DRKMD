@@ -167,7 +167,7 @@ export default function FulfillmentTablet() {
               LIVE
             </span>
           </div>
-          <Link href={`/admin/${storeId}`} className="text-xs text-gray-600 underline shrink-0">Admin</Link>
+          <Link href={`/admin/${storeId}`} className="text-gray-500 text-2xl leading-none shrink-0">‹</Link>
         </div>
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-2 text-xs text-gray-500 min-w-0">
