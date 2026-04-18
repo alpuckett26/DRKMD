@@ -210,7 +210,7 @@ export default function MenuPage() {
         )}
 
         {Object.entries(grouped).map(([category, catProducts]) => (
-          <div key={category} ref={el => { catRefs.current[category] = el }}>
+          <div key={category} ref={el => { catRefs.current[category] = el }} style={{ scrollMarginTop: '175px' }}>
             <div className="flex items-center gap-2 mb-3">
               <span className="text-lg">{CAT_ICON[category] ?? '🛒'}</span>
               <h2 className="font-black text-sm uppercase tracking-widest text-gray-300">{category}</h2>
