@@ -3,7 +3,7 @@ const BRAVE_KEY = process.env.BRAVE_SEARCH_API_KEY
 async function tryOpenFoodFacts(name: string): Promise<string | null> {
   try {
     const res = await fetch(
-      `https://world.openfoodfacts.org/api/v2/search?search_terms=${encodeURIComponent(name)}&fields=image_front_url,image_url&page_size=5&json=1`,
+      `https://world.openfoodfacts.org/api/v2/search?search_terms=${encodeURIComponent(name)}&fields=image_front_url,image_url&page_size=5&json=1&countries_tags_en=united-states&sort_by=unique_scans_n`,
       {
         headers: {
           'User-Agent': 'WendOS/1.0 (https://drkmd.vercel.app)',
