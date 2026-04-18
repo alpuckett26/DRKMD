@@ -156,68 +156,73 @@ export default function FulfillmentTablet() {
   return (
     <div className="min-h-screen flex flex-col" style={{background:'#050a12'}}>
       {/* Header bar */}
-      <div className="panel px-6 py-3 flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <span className="font-black text-brand text-xl glow-text">WendOS</span>
-          <span className="text-gray-500 text-sm">{storeName}</span>
-          <span className="badge bg-green-900 text-green-400 text-xs">● FULFILLMENT</span>
+      <div className="panel px-4 pt-3 pb-2 space-y-2">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="font-black text-brand text-lg glow-text shrink-0">WendOS</span>
+            <span className="text-gray-500 text-sm truncate">{storeName}</span>
+            <span className="shrink-0 flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full"
+              style={{ background: 'rgba(46,168,255,0.12)', color: '#2EA8FF', border: '1px solid rgba(46,168,255,0.3)' }}>
+              <span className="w-1.5 h-1.5 rounded-full bg-brand animate-pulse" />
+              LIVE
+            </span>
+          </div>
+          <Link href={`/admin/${storeId}`} className="text-xs text-gray-600 underline shrink-0">Admin</Link>
         </div>
-        <div className="flex items-center gap-4 text-xs text-gray-500">
-          {lastPoll && <span>Updated {lastPoll.toLocaleTimeString()}</span>}
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2 text-xs text-gray-500 min-w-0">
+            {staffSession && <span className="text-gray-300 truncate">{staffSession.name}</span>}
+            {lastPoll && <span className="truncate">· {lastPoll.toLocaleTimeString()}</span>}
+          </div>
           {staffSession ? (
-            <div className="flex items-center gap-2">
-              <span className="text-gray-300">{staffSession.name}</span>
-              <button
-                onClick={endShift}
-                disabled={endingShift}
-                className="glass text-white text-xs px-3 py-1.5 rounded-lg transition-all hover:border-brand/50"
-              >
-                {endingShift ? '…' : 'End Shift'}
-              </button>
-            </div>
+            <button onClick={endShift} disabled={endingShift}
+              className="shrink-0 text-xs px-3 py-1.5 rounded-lg font-semibold transition-colors"
+              style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)', color: '#9ca3af' }}>
+              {endingShift ? '…' : 'End Shift'}
+            </button>
           ) : (
-            <Link href={`/staff/${storeId}/login`} className="text-gray-600 underline">Staff Login</Link>
+            <Link href={`/staff/${storeId}/login`} className="shrink-0 text-xs text-gray-500 underline">Staff Login</Link>
           )}
-          <Link href={`/admin/${storeId}`} className="text-gray-600 underline">Admin</Link>
         </div>
       </div>
 
       <div className="flex-1 grid grid-cols-2 gap-0 divide-x divide-gray-800 overflow-hidden">
         {/* LEFT PANEL: Order Queue */}
         <div className="flex flex-col overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-800 flex items-center justify-between">
-            <h2 className="font-black text-lg">Order Queue</h2>
-            <span className="badge bg-yellow-900 text-yellow-300 text-sm">{queue.length} pending</span>
+          <div className="px-4 py-3 border-b border-gray-800 flex items-center justify-between">
+            <h2 className="font-black text-base">Queue</h2>
+            <span className="text-xs font-bold px-2 py-0.5 rounded-full"
+              style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', color: queue.length > 0 ? '#facc15' : '#6b7280' }}>
+              {queue.length} pending
+            </span>
           </div>
-          <div className="flex-1 overflow-y-auto p-4 space-y-3">
+          <div className="flex-1 overflow-y-auto p-3 space-y-3">
             {queue.length === 0 && (
-              <div className="flex flex-col items-center justify-center h-full text-gray-600 gap-3 py-20">
-                <span className="text-5xl">🪟</span>
-                <p>No pending orders</p>
+              <div className="flex flex-col items-center justify-center h-full text-gray-700 gap-3 py-20">
+                <span className="text-4xl">🪟</span>
+                <p className="text-sm">No pending orders</p>
               </div>
             )}
             {queue.map(order => (
-              <OrderCard
-                key={order.id}
-                order={order}
-                isNew={newOrderIds.has(order.id)}
-                storeId={storeId}
-              />
+              <OrderCard key={order.id} order={order} isNew={newOrderIds.has(order.id)} storeId={storeId} />
             ))}
           </div>
         </div>
 
         {/* RIGHT PANEL: Ready for Pickup */}
         <div className="flex flex-col overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-800 flex items-center justify-between">
-            <h2 className="font-black text-lg">Ready for Pickup</h2>
-            <span className="badge bg-green-900 text-green-300 text-sm">{ready.length} ready</span>
+          <div className="px-4 py-3 border-b border-gray-800 flex items-center justify-between">
+            <h2 className="font-black text-base">Ready</h2>
+            <span className="text-xs font-bold px-2 py-0.5 rounded-full"
+              style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', color: ready.length > 0 ? '#2EA8FF' : '#6b7280' }}>
+              {ready.length} ready
+            </span>
           </div>
-          <div className="flex-1 overflow-y-auto p-4 space-y-3">
+          <div className="flex-1 overflow-y-auto p-3 space-y-3">
             {ready.length === 0 && (
-              <div className="flex flex-col items-center justify-center h-full text-gray-600 gap-3 py-20">
-                <span className="text-5xl">✅</span>
-                <p>No orders awaiting pickup</p>
+              <div className="flex flex-col items-center justify-center h-full text-gray-700 gap-3 py-20">
+                <span className="text-4xl opacity-40">✓</span>
+                <p className="text-sm">No orders awaiting pickup</p>
               </div>
             )}
             {ready.map(order => (
@@ -295,35 +300,40 @@ function ReadyCard({ order, storeId }: { order: Order; storeId: string }) {
   return (
     <Link
       href={`/staff/${storeId}/orders/${order.id}`}
-      className="block rounded-2xl p-4 border-2 border-green-600 bg-green-900/20"
+      className="block rounded-2xl p-4"
+      style={{ background: 'rgba(46,168,255,0.07)', border: '1px solid rgba(46,168,255,0.25)' }}
     >
       <div className="flex items-center justify-between gap-3">
         <div>
-          <p className="font-black text-4xl tracking-widest text-white">{order.pickupCode}</p>
-          <p className="text-gray-300 text-sm mt-0.5">{order.customerName}</p>
+          <p className="font-black text-3xl tracking-widest text-white">{order.pickupCode}</p>
+          <p className="text-gray-400 text-sm mt-0.5">{order.customerName}</p>
         </div>
         <div className="text-right">
-          <p className="text-green-400 font-bold text-sm">READY</p>
-          <p className="font-black text-brand text-xl mt-1">
+          <p className="text-brand font-bold text-xs uppercase tracking-widest">Ready</p>
+          <p className="font-black text-white text-xl mt-1">
             {formatCents(order.finalTotal ?? order.estimatedTotal)}
           </p>
         </div>
       </div>
-      <p className="text-xs text-green-600 mt-2 font-semibold">→ Tap to view order</p>
     </Link>
   )
 }
 
 function StatusPill({ status }: { status: string }) {
-  const cfg: Record<string, { label: string; cls: string }> = {
-    authorized: { label: 'New', cls: 'bg-yellow-900 text-yellow-300' },
-    picking: { label: 'In Progress', cls: 'bg-blue-900 text-blue-300' },
-    ready: { label: 'Ready', cls: 'bg-green-900 text-green-300' },
-    partially_ready: { label: 'Partial', cls: 'bg-green-900 text-green-400' },
-    captured: { label: 'Paid ✓', cls: 'bg-green-800 text-green-200' },
+  const cfg: Record<string, { label: string; color: string }> = {
+    authorized:     { label: 'New',         color: '#facc15' },
+    picking:        { label: 'Picking',      color: '#2EA8FF' },
+    ready:          { label: 'Ready',        color: '#2EA8FF' },
+    partially_ready:{ label: 'Partial',      color: '#2EA8FF' },
+    captured:       { label: 'Paid ✓',       color: '#4ade80' },
   }
-  const c = cfg[status] ?? { label: status, cls: 'bg-gray-700 text-gray-400' }
-  return <span className={`badge ${c.cls}`}>{c.label}</span>
+  const c = cfg[status] ?? { label: status, color: '#6b7280' }
+  return (
+    <span className="badge text-xs font-bold"
+      style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', color: c.color }}>
+      {c.label}
+    </span>
+  )
 }
 
 function ItemDot({ status }: { status: string }) {
