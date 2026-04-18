@@ -9,7 +9,8 @@ const STEPS = ['Welcome', 'Business', 'Photo', 'Shelf', 'Hours', 'Terms', 'Purch
 const BUSINESS_TYPES = ['Sole Proprietorship', 'LLC', 'Corporation', 'Partnership', 'Other']
 
 interface SquareConfig { appId: string; locationId: string; environment: string }
-interface SuggestedProduct { name: string; category: string; restricted: boolean; estimatedPrice: number | null; imageUrl: string | null; selected: boolean; customPrice: string }
+interface CropBox { x: number; y: number; w: number; h: number }
+interface SuggestedProduct { name: string; category: string; restricted: boolean; estimatedPrice: number | null; imageUrl: string | null; selected: boolean; customPrice: string; photoIndex?: number; cropBox?: CropBox }
 
 export default function SetupWizard() {
   const { storeId } = useParams<{ storeId: string }>()
@@ -31,6 +32,7 @@ export default function SetupWizard() {
 
   // Shelf photos
   const [shelfPhotos, setShelfPhotos] = useState<string[]>([])
+  const [scanPhotos, setScanPhotos] = useState<string[]>([])
   const [analyzing, setAnalyzing] = useState(false)
   const [suggestions, setSuggestions] = useState<SuggestedProduct[]>([])
   const [addingItems, setAddingItems] = useState(false)
@@ -127,6 +129,7 @@ export default function SetupWizard() {
         body: JSON.stringify({ images: shelfPhotos }),
       })
       const data = await res.json()
+      setScanPhotos(data.photos ?? [])
       setSuggestions((data.products ?? []).map((p: Omit<SuggestedProduct, 'selected' | 'customPrice'>) => ({
         ...p,
         selected: true,
@@ -389,9 +392,11 @@ export default function SetupWizard() {
                       >
                         <input type="checkbox" checked={s.selected} readOnly
                           className="accent-brand w-4 h-4 shrink-0" />
-                        {s.imageUrl
-                          ? <img src={s.imageUrl} alt={s.name} className="w-10 h-10 rounded-lg object-contain bg-gray-800 shrink-0" />
-                          : <div className="w-10 h-10 rounded-lg bg-gray-800 shrink-0 flex items-center justify-center text-lg">🛒</div>
+                        {s.cropBox != null && scanPhotos[s.photoIndex ?? 0]
+                          ? <CropThumbnail src={scanPhotos[s.photoIndex ?? 0]} crop={s.cropBox} />
+                          : s.imageUrl
+                            ? <img src={s.imageUrl} alt={s.name} className="w-10 h-10 rounded-lg object-contain bg-gray-800 shrink-0" />
+                            : <div className="w-10 h-10 rounded-lg bg-gray-800 shrink-0 flex items-center justify-center text-lg">🛒</div>
                         }
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-semibold truncate">{s.name}</p>
@@ -618,6 +623,30 @@ export default function SetupWizard() {
         </div>
       </div>
     </>
+  )
+}
+
+function CropThumbnail({ src, crop }: { src: string; crop: { x: number; y: number; w: number; h: number } }) {
+  const [imgStyle, setImgStyle] = useState<React.CSSProperties>({ opacity: 0, position: 'absolute', maxWidth: 'none' })
+
+  function onLoad(e: React.SyntheticEvent<HTMLImageElement>) {
+    const img = e.currentTarget
+    const { naturalWidth, naturalHeight } = img
+    const scale = 40 / Math.min(naturalWidth * crop.w, naturalHeight * crop.h)
+    setImgStyle({
+      position: 'absolute',
+      maxWidth: 'none',
+      width: naturalWidth * scale,
+      height: naturalHeight * scale,
+      left: -naturalWidth * crop.x * scale,
+      top: -naturalHeight * crop.y * scale,
+    })
+  }
+
+  return (
+    <div style={{ width: 40, height: 40, overflow: 'hidden', position: 'relative', borderRadius: 8, background: '#1f2937', flexShrink: 0 }}>
+      <img src={src} onLoad={onLoad} style={imgStyle} alt="" />
+    </div>
   )
 }
 

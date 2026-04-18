@@ -41,14 +41,16 @@ export async function POST(req: Request, { params }: { params: { storeId: string
           type: 'text',
           text: `You are cataloging inventory for a convenience store. Analyze these shelf photos and list every distinct product you can identify.
 
-For each product return:
-- name: specific product name (brand + variant if readable, e.g. "Monster Energy Ultra White 16oz")
+For each product return these exact fields:
+- name: specific product name with brand, variant, and size if readable (e.g. "Monster Energy Ultra White 16oz")
 - category: exactly one of: Drinks, Energy, Coffee & Tea, Beer, Wine & Spirits, Snacks, Candy & Chocolate, Food, Health & Beauty, Tobacco, Electronics, Household, General
 - restricted: true only for alcohol or tobacco
 - estimatedPrice: realistic US convenience store retail price as a number in dollars (e.g. 3.99), or null if unsure
+- photoIndex: 0-based index of which provided image this product appears in (0 = first image)
+- cropBox: tight bounding box where this product appears in that photo, as decimal fractions 0.0–1.0 of the image width/height: {"x": left edge, "y": top edge, "w": width, "h": height}
 
 Return ONLY a JSON array, no other text:
-[{"name":"...","category":"...","restricted":false,"estimatedPrice":2.49}]`,
+[{"name":"...","category":"...","restricted":false,"estimatedPrice":2.49,"photoIndex":0,"cropBox":{"x":0.1,"y":0.2,"w":0.15,"h":0.3}}]`,
         },
       ],
     }],
@@ -56,7 +58,7 @@ Return ONLY a JSON array, no other text:
 
   const text = message.content.find(b => b.type === 'text')?.text ?? '[]'
   const match = text.match(/\[[\s\S]*\]/)
-  let products: { name: string; category: string; restricted: boolean; estimatedPrice: number | null }[] = []
+  let products: { name: string; category: string; restricted: boolean; estimatedPrice: number | null; photoIndex?: number; cropBox?: { x: number; y: number; w: number; h: number } }[] = []
   if (match) {
     try { products = JSON.parse(match[0]) } catch {}
   }
@@ -78,5 +80,5 @@ Return ONLY a JSON array, no other text:
     products.map(async p => ({ ...p, imageUrl: await fetchProductImage(p.name) })),
   )
 
-  return NextResponse.json({ products: enriched })
+  return NextResponse.json({ products: enriched, photos: images.slice(0, 6) })
 }
