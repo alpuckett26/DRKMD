@@ -1,9 +1,8 @@
 'use client'
 
-import { useState } from 'react'
-import { useParams } from 'next/navigation'
+import { useEffect, useState } from 'react'
+import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { formatCents } from '@/lib/utils'
 
 interface ProductRow {
   name: string
@@ -123,19 +122,43 @@ const PRESET_CATALOG: ProductRow[] = [
 
 export default function ImportPage() {
   const { storeId } = useParams<{ storeId: string }>()
+  const router = useRouter()
   const [catalog, setCatalog] = useState<ProductRow[]>(PRESET_CATALOG)
-  const [selected, setSelected] = useState<Set<number>>(new Set(PRESET_CATALOG.map((_, i) => i)))
+  const [selected, setSelected] = useState<Set<number>>(new Set())
+  const [existingNames, setExistingNames] = useState<Set<string>>(new Set())
   const [csvText, setCsvText] = useState('')
   const [loading, setLoading] = useState(false)
   const [fetchingImages, setFetchingImages] = useState(false)
   const [result, setResult] = useState('')
   const [tab, setTab] = useState<'preset' | 'csv'>('preset')
 
+  useEffect(() => {
+    fetch(`/api/stores/${storeId}/menu`)
+      .then(r => r.json())
+      .then((products: { name: string }[]) => {
+        const names = new Set(products.map(p => p.name.toLowerCase()))
+        setExistingNames(names)
+        // Pre-select only items not already in the store
+        const notImported = new Set(
+          PRESET_CATALOG.map((p, i) => ({ p, i }))
+            .filter(({ p }) => !names.has(p.name.toLowerCase()))
+            .map(({ i }) => i)
+        )
+        setSelected(notImported)
+      })
+      .catch(() => setSelected(new Set(PRESET_CATALOG.map((_, i) => i))))
+  }, [storeId])
+
+  const availableIndexes = PRESET_CATALOG
+    .map((p, i) => ({ p, i }))
+    .filter(({ p }) => !existingNames.has(p.name.toLowerCase()))
+    .map(({ i }) => i)
+
   function toggleAll() {
-    if (selected.size === PRESET_CATALOG.length) {
+    if (selected.size === availableIndexes.length) {
       setSelected(new Set())
     } else {
-      setSelected(new Set(PRESET_CATALOG.map((_, i) => i)))
+      setSelected(new Set(availableIndexes))
     }
   }
 
@@ -169,8 +192,8 @@ export default function ImportPage() {
       body: JSON.stringify({ storeId, rows }),
     })
     const data = await res.json()
-    setResult(`✅ Imported ${data.created} products${data.errors?.length ? ` (${data.errors.length} skipped)` : ''}`)
     setLoading(false)
+    router.push(`/admin/${storeId}/products?imported=${data.created}`)
   }
 
   async function importCSV() {
@@ -216,7 +239,7 @@ export default function ImportPage() {
         {tab === 'preset' && (
           <>
             <div className="flex items-center justify-between">
-              <p className="text-sm text-gray-400">{selected.size} of {catalog.length} selected</p>
+              <p className="text-sm text-gray-400">{selected.size} of {availableIndexes.length} new selected{existingNames.size > 0 ? ` · ${existingNames.size} already imported` : ''}</p>
               <div className="flex gap-3">
                 <button onClick={fetchImages} disabled={fetchingImages || loading} className="text-sm text-brand underline">
                   {fetchingImages ? 'Fetching…' : '🖼 Fetch Images'}
@@ -235,13 +258,17 @@ export default function ImportPage() {
               <div key={cat} className="space-y-1">
                 <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-widest">{cat}</h3>
                 {catalog.map((p, i) => p.category !== cat ? null : (
-                  <label key={i} className={`card flex items-center gap-3 cursor-pointer ${selected.has(i) ? 'border border-brand/40' : 'opacity-50'}`}>
-                    <input
-                      type="checkbox"
-                      checked={selected.has(i)}
-                      onChange={() => toggleItem(i)}
-                      className="accent-brand w-4 h-4 flex-shrink-0"
-                    />
+                  <label key={i} className={`card flex items-center gap-3 ${existingNames.has(p.name.toLowerCase()) ? 'opacity-40 cursor-default' : `cursor-pointer ${selected.has(i) ? 'border border-brand/40' : ''}`}`}>
+                    {existingNames.has(p.name.toLowerCase()) ? (
+                      <span className="w-4 h-4 flex-shrink-0 text-green-500 text-xs font-bold">✓</span>
+                    ) : (
+                      <input
+                        type="checkbox"
+                        checked={selected.has(i)}
+                        onChange={() => toggleItem(i)}
+                        className="accent-brand w-4 h-4 flex-shrink-0"
+                      />
+                    )}
                     {p.imageUrl ? (
                       <img src={p.imageUrl} alt={p.name} className="w-10 h-10 rounded-lg object-contain bg-white flex-shrink-0" />
                     ) : (
@@ -285,7 +312,7 @@ export default function ImportPage() {
         <div className="fixed bottom-0 left-0 right-0 p-4 bg-gray-950 border-t border-gray-800">
           <div className="max-w-2xl mx-auto">
             <button onClick={importPreset} disabled={loading || selected.size === 0} className="btn-primary">
-              {loading ? 'Importing…' : `Import ${selected.size} Products`}
+              {loading ? 'Importing…' : selected.size === 0 ? 'All products already imported' : `Import ${selected.size} New Products`}
             </button>
           </div>
         </div>
