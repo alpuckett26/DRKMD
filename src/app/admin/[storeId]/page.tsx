@@ -99,31 +99,45 @@ export default function AdminDashboard() {
   return (
     <div className="min-h-screen pb-10">
       <div className="panel">
-        <div className="max-w-2xl mx-auto px-4 py-4 flex items-center justify-between">
+        <div className="max-w-2xl mx-auto px-4 pt-4 pb-3 flex items-center justify-between gap-3">
           <div>
-            <h1 className="font-black text-lg text-brand glow-text">WendOS</h1>
-            <p className="text-sm text-gray-400">{store.name}</p>
+            <h1 className="font-black text-xl text-brand glow-text leading-none">WendOS</h1>
+            <p className="text-xs text-gray-400 mt-0.5">{store.name}</p>
           </div>
-          <div className="flex gap-3 text-sm items-center">
-            <Link href={`/admin/${storeId}/products`} className="text-brand underline">Products</Link>
-            <Link href={`/admin/${storeId}/orders`} className="text-brand underline">Orders</Link>
-            <Link href={`/admin/${storeId}/staff`} className="text-brand underline">Staff</Link>
-            <Link href={`/staff/${storeId}/orders`} className="text-gray-400 underline">Staff View</Link>
-            <Link href={`/fulfillment/${storeId}`} className="text-gray-400 underline">Fulfillment</Link>
-            {!isDemo && (
-              <button onClick={logout} className="text-gray-600 text-xs underline hover:text-gray-400 transition-colors">
-                Sign out
-              </button>
-            )}
-          </div>
+          {!isDemo && (
+            <button onClick={logout} className="text-xs text-gray-500 hover:text-gray-300 transition-colors px-3 py-1.5 rounded-lg bg-gray-800">
+              Sign out
+            </button>
+          )}
+        </div>
+        {/* Nav strip */}
+        <div className="flex gap-2 overflow-x-auto px-4 pb-3" style={{ scrollbarWidth: 'none' }}>
+          {[
+            { href: `/admin/${storeId}/products`, label: '📦 Products' },
+            { href: `/admin/${storeId}/orders`, label: '📋 Orders' },
+            { href: `/admin/${storeId}/staff`, label: '👥 Staff' },
+            { href: `/staff/${storeId}/orders`, label: '🧾 Staff View' },
+            { href: `/fulfillment/${storeId}`, label: '🖥️ Fulfillment' },
+          ].map(({ href, label }) => (
+            <Link key={href} href={href}
+              className="shrink-0 text-xs font-semibold px-3 py-1.5 rounded-full bg-gray-800 text-gray-300 hover:text-white hover:bg-gray-700 transition-colors whitespace-nowrap">
+              {label}
+            </Link>
+          ))}
         </div>
       </div>
 
       {!onboardingComplete && (
-        <div className="bg-brand/10 border-b border-brand/30 px-4 py-3">
-          <div className="max-w-2xl mx-auto flex items-center justify-between gap-4">
-            <p className="text-sm text-brand font-semibold">⚠️ Setup not complete — your kit hasn&apos;t been ordered yet.</p>
-            <Link href={`/admin/${storeId}/setup`} className="btn-primary text-xs shrink-0">Complete Setup →</Link>
+        <div className="max-w-2xl mx-auto px-4 pt-4">
+          <div className="rounded-2xl p-4 space-y-3" style={{ background: 'rgba(46,168,255,0.08)', border: '1px solid rgba(46,168,255,0.3)' }}>
+            <div className="flex items-start gap-3">
+              <span className="text-xl mt-0.5">⚠️</span>
+              <div>
+                <p className="font-bold text-sm text-white">Setup not complete</p>
+                <p className="text-xs text-gray-400 mt-0.5">Your starter kit hasn&apos;t been ordered yet. Finish setup to go live.</p>
+              </div>
+            </div>
+            <Link href={`/admin/${storeId}/setup`} className="btn-primary block text-center">Complete Setup →</Link>
           </div>
         </div>
       )}
