@@ -17,6 +17,9 @@ export default function ProductsPage() {
   const [loading, setLoading] = useState(true)
   const [showAdd, setShowAdd] = useState(false)
   const [selected, setSelected] = useState<ExtendedProduct | null>(null)
+  const [bulkMode, setBulkMode] = useState(false)
+  const [bulkSelected, setBulkSelected] = useState<Set<string>>(new Set())
+  const [deleting, setDeleting] = useState(false)
   const [form, setForm] = useState({
     name: '', category: '',
     nighttimeAvailable: true, restrictedFlag: false,
@@ -95,6 +98,39 @@ export default function ProductsPage() {
     setProducts(prev => prev.map(p => p.id === updated.id ? updated : p))
   }
 
+  function toggleBulkSelect(id: string) {
+    setBulkSelected(prev => {
+      const next = new Set(prev)
+      next.has(id) ? next.delete(id) : next.add(id)
+      return next
+    })
+  }
+
+  function selectAll() {
+    setBulkSelected(new Set(products.map(p => p.id)))
+  }
+
+  function clearSelection() {
+    setBulkSelected(new Set())
+    setBulkMode(false)
+  }
+
+  async function deleteSelected() {
+    if (bulkSelected.size === 0) return
+    setDeleting(true)
+    await Promise.all(Array.from(bulkSelected).map(id =>
+      fetch(`/api/admin/products/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ active: false }),
+      })
+    ))
+    setProducts(prev => prev.filter(p => !bulkSelected.has(p.id)))
+    setBulkSelected(new Set())
+    setBulkMode(false)
+    setDeleting(false)
+  }
+
   const featured = products.filter(p => p.promoted)
   const regular = products.filter(p => !p.promoted)
 
@@ -107,14 +143,37 @@ export default function ProductsPage() {
             <h1 className="font-bold text-lg">Night Menu</h1>
           </div>
           <div className="flex gap-3 items-center">
-            <button onClick={refreshAllImages} disabled={refreshing} className="text-gray-400 text-sm font-semibold">
-              {refreshing ? '⟳ Refreshing…' : '⟳ Pics'}
-            </button>
-            <Link href={`/admin/${storeId}/scan`} className="text-gray-400 text-sm font-semibold underline">Scan Shelf</Link>
-            <Link href={`/admin/${storeId}/import`} className="text-gray-400 text-sm font-semibold underline">Import</Link>
-            <button onClick={() => setShowAdd(v => !v)} className="text-brand text-sm font-semibold">
-              {showAdd ? 'Cancel' : '+ Add Item'}
-            </button>
+            {bulkMode ? (
+              <>
+                <button onClick={selectAll} className="text-gray-400 text-sm font-semibold">
+                  All
+                </button>
+                <button
+                  onClick={deleteSelected}
+                  disabled={bulkSelected.size === 0 || deleting}
+                  className="text-red-400 text-sm font-semibold disabled:opacity-40"
+                >
+                  {deleting ? 'Removing…' : `Remove ${bulkSelected.size > 0 ? `(${bulkSelected.size})` : ''}`}
+                </button>
+                <button onClick={clearSelection} className="text-brand text-sm font-semibold">
+                  Done
+                </button>
+              </>
+            ) : (
+              <>
+                <button onClick={refreshAllImages} disabled={refreshing} className="text-gray-400 text-sm font-semibold">
+                  {refreshing ? '⟳…' : '⟳ Pics'}
+                </button>
+                <Link href={`/admin/${storeId}/scan`} className="text-gray-400 text-sm font-semibold underline">Scan</Link>
+                <Link href={`/admin/${storeId}/import`} className="text-gray-400 text-sm font-semibold underline">Import</Link>
+                <button onClick={() => { setBulkMode(true); setShowAdd(false) }} className="text-gray-400 text-sm font-semibold">
+                  Select
+                </button>
+                <button onClick={() => setShowAdd(v => !v)} className="text-brand text-sm font-semibold">
+                  {showAdd ? 'Cancel' : '+ Add'}
+                </button>
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -155,7 +214,7 @@ export default function ProductsPage() {
           </div>
         ) : (
           <div className="space-y-6">
-            {featured.length > 0 && (
+            {featured.length > 0 && !bulkMode && (
               <div>
                 <div className="flex items-center gap-2 mb-2">
                   <span>⚡</span>
@@ -163,19 +222,30 @@ export default function ProductsPage() {
                 </div>
                 <div className="space-y-2">
                   {featured.map(product => (
-                    <ProductRow key={product.id} product={product} onOpen={() => setSelected(product)} />
+                    <ProductRow key={product.id} product={product} onOpen={() => setSelected(product)}
+                      bulkMode={false} checked={false} onToggle={() => {}} />
                   ))}
                 </div>
               </div>
             )}
 
             <div>
-              {featured.length > 0 && (
+              {featured.length > 0 && !bulkMode && (
                 <h2 className="text-xs font-black uppercase tracking-widest text-gray-500 mb-2">All Items</h2>
               )}
+              {bulkMode && (
+                <p className="text-xs text-gray-500 mb-2">{bulkSelected.size} of {products.length} selected</p>
+              )}
               <div className="space-y-2">
-                {regular.map(product => (
-                  <ProductRow key={product.id} product={product} onOpen={() => setSelected(product)} />
+                {(bulkMode ? products : regular).map(product => (
+                  <ProductRow
+                    key={product.id}
+                    product={product}
+                    onOpen={() => !bulkMode && setSelected(product)}
+                    bulkMode={bulkMode}
+                    checked={bulkSelected.has(product.id)}
+                    onToggle={() => toggleBulkSelect(product.id)}
+                  />
                 ))}
               </div>
             </div>
@@ -183,7 +253,7 @@ export default function ProductsPage() {
         )}
       </div>
 
-      {selected && (
+      {selected && !bulkMode && (
         <ProductDetailSheet
           product={selected}
           onClose={() => { setSelected(null); fetchProducts() }}
@@ -194,40 +264,54 @@ export default function ProductsPage() {
   )
 }
 
-function ProductRow({ product, onOpen }: { product: ExtendedProduct; onOpen: () => void }) {
+function ProductRow({
+  product, onOpen, bulkMode, checked, onToggle,
+}: {
+  product: ExtendedProduct
+  onOpen: () => void
+  bulkMode: boolean
+  checked: boolean
+  onToggle: () => void
+}) {
   return (
     <button
-      onClick={onOpen}
+      onClick={bulkMode ? onToggle : onOpen}
       className="card flex items-center gap-3 w-full text-left active:opacity-70 transition-opacity"
-      style={product.promoted ? { borderColor: 'rgba(46,168,255,0.45)', boxShadow: '0 0 12px rgba(46,168,255,0.12)' } : {}}
+      style={!bulkMode && product.promoted ? { borderColor: 'rgba(46,168,255,0.45)', boxShadow: '0 0 12px rgba(46,168,255,0.12)' } : {}}
     >
-      <div className="w-12 h-12 rounded-xl bg-gray-800 shrink-0 overflow-hidden flex items-center justify-center">
-        {product.imageUrl
-          ? <Image src={product.imageUrl} alt={product.name} width={48} height={48} className="object-cover w-full h-full" unoptimized />
-          : <span className="text-xl">🛒</span>
-        }
-      </div>
+      {bulkMode ? (
+        <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${
+          checked ? 'bg-brand border-brand' : 'border-gray-600'
+        }`}>
+          {checked && <span className="text-white text-xs font-black">✓</span>}
+        </div>
+      ) : (
+        <div className="w-12 h-12 rounded-xl bg-gray-800 shrink-0 overflow-hidden flex items-center justify-center">
+          {product.imageUrl
+            ? <Image src={product.imageUrl} alt={product.name} width={48} height={48} className="object-cover w-full h-full" unoptimized />
+            : <span className="text-xl">🛒</span>
+          }
+        </div>
+      )}
       <div className="flex-1 min-w-0">
         <p className="font-semibold text-sm truncate">{product.name}</p>
         <div className="flex items-center gap-2 mt-0.5">
           {product.category && <span className="text-xs text-gray-500">{product.category}</span>}
           {product.restrictedFlag && <span className="badge bg-red-900 text-red-400">21+</span>}
-          {product.promoted && <span className="badge bg-blue-900 text-brand">⚡ Featured</span>}
+          {!bulkMode && product.promoted && <span className="badge bg-blue-900 text-brand">⚡</span>}
           {product.price === 0
             ? <span className="text-xs text-yellow-600">Pricing pending</span>
             : <span className="text-xs text-gray-600">${(product.price / 100).toFixed(2)}</span>
           }
         </div>
       </div>
-      <span className="text-gray-600 text-lg">›</span>
+      {!bulkMode && <span className="text-gray-600 text-lg">›</span>}
     </button>
   )
 }
 
 function ProductDetailSheet({
-  product,
-  onClose,
-  onUpdate,
+  product, onClose, onUpdate,
 }: {
   product: ExtendedProduct
   onClose: () => void
@@ -280,82 +364,44 @@ function ProductDetailSheet({
 
   return (
     <>
-      {/* Backdrop */}
-      <div
-        className="fixed inset-0 bg-black/60 z-40"
-        onClick={onClose}
-      />
-
-      {/* Sheet */}
+      <div className="fixed inset-0 bg-black/60 z-40" onClick={onClose} />
       <div className="fixed bottom-0 left-0 right-0 z-50 max-w-2xl mx-auto bg-gray-900 rounded-t-3xl overflow-hidden"
-        style={{ maxHeight: '90vh', overflowY: 'auto' }}
-      >
-        {/* Drag handle */}
+        style={{ maxHeight: '90vh', overflowY: 'auto' }}>
         <div className="flex justify-center pt-3 pb-1">
           <div className="w-10 h-1 rounded-full bg-gray-700" />
         </div>
-
-        {/* Image */}
         <div className="relative mx-4 mt-2 rounded-2xl overflow-hidden bg-gray-800 flex items-center justify-center"
-          style={{ height: 200 }}
-        >
+          style={{ height: 200 }}>
           {draft.imageUrl && !imgError
-            ? <Image
-                src={draft.imageUrl}
-                alt={draft.name}
-                fill
-                className="object-contain"
-                unoptimized
-                onError={() => setImgError(true)}
-              />
+            ? <Image src={draft.imageUrl} alt={draft.name} fill className="object-contain" unoptimized onError={() => setImgError(true)} />
             : <span className="text-6xl">🛒</span>
           }
-          <button
-            onClick={refreshImage}
-            disabled={refreshingImage}
-            className="absolute bottom-2 right-2 bg-black/60 text-white text-xs px-3 py-1.5 rounded-full font-semibold backdrop-blur-sm"
-          >
+          <button onClick={refreshImage} disabled={refreshingImage}
+            className="absolute bottom-2 right-2 bg-black/60 text-white text-xs px-3 py-1.5 rounded-full font-semibold backdrop-blur-sm">
             {refreshingImage ? 'Searching…' : '↺ Refresh Image'}
           </button>
         </div>
-
-        {/* Fields */}
         <div className="px-4 pt-4 pb-8 space-y-4">
           <div className="space-y-3">
             <div>
               <label className="text-xs text-gray-500 uppercase tracking-wider">Product Name</label>
-              <input
-                value={draft.name}
-                onChange={e => setDraft(d => ({ ...d, name: e.target.value }))}
-                className="input mt-1"
-              />
+              <input value={draft.name} onChange={e => setDraft(d => ({ ...d, name: e.target.value }))} className="input mt-1" />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="text-xs text-gray-500 uppercase tracking-wider">Category</label>
-                <input
-                  value={draft.category ?? ''}
-                  onChange={e => setDraft(d => ({ ...d, category: e.target.value }))}
-                  placeholder="e.g. Drinks"
-                  className="input mt-1"
-                />
+                <input value={draft.category ?? ''} onChange={e => setDraft(d => ({ ...d, category: e.target.value }))}
+                  placeholder="e.g. Drinks" className="input mt-1" />
               </div>
               <div>
                 <label className="text-xs text-gray-500 uppercase tracking-wider">Price ($)</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  min="0"
+                <input type="number" step="0.01" min="0"
                   value={draft.price === 0 ? '' : (draft.price / 100).toFixed(2)}
                   onChange={e => setDraft(d => ({ ...d, price: Math.round(parseFloat(e.target.value || '0') * 100) }))}
-                  placeholder="0.00"
-                  className="input mt-1"
-                />
+                  placeholder="0.00" className="input mt-1" />
               </div>
             </div>
           </div>
-
-          {/* Toggles */}
           <div className="card space-y-3">
             {([
               ['nighttimeAvailable', 'Night Menu', 'Show on after-hours menu'],
@@ -367,17 +413,13 @@ function ProductDetailSheet({
                   <p className="text-sm font-semibold">{label}</p>
                   <p className="text-xs text-gray-500">{desc}</p>
                 </div>
-                <div
-                  onClick={() => setDraft(d => ({ ...d, [key]: !d[key] }))}
-                  className={`w-11 h-6 rounded-full transition-colors relative ${draft[key] ? 'bg-brand' : 'bg-gray-700'}`}
-                >
+                <div onClick={() => setDraft(d => ({ ...d, [key]: !d[key] }))}
+                  className={`w-11 h-6 rounded-full transition-colors relative ${draft[key] ? 'bg-brand' : 'bg-gray-700'}`}>
                   <div className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${draft[key] ? 'translate-x-5' : 'translate-x-0.5'}`} />
                 </div>
               </label>
             ))}
           </div>
-
-          {/* Actions */}
           <button onClick={save} disabled={saving} className="btn-primary w-full">
             {saving ? 'Saving…' : 'Save Changes'}
           </button>
