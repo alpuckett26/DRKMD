@@ -22,6 +22,7 @@ export default function ProductsPage() {
     nighttimeAvailable: true, restrictedFlag: false,
   })
   const [saving, setSaving] = useState(false)
+  const [refreshing, setRefreshing] = useState(false)
 
   async function fetchProducts() {
     const res = await fetch(`/api/stores/${storeId}/menu`)
@@ -46,6 +47,24 @@ export default function ProductsPage() {
       })
       setProducts(prev => prev.map(x => x.id === p.id ? { ...x, imageUrl } : x))
     }
+  }
+
+  async function refreshAllImages() {
+    setRefreshing(true)
+    const current = await fetch(`/api/stores/${storeId}/menu`).then(r => r.json()) as ExtendedProduct[]
+    for (const p of current) {
+      const r = await fetch(`/api/admin/products/image-lookup?name=${encodeURIComponent(p.name)}`)
+      if (!r.ok) continue
+      const { imageUrl } = await r.json()
+      if (!imageUrl) continue
+      fetch(`/api/admin/products/${p.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ imageUrl }),
+      })
+      setProducts(prev => prev.map(x => x.id === p.id ? { ...x, imageUrl } : x))
+    }
+    setRefreshing(false)
   }
 
   useEffect(() => { fetchProducts() }, [storeId])
@@ -88,6 +107,9 @@ export default function ProductsPage() {
             <h1 className="font-bold text-lg">Night Menu</h1>
           </div>
           <div className="flex gap-3 items-center">
+            <button onClick={refreshAllImages} disabled={refreshing} className="text-gray-400 text-sm font-semibold">
+              {refreshing ? '⟳ Refreshing…' : '⟳ Pics'}
+            </button>
             <Link href={`/admin/${storeId}/scan`} className="text-gray-400 text-sm font-semibold underline">Scan Shelf</Link>
             <Link href={`/admin/${storeId}/import`} className="text-gray-400 text-sm font-semibold underline">Import</Link>
             <button onClick={() => setShowAdd(v => !v)} className="text-brand text-sm font-semibold">
