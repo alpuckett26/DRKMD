@@ -21,6 +21,14 @@ interface OFFProduct {
   image_url?: string
 }
 
+function isRelevantMatch(query: string, productName: string): boolean {
+  const words = query.toLowerCase().replace(/[^a-z0-9\s]/g, '').split(/\s+/).filter(w => w.length > 3)
+  if (words.length === 0) return true
+  const result = productName.toLowerCase()
+  const hits = words.filter(w => result.includes(w)).length
+  return hits >= Math.ceil(words.length / 2)
+}
+
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url)
   const name = searchParams.get('name')
@@ -41,7 +49,7 @@ export async function GET(req: Request) {
     if (!ct.includes('application/json')) return NextResponse.json(null)
 
     const data = await res.json() as { products?: OFFProduct[] }
-    const item = data.products?.[0]
+    const item = data.products?.find(p => isRelevantMatch(name, p.product_name ?? ''))
     if (!item) return NextResponse.json(null)
 
     const topCategory = item.categories?.split(',')[0]?.trim() ?? null
