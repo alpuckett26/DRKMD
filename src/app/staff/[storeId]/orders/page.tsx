@@ -41,9 +41,12 @@ export default function StaffOrdersPage() {
     <div className="min-h-screen pb-10">
       <div className="bg-gray-900 border-b border-gray-800 sticky top-0 z-10">
         <div className="max-w-2xl mx-auto px-4 py-4 flex items-center justify-between">
-          <div>
-            <h1 className="font-bold text-lg">Incoming Orders</h1>
-            <p className="text-xs text-gray-500 animate-pulse">Live • refreshes every 10s</p>
+          <div className="flex items-center gap-3">
+            <Link href={`/admin/${storeId}`} className="text-gray-400 text-2xl leading-none">‹</Link>
+            <div>
+              <h1 className="font-bold text-lg">Incoming Orders</h1>
+              <p className="text-xs text-gray-500 animate-pulse">Live • refreshes every 10s</p>
+            </div>
           </div>
           <Link href={`/staff/${storeId}/handoff`} className="text-sm text-brand underline">
             Verify Handoff
