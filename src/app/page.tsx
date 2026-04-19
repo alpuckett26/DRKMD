@@ -43,7 +43,7 @@ export default function Home() {
       <header className="panel sticky top-0 z-20">
         <div className="max-w-lg mx-auto px-4 py-3 flex items-center justify-between">
           <div>
-            <p className="text-[11px] uppercase tracking-widest text-gray-500 font-semibold">Delivery to</p>
+            <p className="text-[11px] uppercase tracking-widest text-gray-500 font-semibold">Window pickup near</p>
             <button onClick={useMyLocation} className="flex items-center gap-1.5 font-bold text-base">
               {locating ? 'Locating…' : locationLabel}
               <span className="text-gray-500 text-xs">▾</span>
