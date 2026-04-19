@@ -172,6 +172,35 @@ export default function MenuPage() {
         )}
       </div>
 
+      {/* Hero banner */}
+      {!search && activeCategory === 'All' && (
+        <div className="relative w-full overflow-hidden" style={{ height: '42vw', maxHeight: 220 }}>
+          {(store as StoreInfo & { logoUrl?: string })?.logoUrl ? (
+            <Image
+              src={(store as StoreInfo & { logoUrl?: string }).logoUrl!}
+              alt={store?.name ?? ''}
+              fill
+              className="object-cover"
+              unoptimized
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center"
+              style={{ background: 'linear-gradient(135deg, rgba(46,168,255,0.25) 0%, rgba(5,10,18,1) 70%)' }}>
+              <div className="text-center px-6">
+                <p className="font-black text-2xl text-white">{store?.name}</p>
+                <p className="text-xs text-gray-400 mt-1">Tap any item to add it to your order</p>
+              </div>
+            </div>
+          )}
+          {/* gradient overlay for text legibility */}
+          <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, rgba(5,10,18,0.85) 0%, rgba(5,10,18,0.1) 60%, transparent 100%)' }} />
+          <div className="absolute bottom-0 left-0 right-0 px-4 pb-3">
+            <p className="font-black text-lg text-white leading-tight">{store?.name}</p>
+            <p className="text-xs text-gray-300 mt-0.5">📍 Tap any item · Pay at checkout · Pick up at window</p>
+          </div>
+        </div>
+      )}
+
       <div className="max-w-lg mx-auto px-4 pt-4 space-y-6">
         {/* Hot Picks impulse strip */}
         {promoted.length > 0 && !search && activeCategory === 'All' && (
@@ -362,30 +391,37 @@ function ProductCard({ product, qty, onAdd, onOpen }: { product: ProductInfo; qt
   const [imgError, setImgError] = useState(false)
   return (
     <div onClick={onOpen} className="product-card cursor-pointer active:scale-95 transition-transform">
-      <div className="relative aspect-square bg-gray-800">
-        {product.imageUrl && !imgError ? (
-          <Image src={product.imageUrl} alt={product.name} fill className="object-contain p-2" unoptimized onError={() => setImgError(true)} />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center text-4xl">
-            {CAT_ICON[product.category ?? ''] ?? '🛒'}
-          </div>
-        )}
+      {/* 4:3 image area — 33% taller than before */}
+      <div className="relative w-full bg-gray-800" style={{ paddingBottom: '75%' }}>
+        <div className="absolute inset-0 flex items-center justify-center">
+          {product.imageUrl && !imgError ? (
+            <Image src={product.imageUrl} alt={product.name} fill className="object-contain p-2" unoptimized onError={() => setImgError(true)} />
+          ) : (
+            <span className="text-5xl">{CAT_ICON[product.category ?? ''] ?? '🛒'}</span>
+          )}
+        </div>
         {product.restrictedFlag && (
-          <span className="absolute top-2 left-2 badge bg-red-900 text-red-400 text-xs">21+</span>
+          <span className="absolute top-2 left-2 badge bg-red-900/80 text-red-300 text-xs backdrop-blur-sm">21+</span>
         )}
         {product.promoted && (
-          <span className="absolute top-2 right-2 text-xs">⚡</span>
+          <span className="absolute top-2 right-2 text-base">⚡</span>
+        )}
+        {qty > 0 && (
+          <span className="absolute top-2 right-2 w-5 h-5 rounded-full bg-brand text-white text-xs font-bold flex items-center justify-center">{qty}</span>
         )}
       </div>
       <div className="p-2.5 flex flex-col flex-1 justify-between gap-2">
         <p className="text-xs font-semibold leading-snug line-clamp-2">{product.name}</p>
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-1">
           <span className="text-brand font-black text-sm">{formatCents(product.price)}</span>
           <button
             onClick={e => { e.stopPropagation(); onAdd() }}
-            className={`w-8 h-8 rounded-full font-bold text-sm flex items-center justify-center transition-colors shrink-0 ${
-              qty > 0 ? 'bg-brand text-white' : 'bg-gray-700 text-gray-300 hover:bg-brand hover:text-white'
-            }`}
+            className="w-8 h-8 rounded-full font-bold text-lg flex items-center justify-center transition-all shrink-0"
+            style={{
+              background: qty > 0 ? '#2EA8FF' : 'rgba(46,168,255,0.18)',
+              color: qty > 0 ? '#fff' : '#2EA8FF',
+              border: '1.5px solid rgba(46,168,255,0.5)',
+            }}
           >
             {qty > 0 ? qty : '+'}
           </button>
