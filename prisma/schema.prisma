@@ -37,6 +37,20 @@ model Store {
   updatedAt         DateTime  @updatedAt
 }
 
+model StoreRequest {
+  id            String   @id @default(cuid())
+  storeName     String
+  city          String?
+  state         String?
+  address       String?
+  ownerName     String?
+  contactEmail  String?
+  contactPhone  String?
+  notes         String?
+  status        String   @default("new")
+  createdAt     DateTime @default(now())
+}
+
 model Account {
   id             String    @id @default(cuid())
   email          String    @unique
