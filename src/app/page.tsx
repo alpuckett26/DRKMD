@@ -102,10 +102,10 @@ export default function Home() {
           className="block rounded-2xl p-4 bg-gradient-to-br from-brand/15 to-white/4 border border-brand/30 active:scale-[0.99] transition-transform"
         >
           <div className="flex items-start gap-3">
-            <span className="text-2xl shrink-0">🏪</span>
+            <span className="text-2xl shrink-0">🔔</span>
             <div className="flex-1">
               <p className="font-bold text-white text-base">Don&apos;t see your favorite store?</p>
-              <p className="text-xs text-gray-300 mt-1 leading-relaxed">Request your corner store and we&apos;ll reach out to get them set up with Window Mode — safer nights, more sales.</p>
+              <p className="text-xs text-gray-300 mt-1 leading-relaxed">Tell us where to roll out Window Mode next — we&apos;ll ping the owner and notify you the moment they go live.</p>
               <p className="text-sm text-brand font-semibold mt-2">Request your store →</p>
             </div>
           </div>

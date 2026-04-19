@@ -54,10 +54,10 @@ export default function RequestStorePage() {
     return (
       <main className="min-h-screen flex flex-col items-center justify-center p-6 text-center">
         <div className="max-w-sm space-y-4">
-          <p className="text-5xl">✅</p>
-          <h1 className="text-2xl font-black">Request received</h1>
+          <p className="text-5xl">🔔</p>
+          <h1 className="text-2xl font-black">You&apos;re on the list</h1>
           <p className="text-sm text-gray-400">
-            We&apos;ll reach out to <span className="font-bold text-gray-200">{storeName}</span> within 2 business days. Thanks for the heads up!
+            We&apos;ll reach out to <span className="font-bold text-gray-200">{storeName}</span> about Window Mode — and ping you the moment they go live so you can place your first order.
           </p>
           <p className="text-xs text-gray-500">Redirecting to home…</p>
         </div>
@@ -110,8 +110,9 @@ export default function RequestStorePage() {
             <input className="input" value={address} onChange={e => setAddress(e.target.value)} placeholder="123 Main St" />
           </Field>
 
-          <div className="pt-3 pb-1">
-            <p className="text-[11px] uppercase tracking-widest text-gray-500 font-bold">How can we reach you?</p>
+          <div className="pt-3 pb-1 space-y-1">
+            <p className="text-[11px] uppercase tracking-widest text-brand font-bold flex items-center gap-1.5"><span>🔔</span> Notify me when it&apos;s live</p>
+            <p className="text-xs text-gray-500">We&apos;ll message you the instant this store switches on Window Mode.</p>
           </div>
 
           <Field label="Your name">
@@ -122,7 +123,7 @@ export default function RequestStorePage() {
             <input type="email" className="input" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@example.com" />
           </Field>
 
-          <Field label="Phone">
+          <Field label="Phone (optional for SMS)">
             <input type="tel" className="input" value={phone} onChange={e => setPhone(e.target.value)} placeholder="(555) 123-4567" />
           </Field>
 
@@ -133,11 +134,11 @@ export default function RequestStorePage() {
           {error && <p className="text-sm text-red-400">{error}</p>}
 
           <button type="submit" disabled={submitting || !storeName.trim() || (!email.trim() && !phone.trim())} className="btn-primary">
-            {submitting ? 'Sending…' : 'Send request'}
+            {submitting ? 'Sending…' : '🔔 Notify me when it goes live'}
           </button>
 
           <p className="text-xs text-gray-500 text-center pt-2">
-            No obligation. We only contact the store owner if a request comes in from a real customer like you.
+            No obligation. We&apos;ll reach out to the store about Window Mode and ping you the moment they&apos;re live.
           </p>
         </form>
       </div>
