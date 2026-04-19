@@ -53,14 +53,7 @@ function ImpulseBuySection({ storeId }: { storeId: string }) {
   if (promoted.length === 0) return null
 
   return (
-    <div
-      className="rounded-2xl overflow-hidden"
-      style={{
-        background: 'rgba(46,168,255,0.06)',
-        border: '1px solid rgba(46,168,255,0.3)',
-        boxShadow: '0 0 24px rgba(46,168,255,0.08)',
-      }}
-    >
+    <div className="card overflow-hidden !p-0">
       <div className="px-4 pt-3 pb-2 flex items-center gap-2">
         <span>⚡</span>
         <p className="font-black text-sm uppercase tracking-widest text-gray-300">Add to your order</p>
@@ -70,13 +63,9 @@ function ImpulseBuySection({ storeId }: { storeId: string }) {
           <button
             key={product.id}
             onClick={() => addItem({ productId: product.id, name: product.name, price: product.price, restricted: product.restrictedFlag })}
-            className="shrink-0 w-28 rounded-xl overflow-hidden text-left transition-transform active:scale-95"
-            style={{
-              background: 'rgba(255,255,255,0.04)',
-              border: '1px solid rgba(46,168,255,0.25)',
-            }}
+            className="product-card shrink-0 w-28 text-left active:scale-95 transition-transform"
           >
-            <div className="relative aspect-square bg-gray-800/50">
+            <div className="relative aspect-square bg-white/5">
               {product.imageUrl ? (
                 <Image src={product.imageUrl} alt={product.name} fill className="object-contain p-1.5" unoptimized />
               ) : (
@@ -87,7 +76,7 @@ function ImpulseBuySection({ storeId }: { storeId: string }) {
             </div>
             <div className="p-2">
               <p className="text-xs font-semibold leading-tight line-clamp-2 mb-1">{product.name}</p>
-              <p className="text-brand font-black text-xs">{formatCents(product.price)}</p>
+              <p className="text-white font-black text-xs">{formatCents(product.price)}</p>
             </div>
           </button>
         ))}

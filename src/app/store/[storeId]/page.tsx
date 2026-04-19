@@ -175,8 +175,7 @@ export default function MenuPage() {
               unoptimized
             />
           ) : (
-            <div className="w-full h-full flex items-center justify-center"
-              style={{ background: 'linear-gradient(135deg, rgba(46,168,255,0.25) 0%, rgba(5,10,18,1) 70%)' }}>
+            <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-white/10 to-black">
               <div className="text-center px-6">
                 <p className="font-black text-2xl text-white">{store?.name}</p>
                 <p className="text-xs text-gray-400 mt-1">Tap any item to add it to your order</p>
