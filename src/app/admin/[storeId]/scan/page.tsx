@@ -176,7 +176,7 @@ export default function ScanShelfPage() {
           <Link
             href={`/admin/${storeId}/products`}
             onClick={stopCamera}
-            className="text-gray-400 text-2xl leading-none"
+            className="text-gray-500 text-2xl leading-none"
           >
             ‹
           </Link>
@@ -186,7 +186,7 @@ export default function ScanShelfPage() {
 
       {error && (
         <div className="max-w-2xl mx-auto w-full px-4 pt-3">
-          <div className="bg-red-900/20 text-red-400 text-sm px-4 py-3 rounded-xl">{error}</div>
+          <div className="bg-red-100/20 text-red-700 text-sm px-4 py-3 rounded-xl">{error}</div>
         </div>
       )}
 
@@ -219,16 +219,16 @@ export default function ScanShelfPage() {
 
             {/* Camera loading */}
             {!cameraReady && !cameraError && (
-              <div className="absolute inset-0 flex items-center justify-center bg-gray-950">
+              <div className="absolute inset-0 flex items-center justify-center bg-white">
                 <div className="w-8 h-8 border-4 border-brand border-t-transparent rounded-full animate-spin" />
               </div>
             )}
 
             {/* Camera unavailable — fallback to file */}
             {cameraError && (
-              <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-950 gap-4 px-8">
+              <div className="absolute inset-0 flex flex-col items-center justify-center bg-white gap-4 px-8">
                 <p className="text-4xl">📷</p>
-                <p className="text-gray-400 text-sm text-center">Camera access unavailable</p>
+                <p className="text-gray-500 text-sm text-center">Camera access unavailable</p>
                 <input
                   ref={fileRef}
                   type="file"
@@ -287,7 +287,7 @@ export default function ScanShelfPage() {
       {/* ── CAPTURE: photo preview ── */}
       {stage === 'capture' && preview && (
         <div className="flex flex-col flex-1 max-w-2xl mx-auto w-full px-4 pt-4 pb-6 gap-3">
-          <div className="relative w-full rounded-xl overflow-hidden bg-gray-800" style={{ aspectRatio: '4/3' }}>
+          <div className="relative w-full rounded-xl overflow-hidden bg-gray-100" style={{ aspectRatio: '4/3' }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={preview} alt="Shelf preview" className="w-full h-full object-contain" />
           </div>
@@ -302,7 +302,7 @@ export default function ScanShelfPage() {
       {stage === 'scanning' && (
         <div className="flex-1 flex flex-col items-center justify-center gap-4">
           <div className="w-10 h-10 border-4 border-brand border-t-transparent rounded-full animate-spin" />
-          <p className="text-gray-400 text-sm animate-pulse">Analyzing shelf with Claude Vision…</p>
+          <p className="text-gray-500 text-sm animate-pulse">Analyzing shelf with Claude Vision…</p>
         </div>
       )}
 
@@ -310,7 +310,7 @@ export default function ScanShelfPage() {
       {stage === 'review' && products.length > 0 && (
         <div className="max-w-2xl mx-auto w-full px-4 pt-4 pb-6 space-y-4">
           <div className="flex items-center justify-between">
-            <p className="text-sm text-gray-400">{products.length} products identified · {selectedCount} selected</p>
+            <p className="text-sm text-gray-500">{products.length} products identified · {selectedCount} selected</p>
             <button onClick={reset} className="text-xs text-gray-500 underline">Start over</button>
           </div>
 
@@ -322,11 +322,11 @@ export default function ScanShelfPage() {
                 onClick={() => toggle(i)}
               >
                 {p.imageUrl ? (
-                  <div className="w-14 h-14 rounded-lg overflow-hidden bg-gray-800 flex-shrink-0">
+                  <div className="w-14 h-14 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
                     <Image src={p.imageUrl} alt={p.name} width={56} height={56} className="w-full h-full object-contain" unoptimized />
                   </div>
                 ) : (
-                  <div className="w-14 h-14 rounded-lg bg-gray-800 flex-shrink-0 flex items-center justify-center text-2xl">🏪</div>
+                  <div className="w-14 h-14 rounded-lg bg-gray-100 flex-shrink-0 flex items-center justify-center text-2xl">🏪</div>
                 )}
                 <div className="flex-1 min-w-0 space-y-1">
                   <p className="font-semibold text-sm leading-tight">{p.name}</p>
@@ -339,7 +339,7 @@ export default function ScanShelfPage() {
                     className="input text-sm py-1 w-28"
                   />
                 </div>
-                <div className={`w-5 h-5 rounded border-2 flex-shrink-0 mt-1 flex items-center justify-center ${p.selected ? 'bg-brand border-brand' : 'border-gray-600'}`}>
+                <div className={`w-5 h-5 rounded border-2 flex-shrink-0 mt-1 flex items-center justify-center ${p.selected ? 'bg-brand border-brand' : 'border-gray-300'}`}>
                   {p.selected && <span className="text-black text-xs font-bold">✓</span>}
                 </div>
               </div>
@@ -356,7 +356,7 @@ export default function ScanShelfPage() {
       {stage === 'importing' && (
         <div className="flex-1 flex flex-col items-center justify-center gap-4">
           <div className="w-10 h-10 border-4 border-brand border-t-transparent rounded-full animate-spin" />
-          <p className="text-gray-400 text-sm animate-pulse">Importing products…</p>
+          <p className="text-gray-500 text-sm animate-pulse">Importing products…</p>
         </div>
       )}
 

@@ -225,7 +225,7 @@ export default function CheckoutPage() {
                 <span className="text-gray-700">{formatCents(i.price * i.qty)}</span>
               </div>
             ))}
-            <div className="border-t border-gray-700 pt-2 space-y-1">
+            <div className="border-t border-gray-200 pt-2 space-y-1">
               <div className="flex justify-between text-sm text-gray-500">
                 <span>Subtotal</span>
                 <span>{formatCents(total)}</span>
@@ -234,7 +234,7 @@ export default function CheckoutPage() {
                 <span>Convenience Fee (12.5%)</span>
                 <span>{formatCents(serviceFee)}</span>
               </div>
-              <div className="flex justify-between font-bold pt-1 border-t border-gray-700">
+              <div className="flex justify-between font-bold pt-1 border-t border-gray-200">
                 <span>Estimated Total</span>
                 <span className="text-brand">{formatCents(grandTotal)}</span>
               </div>
@@ -298,7 +298,7 @@ export default function CheckoutPage() {
                 <span className="text-gray-700">{formatCents(i.price * i.qty)}</span>
               </div>
             ))}
-            <div className="border-t border-gray-700 pt-2 space-y-1">
+            <div className="border-t border-gray-200 pt-2 space-y-1">
               <div className="flex justify-between text-sm text-gray-500">
                 <span>Subtotal</span>
                 <span>{formatCents(total)}</span>
@@ -307,7 +307,7 @@ export default function CheckoutPage() {
                 <span>Convenience Fee (12.5%)</span>
                 <span>{formatCents(serviceFee)}</span>
               </div>
-              <div className="flex justify-between font-bold pt-1 border-t border-gray-700">
+              <div className="flex justify-between font-bold pt-1 border-t border-gray-200">
                 <span>Estimated Total</span>
                 <span className="text-brand">{formatCents(grandTotal)}</span>
               </div>

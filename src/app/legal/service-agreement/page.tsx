@@ -15,10 +15,10 @@ export default function ServiceAgreement() {
         </div>
       </div>
 
-      <div className="max-w-2xl mx-auto px-4 pt-8 space-y-8 text-sm text-gray-300 leading-relaxed">
+      <div className="max-w-2xl mx-auto px-4 pt-8 space-y-8 text-sm text-gray-700 leading-relaxed">
 
         <div className="card border-brand/30 space-y-2">
-          <p className="text-xs text-gray-500">This agreement is between <strong className="text-white">WendOS, LLC</strong> ("WendOS," "we," "us") and the registered store operator ("Store," "you") who has completed the onboarding process. By checking the agreement box during onboarding or by using the WendOS platform, you accept these terms in full.</p>
+          <p className="text-xs text-gray-500">This agreement is between <strong className="text-gray-900">WendOS, LLC</strong> ("WendOS," "we," "us") and the registered store operator ("Store," "you") who has completed the onboarding process. By checking the agreement box during onboarding or by using the WendOS platform, you accept these terms in full.</p>
         </div>
 
         <Section title="1. Services Provided">
@@ -151,7 +151,7 @@ export default function ServiceAgreement() {
         </Section>
 
         <div className="card border-brand/20 text-center space-y-2">
-          <p className="text-xs text-gray-500">Questions? Reach us at <strong className="text-gray-300">support@wendos.com</strong></p>
+          <p className="text-xs text-gray-500">Questions? Reach us at <strong className="text-gray-700">support@wendos.com</strong></p>
           <p className="text-xs text-gray-600">WendOS, LLC · Service Agreement v1.0 · Effective {EFFECTIVE}</p>
           <p className="text-xs text-yellow-600">This document is provided for informational purposes. Consult a licensed attorney before relying on any legal document.</p>
         </div>
@@ -164,15 +164,15 @@ export default function ServiceAgreement() {
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="space-y-3">
-      <h2 className="font-black text-base text-white border-b border-gray-800 pb-2">{title}</h2>
-      <div className="space-y-2 text-gray-300">{children}</div>
+      <h2 className="font-black text-base text-gray-900 border-b border-gray-200 pb-2">{title}</h2>
+      <div className="space-y-2 text-gray-700">{children}</div>
     </div>
   )
 }
 
 function Row({ label, value, sub }: { label: string; value: string; sub?: string }) {
   return (
-    <div className="flex items-start justify-between gap-4 py-1 border-b border-gray-800/50">
+    <div className="flex items-start justify-between gap-4 py-1 border-b border-gray-200/50">
       <div>
         <p className="text-sm">{label}</p>
         {sub && <p className="text-xs text-gray-500">{sub}</p>}

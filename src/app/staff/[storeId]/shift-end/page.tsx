@@ -34,7 +34,7 @@ export default function ShiftEndPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-950 flex items-center justify-center">
+      <div className="min-h-screen bg-white flex items-center justify-center">
         <p className="text-gray-500 animate-pulse">Loading…</p>
       </div>
     )
@@ -48,12 +48,12 @@ export default function ShiftEndPage() {
       : `${mins}m`
 
   return (
-    <div className="min-h-screen bg-gray-950 flex flex-col items-center justify-center px-4 gap-8">
+    <div className="min-h-screen bg-white flex flex-col items-center justify-center px-4 gap-8">
       <div className="text-center">
         <p className="text-5xl mb-3">✅</p>
         <h1 className="font-black text-2xl text-brand">Shift Complete</h1>
         {summary && (
-          <p className="text-gray-400 text-lg mt-1">{summary.staffName}</p>
+          <p className="text-gray-500 text-lg mt-1">{summary.staffName}</p>
         )}
       </div>
 
@@ -62,13 +62,13 @@ export default function ShiftEndPage() {
           <div className="grid grid-cols-2 gap-4">
             <div className="text-center">
               <p className="text-xs text-gray-500 mb-1">Duration</p>
-              <p className="font-black text-2xl text-white">{durationStr}</p>
+              <p className="font-black text-2xl text-gray-900">{durationStr}</p>
             </div>
             <div className="text-center">
               <p className="text-xs text-gray-500 mb-1">Orders</p>
-              <p className="font-black text-2xl text-white">{summary.orderCount}</p>
+              <p className="font-black text-2xl text-gray-900">{summary.orderCount}</p>
             </div>
-            <div className="col-span-2 text-center border-t border-gray-700 pt-4">
+            <div className="col-span-2 text-center border-t border-gray-200 pt-4">
               <p className="text-xs text-gray-500 mb-1">Total Sales</p>
               <p className="font-black text-3xl text-brand">{formatCents(summary.totalSales)}</p>
             </div>

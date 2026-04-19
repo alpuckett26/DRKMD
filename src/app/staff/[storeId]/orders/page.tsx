@@ -39,10 +39,10 @@ export default function StaffOrdersPage() {
 
   return (
     <div className="min-h-screen pb-10">
-      <div className="bg-gray-900 border-b border-gray-800 sticky top-0 z-10">
+      <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
         <div className="max-w-2xl mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Link href={`/admin/${storeId}`} className="text-gray-400 text-2xl leading-none">‹</Link>
+            <Link href={`/admin/${storeId}`} className="text-gray-500 text-2xl leading-none">‹</Link>
             <div>
               <h1 className="font-bold text-lg">Incoming Orders</h1>
               <p className="text-xs text-gray-500 animate-pulse">Live • refreshes every 10s</p>
@@ -75,7 +75,7 @@ export default function StaffOrdersPage() {
               <Link
                 key={order.id}
                 href={`/staff/${storeId}/orders/${order.id}`}
-                className="card flex items-center justify-between hover:bg-gray-800 transition-colors gap-3"
+                className="card flex items-center justify-between hover:bg-gray-100 transition-colors gap-3"
               >
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
@@ -84,7 +84,7 @@ export default function StaffOrdersPage() {
                     </span>
                     <StatusBadge status={order.status} />
                   </div>
-                  <p className="text-sm text-gray-300 mt-0.5">{order.customerName}</p>
+                  <p className="text-sm text-gray-700 mt-0.5">{order.customerName}</p>
                   <p className="text-xs text-gray-500">
                     {order.items.length} items • {formatCents(order.estimatedTotal)}
                   </p>
@@ -122,15 +122,15 @@ export default function StaffOrdersPage() {
 
 function StatusBadge({ status }: { status: string }) {
   const configs: Record<string, string> = {
-    authorized: 'bg-yellow-900 text-yellow-300',
-    picking: 'bg-blue-900 text-blue-300',
-    ready: 'bg-green-900 text-green-300',
-    partially_ready: 'bg-green-900 text-green-300',
-    captured: 'bg-green-800 text-green-200',
-    completed: 'bg-gray-700 text-gray-400',
-    voided: 'bg-gray-800 text-gray-500',
-    canceled: 'bg-red-900 text-red-400',
+    authorized: 'bg-yellow-100 text-yellow-800',
+    picking: 'bg-blue-100 text-blue-800',
+    ready: 'bg-green-100 text-green-700',
+    partially_ready: 'bg-green-100 text-green-700',
+    captured: 'bg-green-100 text-green-800',
+    completed: 'bg-gray-200 text-gray-500',
+    voided: 'bg-gray-100 text-gray-500',
+    canceled: 'bg-red-100 text-red-700',
   }
-  const cls = configs[status] ?? 'bg-gray-800 text-gray-400'
+  const cls = configs[status] ?? 'bg-gray-100 text-gray-500'
   return <span className={`badge ${cls}`}>{orderStatusLabel(status)}</span>
 }

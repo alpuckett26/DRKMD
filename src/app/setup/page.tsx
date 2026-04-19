@@ -34,7 +34,7 @@ export default function SetupPage() {
         2. Seed Demo Data
       </button>
       {status && (
-        <pre className="text-sm text-gray-300 bg-gray-900 rounded-xl p-4 w-full whitespace-pre-wrap break-all">
+        <pre className="text-sm text-gray-700 bg-white rounded-xl p-4 w-full whitespace-pre-wrap break-all">
           {status}
         </pre>
       )}

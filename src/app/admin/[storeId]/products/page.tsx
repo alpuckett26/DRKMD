@@ -143,19 +143,19 @@ export default function ProductsPage() {
       <div className="panel sticky top-0 z-10">
         <div className="max-w-2xl mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Link href={`/admin/${storeId}`} className="text-gray-400 text-2xl">‹</Link>
+            <Link href={`/admin/${storeId}`} className="text-gray-500 text-2xl">‹</Link>
             <h1 className="font-bold text-lg">Night Menu</h1>
           </div>
           <div className="flex gap-3 items-center">
             {bulkMode ? (
               <>
-                <button onClick={selectAll} className="text-gray-400 text-sm font-semibold">
+                <button onClick={selectAll} className="text-gray-500 text-sm font-semibold">
                   All
                 </button>
                 <button
                   onClick={deleteSelected}
                   disabled={bulkSelected.size === 0 || deleting}
-                  className="text-red-400 text-sm font-semibold disabled:opacity-40"
+                  className="text-red-700 text-sm font-semibold disabled:opacity-40"
                 >
                   {deleting ? 'Removing…' : `Remove ${bulkSelected.size > 0 ? `(${bulkSelected.size})` : ''}`}
                 </button>
@@ -165,17 +165,17 @@ export default function ProductsPage() {
               </>
             ) : (
               <>
-                <button onClick={refreshAllImages} disabled={refreshing} className="text-gray-400 text-sm font-semibold flex items-center gap-1.5">
+                <button onClick={refreshAllImages} disabled={refreshing} className="text-gray-500 text-sm font-semibold flex items-center gap-1.5">
                   {refreshing ? (
                     <>
-                      <span className="inline-block w-3 h-3 rounded-full border-2 border-gray-600 border-t-brand animate-spin" />
+                      <span className="inline-block w-3 h-3 rounded-full border-2 border-gray-300 border-t-brand animate-spin" />
                       <span className="text-xs tabular-nums">{refreshProgress.done}/{refreshProgress.total}</span>
                     </>
                   ) : '⟳ Pics'}
                 </button>
-                <Link href={`/admin/${storeId}/scan`} className="text-gray-400 text-sm font-semibold underline">Scan</Link>
-                <Link href={`/admin/${storeId}/import`} className="text-gray-400 text-sm font-semibold underline">Import</Link>
-                <button onClick={() => { setBulkMode(true); setShowAdd(false) }} className="text-gray-400 text-sm font-semibold">
+                <Link href={`/admin/${storeId}/scan`} className="text-gray-500 text-sm font-semibold underline">Scan</Link>
+                <Link href={`/admin/${storeId}/import`} className="text-gray-500 text-sm font-semibold underline">Import</Link>
+                <button onClick={() => { setBulkMode(true); setShowAdd(false) }} className="text-gray-500 text-sm font-semibold">
                   Select
                 </button>
                 <button onClick={() => setShowAdd(v => !v)} className="text-brand text-sm font-semibold">
@@ -290,12 +290,12 @@ function ProductRow({
     >
       {bulkMode ? (
         <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${
-          checked ? 'bg-brand border-brand' : 'border-gray-600'
+          checked ? 'bg-brand border-brand' : 'border-gray-300'
         }`}>
-          {checked && <span className="text-white text-xs font-black">✓</span>}
+          {checked && <span className="text-gray-900 text-xs font-black">✓</span>}
         </div>
       ) : (
-        <div className="w-12 h-12 rounded-xl bg-gray-800 shrink-0 overflow-hidden flex items-center justify-center">
+        <div className="w-12 h-12 rounded-xl bg-gray-100 shrink-0 overflow-hidden flex items-center justify-center">
           {product.imageUrl
             ? <Image src={product.imageUrl} alt={product.name} width={48} height={48} className="object-cover w-full h-full" unoptimized />
             : <span className="text-xl">🛒</span>
@@ -306,8 +306,8 @@ function ProductRow({
         <p className="font-semibold text-sm truncate">{product.name}</p>
         <div className="flex items-center gap-2 mt-0.5">
           {product.category && <span className="text-xs text-gray-500">{product.category}</span>}
-          {product.restrictedFlag && <span className="badge bg-red-900 text-red-400">21+</span>}
-          {!bulkMode && product.promoted && <span className="badge bg-blue-900 text-brand">⚡</span>}
+          {product.restrictedFlag && <span className="badge bg-red-100 text-red-700">21+</span>}
+          {!bulkMode && product.promoted && <span className="badge bg-blue-100 text-brand">⚡</span>}
           {product.price === 0
             ? <span className="text-xs text-yellow-600">Pricing pending</span>
             : <span className="text-xs text-gray-600">${(product.price / 100).toFixed(2)}</span>
@@ -374,19 +374,19 @@ function ProductDetailSheet({
   return (
     <>
       <div className="fixed inset-0 bg-black/60 z-40" onClick={onClose} />
-      <div className="fixed bottom-0 left-0 right-0 z-50 max-w-2xl mx-auto bg-gray-900 rounded-t-3xl overflow-hidden"
+      <div className="fixed bottom-0 left-0 right-0 z-50 max-w-2xl mx-auto bg-white rounded-t-3xl overflow-hidden"
         style={{ maxHeight: '90vh', overflowY: 'auto' }}>
         <div className="flex justify-center pt-3 pb-1">
-          <div className="w-10 h-1 rounded-full bg-gray-700" />
+          <div className="w-10 h-1 rounded-full bg-gray-200" />
         </div>
-        <div className="relative mx-4 mt-2 rounded-2xl overflow-hidden bg-gray-800 flex items-center justify-center"
+        <div className="relative mx-4 mt-2 rounded-2xl overflow-hidden bg-gray-100 flex items-center justify-center"
           style={{ height: 200 }}>
           {draft.imageUrl && !imgError
             ? <Image src={draft.imageUrl} alt={draft.name} fill className="object-contain" unoptimized onError={() => setImgError(true)} />
             : <span className="text-6xl">🛒</span>
           }
           <button onClick={refreshImage} disabled={refreshingImage}
-            className="absolute bottom-2 right-2 bg-black/60 text-white text-xs px-3 py-1.5 rounded-full font-semibold backdrop-blur-sm">
+            className="absolute bottom-2 right-2 bg-black/60 text-gray-900 text-xs px-3 py-1.5 rounded-full font-semibold backdrop-blur-sm">
             {refreshingImage ? 'Searching…' : '↺ Refresh Image'}
           </button>
         </div>
@@ -423,7 +423,7 @@ function ProductDetailSheet({
                   <p className="text-xs text-gray-500">{desc}</p>
                 </div>
                 <div onClick={() => setDraft(d => ({ ...d, [key]: !d[key] }))}
-                  className={`w-11 h-6 rounded-full transition-colors relative ${draft[key] ? 'bg-brand' : 'bg-gray-700'}`}>
+                  className={`w-11 h-6 rounded-full transition-colors relative ${draft[key] ? 'bg-brand' : 'bg-gray-200'}`}>
                   <div className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${draft[key] ? 'translate-x-5' : 'translate-x-0.5'}`} />
                 </div>
               </label>
@@ -432,7 +432,7 @@ function ProductDetailSheet({
           <button onClick={save} disabled={saving} className="btn-primary w-full">
             {saving ? 'Saving…' : 'Save Changes'}
           </button>
-          <button onClick={remove} className="w-full text-center text-red-400 text-sm font-semibold py-2">
+          <button onClick={remove} className="w-full text-center text-red-700 text-sm font-semibold py-2">
             Remove from Menu
           </button>
         </div>

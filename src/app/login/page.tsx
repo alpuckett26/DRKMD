@@ -28,14 +28,14 @@ function LoginForm() {
   return (
     <form onSubmit={handleSubmit} className="card space-y-4">
       <div>
-        <label className="text-xs text-gray-400 block mb-1">Email</label>
+        <label className="text-xs text-gray-500 block mb-1">Email</label>
         <input type="email" value={email} onChange={e => setEmail(e.target.value)} required className="input" placeholder="you@yourstore.com" autoComplete="email" />
       </div>
       <div>
-        <label className="text-xs text-gray-400 block mb-1">Password</label>
+        <label className="text-xs text-gray-500 block mb-1">Password</label>
         <input type="password" value={password} onChange={e => setPassword(e.target.value)} required className="input" placeholder="••••••••" autoComplete="current-password" />
       </div>
-      {error && <p className="text-red-400 text-sm">{error}</p>}
+      {error && <p className="text-red-700 text-sm">{error}</p>}
       <button type="submit" disabled={loading} className="btn-primary">
         {loading ? 'Signing in…' : 'Sign In →'}
       </button>

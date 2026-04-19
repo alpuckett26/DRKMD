@@ -224,7 +224,7 @@ export default function SetupWizard() {
             </div>
             <div className="flex gap-1">
               {STEPS.map((_, i) => (
-                <div key={i} className={`h-1.5 flex-1 rounded-full transition-colors ${i <= step ? 'bg-brand' : 'bg-gray-700'}`} />
+                <div key={i} className={`h-1.5 flex-1 rounded-full transition-colors ${i <= step ? 'bg-brand' : 'bg-gray-200'}`} />
               ))}
             </div>
           </div>
@@ -238,7 +238,7 @@ export default function SetupWizard() {
               <div className="text-center space-y-3">
                 <p className="text-6xl">🪟</p>
                 <h2 className="font-black text-2xl">Welcome, {storeName || '…'}!</h2>
-                <p className="text-gray-400 text-sm">Let&apos;s get your window ready. About 5 minutes.</p>
+                <p className="text-gray-500 text-sm">Let&apos;s get your window ready. About 5 minutes.</p>
               </div>
               <div className="card space-y-3">
                 <p className="text-xs font-bold text-gray-500 uppercase tracking-widest">What we&apos;ll cover</p>
@@ -251,7 +251,7 @@ export default function SetupWizard() {
                   ))}
                 </div>
               </div>
-              {isDemo && <p className="text-xs text-center text-yellow-500 bg-yellow-900/20 rounded-xl p-3">Demo mode — payment step is skipped.</p>}
+              {isDemo && <p className="text-xs text-center text-yellow-500 bg-yellow-100/20 rounded-xl p-3">Demo mode — payment step is skipped.</p>}
               <button onClick={() => setStep(1)} className="btn-primary">Let&apos;s Go →</button>
             </div>
           )}
@@ -261,7 +261,7 @@ export default function SetupWizard() {
             <div className="space-y-4">
               <div>
                 <h2 className="font-black text-xl">Business Info</h2>
-                <p className="text-gray-400 text-sm mt-1">Used for kit shipping, billing, and tax records.</p>
+                <p className="text-gray-500 text-sm mt-1">Used for kit shipping, billing, and tax records.</p>
               </div>
               <div className="card space-y-3">
                 <p className="text-xs font-bold text-gray-500 uppercase tracking-widest">Contact</p>
@@ -303,7 +303,7 @@ export default function SetupWizard() {
             <div className="space-y-4">
               <div>
                 <h2 className="font-black text-xl">Storefront Photo</h2>
-                <p className="text-gray-400 text-sm mt-1">Customers see this on your menu. Take a photo of your storefront or logo.</p>
+                <p className="text-gray-500 text-sm mt-1">Customers see this on your menu. Take a photo of your storefront or logo.</p>
               </div>
               {logoUrl
                 ? <img src={logoUrl} alt="Preview" className="w-full max-h-52 object-cover rounded-2xl" />
@@ -325,12 +325,12 @@ export default function SetupWizard() {
             <div className="space-y-4">
               <div>
                 <h2 className="font-black text-xl">Shelf Inventory</h2>
-                <p className="text-gray-400 text-sm mt-1">Take photos of your shelves — we&apos;ll use AI to build your menu automatically.</p>
+                <p className="text-gray-500 text-sm mt-1">Take photos of your shelves — we&apos;ll use AI to build your menu automatically.</p>
               </div>
 
               <div className="card space-y-3">
                 <p className="text-xs font-bold text-gray-500 uppercase tracking-widest">📸 Tips for best results</p>
-                <ul className="space-y-2 text-sm text-gray-400">
+                <ul className="space-y-2 text-sm text-gray-500">
                   <li>• Stand 2–3 feet back so the full shelf is in frame</li>
                   <li>• Take one photo per shelf section or aisle</li>
                   <li>• Make sure labels are readable — good lighting helps</li>
@@ -347,7 +347,7 @@ export default function SetupWizard() {
                       <img src={img} alt={`Shelf ${i + 1}`} className="w-full h-full object-cover" />
                       <button
                         onClick={() => { setShelfPhotos(p => p.filter((_, j) => j !== i)); setSuggestions([]); setItemsAdded(false) }}
-                        className="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/70 text-white text-xs flex items-center justify-center"
+                        className="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/70 text-gray-900 text-xs flex items-center justify-center"
                       >×</button>
                     </div>
                   ))}
@@ -394,8 +394,8 @@ export default function SetupWizard() {
                         {s.cropBox != null && scanPhotos[s.photoIndex ?? 0]
                           ? <CropThumbnail src={scanPhotos[s.photoIndex ?? 0]} crop={s.cropBox} />
                           : s.imageUrl
-                            ? <img src={s.imageUrl} alt={s.name} className="w-10 h-10 rounded-lg object-contain bg-gray-800 shrink-0" />
-                            : <div className="w-10 h-10 rounded-lg bg-gray-800 shrink-0 flex items-center justify-center text-lg">🛒</div>
+                            ? <img src={s.imageUrl} alt={s.name} className="w-10 h-10 rounded-lg object-contain bg-gray-100 shrink-0" />
+                            : <div className="w-10 h-10 rounded-lg bg-gray-100 shrink-0 flex items-center justify-center text-lg">🛒</div>
                         }
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-semibold truncate">{s.name}</p>
@@ -438,7 +438,7 @@ export default function SetupWizard() {
             <div className="space-y-4">
               <div>
                 <h2 className="font-black text-xl">Window Hours</h2>
-                <p className="text-gray-400 text-sm mt-1">When is your window open for orders?</p>
+                <p className="text-gray-500 text-sm mt-1">When is your window open for orders?</p>
               </div>
               <div className="card grid grid-cols-2 gap-4">
                 <div>
@@ -463,23 +463,23 @@ export default function SetupWizard() {
             <div className="space-y-4">
               <div>
                 <h2 className="font-black text-xl">Terms & Agreement</h2>
-                <p className="text-gray-400 text-sm mt-1">Please review before purchasing.</p>
+                <p className="text-gray-500 text-sm mt-1">Please review before purchasing.</p>
               </div>
               <div className="card space-y-3">
                 <p className="font-bold text-sm">How Customer Payments Work</p>
-                <div className="space-y-2 text-xs text-gray-400">
-                  <p>① Customer orders and their card is <strong className="text-gray-200">authorized</strong> (hold placed, not charged yet).</p>
+                <div className="space-y-2 text-xs text-gray-500">
+                  <p>① Customer orders and their card is <strong className="text-gray-800">authorized</strong> (hold placed, not charged yet).</p>
                   <p>② You fulfill the order and mark items found or unavailable.</p>
-                  <p>③ Final amount is <strong className="text-gray-200">captured</strong> when you mark the order ready.</p>
-                  <p>④ Voided or canceled orders are fully <strong className="text-gray-200">released</strong> — customer is never charged.</p>
+                  <p>③ Final amount is <strong className="text-gray-800">captured</strong> when you mark the order ready.</p>
+                  <p>④ Voided or canceled orders are fully <strong className="text-gray-800">released</strong> — customer is never charged.</p>
                 </div>
               </div>
               <div className="card space-y-3">
                 <p className="font-bold text-sm">Platform Fees</p>
-                <div className="space-y-1 text-xs text-gray-400">
-                  <p>• <strong className="text-gray-200">$349 one-time</strong> — Starter Kit (hardware + setup)</p>
-                  <p>• <strong className="text-gray-200">$99/month</strong> — Platform access, starting after kit ships</p>
-                  <p>• <strong className="text-gray-200">No transaction fees</strong> — we don&apos;t take a cut of your sales</p>
+                <div className="space-y-1 text-xs text-gray-500">
+                  <p>• <strong className="text-gray-800">$349 one-time</strong> — Starter Kit (hardware + setup)</p>
+                  <p>• <strong className="text-gray-800">$99/month</strong> — Platform access, starting after kit ships</p>
+                  <p>• <strong className="text-gray-800">No transaction fees</strong> — we don&apos;t take a cut of your sales</p>
                   <p>• Cancel with 30 days notice. No refunds on kit hardware.</p>
                 </div>
               </div>
@@ -488,7 +488,7 @@ export default function SetupWizard() {
                   <span>📄 Platform Service Agreement</span>
                   <span className="text-gray-500 text-xs">Read →</span>
                 </a>
-                <div className="border-t border-gray-800" />
+                <div className="border-t border-gray-200" />
                 <a href="/legal/pilot-agreement" target="_blank" className="flex items-center justify-between py-2 text-sm hover:text-brand transition-colors">
                   <span>🧪 Pilot Program Agreement</span>
                   <span className="text-gray-500 text-xs">Read →</span>
@@ -502,7 +502,7 @@ export default function SetupWizard() {
                 ].map(({ key, checked, set, label }) => (
                   <label key={key} className="flex items-start gap-3 cursor-pointer">
                     <input type="checkbox" checked={checked} onChange={e => set(e.target.checked)} className="mt-0.5 accent-brand w-4 h-4 shrink-0" />
-                    <span className="text-xs text-gray-300">{label}</span>
+                    <span className="text-xs text-gray-700">{label}</span>
                   </label>
                 ))}
               </div>
@@ -520,31 +520,31 @@ export default function SetupWizard() {
             <div className="space-y-4">
               <div>
                 <h2 className="font-black text-xl">Starter Kit</h2>
-                <p className="text-gray-400 text-sm mt-1">Everything you need to start taking window orders.</p>
+                <p className="text-gray-500 text-sm mt-1">Everything you need to start taking window orders.</p>
               </div>
               <div className="card space-y-3">
                 <p className="font-bold text-brand">WendOS Starter Kit</p>
-                <ul className="space-y-2 text-sm text-gray-300">
+                <ul className="space-y-2 text-sm text-gray-700">
                   <li>💡 Lighted window sign with QR code</li>
                   <li>📱 Dedicated fulfillment tablet</li>
                   <li>🔧 Tablet stand / mount</li>
                   <li>🪟 Custom window decal</li>
                   <li>⚙️ Platform setup & onboarding</li>
                 </ul>
-                <div className="border-t border-gray-700 pt-3 flex justify-between items-end">
+                <div className="border-t border-gray-200 pt-3 flex justify-between items-end">
                   <div>
                     <p className="text-xs text-gray-500">One-time</p>
                     <p className="font-black text-3xl">$349</p>
                   </div>
                   <div className="text-right">
                     <p className="text-xs text-gray-500">Then monthly</p>
-                    <p className="font-black text-xl text-brand">$99<span className="text-xs font-normal text-gray-400">/mo</span></p>
+                    <p className="font-black text-xl text-brand">$99<span className="text-xs font-normal text-gray-500">/mo</span></p>
                   </div>
                 </div>
               </div>
               <p className="text-xs text-gray-500">Shipping to: {address}, {city}, {stateVal} {zip}</p>
               <div id="sq-card" className="min-h-[100px] rounded-xl overflow-hidden" />
-              {payError && <p className="text-red-400 text-sm">{payError}</p>}
+              {payError && <p className="text-red-700 text-sm">{payError}</p>}
               {!squareLoaded && <p className="text-xs text-gray-500 text-center">Loading payment form…</p>}
               <div className="flex gap-3">
                 <button onClick={() => setStep(5)} className="btn-secondary flex-1" disabled={paying}>Back</button>
@@ -563,15 +563,15 @@ export default function SetupWizard() {
                 <h2 className="font-black text-3xl mt-3">
                   Welcome to the team{storeName ? `, ${storeName}` : ''}!
                 </h2>
-                <p className="text-gray-400 text-sm mt-2">
+                <p className="text-gray-500 text-sm mt-2">
                   {isDemo ? 'Demo complete. Reset and run again anytime.' : 'Your kit is on its way. Your store goes live once hardware arrives.'}
                 </p>
               </div>
 
               {!isDemo && (
                 <>
-                  <div className="card space-y-2 text-sm text-gray-400">
-                    <p className="font-bold text-white text-xs uppercase tracking-widest mb-3">What happens next</p>
+                  <div className="card space-y-2 text-sm text-gray-500">
+                    <p className="font-bold text-gray-900 text-xs uppercase tracking-widest mb-3">What happens next</p>
                     <p>📦 Kit ships within 3–5 business days</p>
                     <p>📧 Confirmation sent to your email</p>
                     <p>💬 Our team will call to schedule your installation</p>
@@ -579,7 +579,7 @@ export default function SetupWizard() {
                   </div>
 
                   <div className="card space-y-4">
-                    <p className="font-bold text-white text-xs uppercase tracking-widest">Go-Live Checklist</p>
+                    <p className="font-bold text-gray-900 text-xs uppercase tracking-widest">Go-Live Checklist</p>
                     <p className="text-xs text-gray-500">Complete this with your WendOS installer on the day your kit arrives.</p>
                     {[
                       'Tablet is mounted, plugged in, and connected to Wi-Fi',
@@ -589,8 +589,8 @@ export default function SetupWizard() {
                       'Order alerts (SMS/email) confirmed working',
                       'Store owner/manager has been trained on the fulfillment app',
                     ].map((item, i) => (
-                      <div key={i} className="flex items-start gap-3 text-sm text-gray-400">
-                        <div className="w-5 h-5 mt-0.5 rounded border border-gray-600 shrink-0 flex items-center justify-center text-xs text-gray-600">{i + 1}</div>
+                      <div key={i} className="flex items-start gap-3 text-sm text-gray-500">
+                        <div className="w-5 h-5 mt-0.5 rounded border border-gray-300 shrink-0 flex items-center justify-center text-xs text-gray-600">{i + 1}</div>
                         <span>{item}</span>
                       </div>
                     ))}
@@ -608,7 +608,7 @@ export default function SetupWizard() {
 
               {isDemo && (
                 <div className="card space-y-2 border border-yellow-800/40">
-                  <p className="text-yellow-400 text-xs font-semibold">Demo Complete</p>
+                  <p className="text-yellow-700 text-xs font-semibold">Demo Complete</p>
                   <p className="text-xs text-gray-500">Ready to go live? Sign up for a real account to receive your Starter Kit and activate your window.</p>
                 </div>
               )}

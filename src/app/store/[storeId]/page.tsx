@@ -366,7 +366,7 @@ function ImpulseCard({ product, qty, onAdd, onOpen }: { product: ProductInfo; qt
           </div>
         )}
         {qty > 0 && (
-          <span className="absolute top-2 right-2 w-5 h-5 rounded-full bg-brand text-gray-900 text-xs font-bold flex items-center justify-center">{qty}</span>
+          <span className="absolute top-2 right-2 w-5 h-5 rounded-full bg-brand text-white text-xs font-bold flex items-center justify-center">{qty}</span>
         )}
       </div>
       <div className="p-2 flex flex-col gap-1.5">
@@ -385,7 +385,7 @@ function AddBtn({ qty, onAdd }: { qty: number; onAdd: () => void }) {
     <button
       onClick={e => { e.stopPropagation(); onAdd() }}
       className={`w-8 h-8 rounded-full font-bold text-base flex items-center justify-center transition-colors shrink-0 ${
-        qty > 0 ? 'bg-brand text-gray-900' : 'bg-gray-100 text-gray-900 hover:bg-white/20 border border-gray-300'
+        qty > 0 ? 'bg-brand text-white' : 'bg-gray-100 text-gray-900 hover:bg-white/20 border border-gray-300'
       }`}
     >
       {qty > 0 ? qty : '+'}
@@ -413,7 +413,7 @@ function ProductCard({ product, qty, onAdd, onOpen }: { product: ProductInfo; qt
           <span className="absolute top-2 right-2 text-base">⚡</span>
         )}
         {qty > 0 && (
-          <span className="absolute top-2 right-2 w-5 h-5 rounded-full bg-brand text-gray-900 text-xs font-bold flex items-center justify-center">{qty}</span>
+          <span className="absolute top-2 right-2 w-5 h-5 rounded-full bg-brand text-white text-xs font-bold flex items-center justify-center">{qty}</span>
         )}
       </div>
       <div className="p-2.5 flex flex-col flex-1 justify-between gap-2">

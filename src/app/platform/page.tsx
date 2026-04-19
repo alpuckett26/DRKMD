@@ -37,15 +37,15 @@ interface OrderRow {
 }
 
 const STATUS_COLORS: Record<string, string> = {
-  authorized: 'bg-yellow-900 text-yellow-300',
-  picking: 'bg-blue-900 text-blue-300',
-  ready: 'bg-green-900 text-green-300',
-  partially_ready: 'bg-green-900 text-green-400',
-  captured: 'bg-green-800 text-green-200',
-  completed: 'bg-gray-700 text-gray-300',
-  voided: 'bg-red-900 text-red-400',
-  canceled: 'bg-red-900 text-red-400',
-  submitted: 'bg-gray-800 text-gray-400',
+  authorized: 'bg-yellow-100 text-yellow-800',
+  picking: 'bg-blue-100 text-blue-800',
+  ready: 'bg-green-100 text-green-700',
+  partially_ready: 'bg-green-100 text-green-700',
+  captured: 'bg-green-100 text-green-800',
+  completed: 'bg-gray-200 text-gray-700',
+  voided: 'bg-red-100 text-red-700',
+  canceled: 'bg-red-100 text-red-700',
+  submitted: 'bg-gray-100 text-gray-500',
 }
 
 export default function PlatformAdmin() {
@@ -134,7 +134,7 @@ export default function PlatformAdmin() {
           <form onSubmit={login} className="card space-y-4">
             <input type="password" value={password} onChange={e => setPassword(e.target.value)}
               placeholder="Platform password" className="input" autoFocus />
-            {authError && <p className="text-red-400 text-sm">{authError}</p>}
+            {authError && <p className="text-red-700 text-sm">{authError}</p>}
             <button type="submit" className="btn-primary">Enter →</button>
           </form>
         </div>
@@ -165,17 +165,17 @@ export default function PlatformAdmin() {
               {(['overview', 'stores', 'orders'] as const).map(t => (
                 <button key={t} onClick={() => setTab(t)}
                   className={`px-3 py-1.5 rounded-lg text-sm font-semibold capitalize transition-all ${
-                    tab === t ? 'bg-brand/20 text-brand border border-brand/30' : 'text-gray-500 hover:text-gray-300'
+                    tab === t ? 'bg-brand/20 text-brand border border-brand/30' : 'text-gray-500 hover:text-gray-700'
                   }`}>
                   {t}
                   {t === 'orders' && liveOrders > 0 && (
-                    <span className="ml-1.5 bg-yellow-500 text-black text-xs rounded-full px-1.5 py-0.5 font-black">{liveOrders}</span>
+                    <span className="ml-1.5 bg-yellow-400 text-gray-900 text-xs rounded-full px-1.5 py-0.5 font-black">{liveOrders}</span>
                   )}
                 </button>
               ))}
             </nav>
           </div>
-          <button onClick={logout} className="text-gray-600 text-xs underline hover:text-gray-400 transition-colors">Sign out</button>
+          <button onClick={logout} className="text-gray-600 text-xs underline hover:text-gray-500 transition-colors">Sign out</button>
         </div>
       </div>
 
@@ -218,7 +218,7 @@ export default function PlatformAdmin() {
                 { label: 'Live Orders Now', value: liveOrders, highlight: liveOrders > 0 },
               ].map(stat => (
                 <div key={stat.label} className="card text-center py-5">
-                  <p className={`text-3xl font-black ${stat.highlight ? 'text-yellow-400' : 'text-white'}`}>{stat.value}</p>
+                  <p className={`text-3xl font-black ${stat.highlight ? 'text-yellow-700' : 'text-gray-900'}`}>{stat.value}</p>
                   <p className="text-xs text-gray-500 mt-1">{stat.label}</p>
                 </div>
               ))}
@@ -238,9 +238,9 @@ export default function PlatformAdmin() {
                 </thead>
                 <tbody>
                   {stores.filter(s => s.id !== 'store_demo').map(s => (
-                    <tr key={s.id} className="border-b border-white/5 hover:bg-white/[0.02] transition-colors">
+                    <tr key={s.id} className="border-b border-gray-200 hover:bg-white/[0.02] transition-colors">
                       <td className="px-4 py-3">
-                        <Link href={`/admin/${s.id}`} className="font-semibold text-white hover:text-brand transition-colors">{s.name}</Link>
+                        <Link href={`/admin/${s.id}`} className="font-semibold text-gray-900 hover:text-brand transition-colors">{s.name}</Link>
                         <p className="text-xs text-gray-600">{s.ownerName ?? '—'}</p>
                       </td>
                       <td className="px-4 py-3 text-right">
@@ -257,7 +257,7 @@ export default function PlatformAdmin() {
                       </td>
                       <td className="px-4 py-3 text-right">
                         {s.activeOrders > 0
-                          ? <span className="badge bg-yellow-900 text-yellow-300">{s.activeOrders} active</span>
+                          ? <span className="badge bg-yellow-100 text-yellow-800">{s.activeOrders} active</span>
                           : <span className="text-gray-700">—</span>}
                       </td>
                     </tr>
@@ -272,8 +272,8 @@ export default function PlatformAdmin() {
         {tab === 'stores' && (
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <h2 className="font-bold text-sm text-gray-400 uppercase tracking-widest">{stores.length} Stores</h2>
-              <button onClick={loadStores} className="text-xs text-gray-500 underline hover:text-gray-300">Refresh</button>
+              <h2 className="font-bold text-sm text-gray-500 uppercase tracking-widest">{stores.length} Stores</h2>
+              <button onClick={loadStores} className="text-xs text-gray-500 underline hover:text-gray-700">Refresh</button>
             </div>
             {loading && <p className="text-gray-500 animate-pulse text-sm">Loading…</p>}
             {stores.map(store => (
@@ -281,8 +281,8 @@ export default function PlatformAdmin() {
                 <div className="flex items-start justify-between gap-4">
                   <div className="min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <h3 className="font-bold text-white text-base">{store.name}</h3>
-                      <span className={`badge text-xs ${store.onboardingComplete ? 'bg-green-900 text-green-400' : 'bg-yellow-900 text-yellow-400'}`}>
+                      <h3 className="font-bold text-gray-900 text-base">{store.name}</h3>
+                      <span className={`badge text-xs ${store.onboardingComplete ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>
                         {store.onboardingComplete ? '✓ Active' : '⚠ Setup pending'}
                       </span>
                       {store.id === 'store_demo' && <span className="badge bg-purple-900 text-purple-400 text-xs">Demo</span>}
@@ -290,7 +290,7 @@ export default function PlatformAdmin() {
                         <span className="badge bg-yellow-800 text-yellow-300 text-xs">{store.activeOrders} live orders</span>
                       )}
                     </div>
-                    <p className="text-sm text-gray-400 mt-1">{store.ownerName ?? '—'} · {store.ownerEmail ?? '—'}</p>
+                    <p className="text-sm text-gray-500 mt-1">{store.ownerName ?? '—'} · {store.ownerEmail ?? '—'}</p>
                     <p className="text-xs text-gray-600 mt-0.5 font-mono">{store.id}</p>
                     <p className="text-xs text-gray-600 mt-0.5">
                       Joined {new Date(store.createdAt).toLocaleDateString()} · {store.productCount} products · {store.staffCount} staff
@@ -299,19 +299,19 @@ export default function PlatformAdmin() {
                   <div className="text-right shrink-0 space-y-1">
                     <p className="font-black text-brand text-lg">{formatCents(store.revenue)}</p>
                     <p className="text-xs text-gray-500">{store.orderCount} total orders</p>
-                    <p className="text-xs text-green-400">{formatCents(store.todayRevenue)} today</p>
+                    <p className="text-xs text-green-700">{formatCents(store.todayRevenue)} today</p>
                   </div>
                 </div>
 
                 {/* Window mode toggle */}
-                <div className="flex items-center justify-between py-2 border-t border-white/5">
+                <div className="flex items-center justify-between py-2 border-t border-gray-200">
                   <div>
                     <p className="text-sm font-semibold">Window Ordering</p>
                     <p className="text-xs text-gray-500">{store.windowModeEnabled ? 'Customers can order now' : 'Orders paused'}</p>
                   </div>
                   <button
                     onClick={() => toggleWindow(store.id, !store.windowModeEnabled)}
-                    className={`relative w-12 h-6 rounded-full transition-colors ${store.windowModeEnabled ? 'bg-brand' : 'bg-gray-700'}`}
+                    className={`relative w-12 h-6 rounded-full transition-colors ${store.windowModeEnabled ? 'bg-brand' : 'bg-gray-200'}`}
                     style={{}}
                   >
                     <span className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${store.windowModeEnabled ? 'translate-x-6' : ''}`} />
@@ -319,7 +319,7 @@ export default function PlatformAdmin() {
                 </div>
 
                 {/* Actions */}
-                <div className="flex gap-2 flex-wrap items-center border-t border-white/5 pt-3">
+                <div className="flex gap-2 flex-wrap items-center border-t border-gray-200 pt-3">
                   <Link href={`/admin/${store.id}`} className="text-xs bg-brand/20 text-brand border border-brand/30 px-3 py-1.5 rounded-lg hover:bg-brand/30 transition-colors font-semibold">
                     Admin Panel →
                   </Link>
@@ -331,9 +331,9 @@ export default function PlatformAdmin() {
                     {store.id !== 'store_demo' && (
                       confirmDelete === store.id ? (
                         <div className="flex gap-2 items-center">
-                          <span className="text-xs text-red-400">Delete store?</span>
+                          <span className="text-xs text-red-700">Delete store?</span>
                           <button onClick={() => deleteStore(store.id)} disabled={deletingId === store.id}
-                            className="text-xs bg-red-900 text-red-300 px-2 py-1 rounded-lg">
+                            className="text-xs bg-red-100 text-red-700 px-2 py-1 rounded-lg">
                             {deletingId === store.id ? '…' : 'Confirm'}
                           </button>
                           <button onClick={() => setConfirmDelete(null)} className="text-xs text-gray-500">Cancel</button>
@@ -384,12 +384,12 @@ export default function PlatformAdmin() {
                 </thead>
                 <tbody>
                   {orders.map(o => (
-                    <tr key={o.id} className="border-b border-white/5 hover:bg-white/[0.02] transition-colors">
+                    <tr key={o.id} className="border-b border-gray-200 hover:bg-white/[0.02] transition-colors">
                       <td className="px-4 py-3 font-black text-brand tracking-widest">{o.pickupCode}</td>
-                      <td className="px-4 py-3 text-gray-300">{o.storeName}</td>
-                      <td className="px-4 py-3 text-gray-300">{o.customerName}</td>
+                      <td className="px-4 py-3 text-gray-700">{o.storeName}</td>
+                      <td className="px-4 py-3 text-gray-700">{o.customerName}</td>
                       <td className="px-4 py-3">
-                        <span className={`badge text-xs ${STATUS_COLORS[o.status] ?? 'bg-gray-700 text-gray-400'}`}>{o.status}</span>
+                        <span className={`badge text-xs ${STATUS_COLORS[o.status] ?? 'bg-gray-200 text-gray-500'}`}>{o.status}</span>
                       </td>
                       <td className="px-4 py-3 font-semibold">
                         {formatCents(o.finalTotal ?? o.estimatedTotal)}

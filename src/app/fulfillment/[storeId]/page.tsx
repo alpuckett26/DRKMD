@@ -171,7 +171,7 @@ export default function FulfillmentTablet() {
         </div>
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-2 text-xs text-gray-500 min-w-0">
-            {staffSession && <span className="text-gray-300 truncate">{staffSession.name}</span>}
+            {staffSession && <span className="text-gray-700 truncate">{staffSession.name}</span>}
             {lastPoll && <span className="truncate">· {lastPoll.toLocaleTimeString()}</span>}
           </div>
           {staffSession ? (
@@ -186,10 +186,10 @@ export default function FulfillmentTablet() {
         </div>
       </div>
 
-      <div className="flex-1 grid grid-cols-2 gap-0 divide-x divide-gray-800 overflow-hidden">
+      <div className="flex-1 grid grid-cols-2 gap-0 divide-x divide-gray-200 overflow-hidden">
         {/* LEFT PANEL: Order Queue */}
         <div className="flex flex-col overflow-hidden">
-          <div className="px-4 py-3 border-b border-gray-800 flex items-center justify-between">
+          <div className="px-4 py-3 border-b border-gray-200 flex items-center justify-between">
             <h2 className="font-black text-base">Queue</h2>
             <span className="text-xs font-bold px-2 py-0.5 rounded-full"
               style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', color: queue.length > 0 ? '#facc15' : '#6b7280' }}>
@@ -211,7 +211,7 @@ export default function FulfillmentTablet() {
 
         {/* RIGHT PANEL: Ready for Pickup */}
         <div className="flex flex-col overflow-hidden">
-          <div className="px-4 py-3 border-b border-gray-800 flex items-center justify-between">
+          <div className="px-4 py-3 border-b border-gray-200 flex items-center justify-between">
             <h2 className="font-black text-base">Ready</h2>
             <span className="text-xs font-bold px-2 py-0.5 rounded-full"
               style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', color: ready.length > 0 ? '#2EA8FF' : '#6b7280' }}>
@@ -253,8 +253,8 @@ function OrderCard({
         isNew
           ? 'border-brand bg-brand/10 animate-pulse'
           : order.status === 'picking'
-            ? 'border-blue-600 bg-blue-900/20'
-            : 'border-gray-700 bg-gray-900'
+            ? 'border-blue-600 bg-blue-100/20'
+            : 'border-gray-200 bg-white'
       }`}
     >
       {isNew && (
@@ -264,8 +264,8 @@ function OrderCard({
       )}
       <div className="flex items-start justify-between gap-3 mb-3">
         <div>
-          <p className="font-black text-3xl tracking-widest text-white">{order.pickupCode}</p>
-          <p className="text-gray-300 text-sm mt-0.5">{order.customerName}</p>
+          <p className="font-black text-3xl tracking-widest text-gray-900">{order.pickupCode}</p>
+          <p className="text-gray-700 text-sm mt-0.5">{order.customerName}</p>
         </div>
         <div className="text-right flex-shrink-0">
           <StatusPill status={order.status} />
@@ -274,10 +274,10 @@ function OrderCard({
       </div>
 
       {/* Item list */}
-      <div className="space-y-1 border-t border-gray-700 pt-2">
+      <div className="space-y-1 border-t border-gray-200 pt-2">
         {order.items.map(item => (
           <div key={item.id} className="flex items-center justify-between text-sm gap-2">
-            <span className="text-gray-200 truncate">
+            <span className="text-gray-800 truncate">
               {item.qtyRequested > 1 && <span className="text-brand font-bold">{item.qtyRequested}× </span>}
               {item.requestedName}
             </span>
@@ -286,7 +286,7 @@ function OrderCard({
         ))}
       </div>
 
-      <div className="flex justify-between items-center mt-2 pt-2 border-t border-gray-700">
+      <div className="flex justify-between items-center mt-2 pt-2 border-t border-gray-200">
         <span className="text-xs text-gray-500">
           {order.substitutionPreference === 'allow_similar' ? '↔ Subs OK' : '✗ No subs'}
         </span>
@@ -305,12 +305,12 @@ function ReadyCard({ order, storeId }: { order: Order; storeId: string }) {
     >
       <div className="flex items-center justify-between gap-3">
         <div>
-          <p className="font-black text-3xl tracking-widest text-white">{order.pickupCode}</p>
-          <p className="text-gray-400 text-sm mt-0.5">{order.customerName}</p>
+          <p className="font-black text-3xl tracking-widest text-gray-900">{order.pickupCode}</p>
+          <p className="text-gray-500 text-sm mt-0.5">{order.customerName}</p>
         </div>
         <div className="text-right">
           <p className="text-brand font-bold text-xs uppercase tracking-widest">Ready</p>
-          <p className="font-black text-white text-xl mt-1">
+          <p className="font-black text-gray-900 text-xl mt-1">
             {formatCents(order.finalTotal ?? order.estimatedTotal)}
           </p>
         </div>

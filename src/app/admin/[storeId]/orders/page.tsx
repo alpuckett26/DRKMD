@@ -35,9 +35,9 @@ export default function AdminOrdersPage() {
 
   return (
     <div className="min-h-screen pb-10">
-      <div className="bg-gray-900 border-b border-gray-800 sticky top-0 z-10">
+      <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
         <div className="max-w-2xl mx-auto px-4 py-4 flex items-center gap-3">
-          <Link href={`/admin/${storeId}`} className="text-gray-400 text-2xl">‹</Link>
+          <Link href={`/admin/${storeId}`} className="text-gray-500 text-2xl">‹</Link>
           <h1 className="font-bold text-lg">Orders</h1>
         </div>
         <div className="max-w-2xl mx-auto px-4 pb-3">
@@ -46,7 +46,7 @@ export default function AdminOrdersPage() {
               <button
                 key={s}
                 onClick={() => setFilter(s)}
-                className={`flex-shrink-0 text-xs font-semibold px-3 py-1.5 rounded-full transition-colors ${filter === s ? 'bg-brand text-white' : 'bg-gray-800 text-gray-400'}`}
+                className={`flex-shrink-0 text-xs font-semibold px-3 py-1.5 rounded-full transition-colors ${filter === s ? 'bg-brand text-white' : 'bg-gray-100 text-gray-500'}`}
               >
                 {s === 'all' ? 'All' : orderStatusLabel(s)}
               </button>
@@ -62,7 +62,7 @@ export default function AdminOrdersPage() {
           <Link
             key={order.id}
             href={`/staff/${storeId}/orders/${order.id}`}
-            className="card flex items-center justify-between gap-3 hover:bg-gray-800 transition-colors"
+            className="card flex items-center justify-between gap-3 hover:bg-gray-100 transition-colors"
           >
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
@@ -71,13 +71,13 @@ export default function AdminOrdersPage() {
                   {new Date(order.createdAt).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                 </span>
               </div>
-              <p className="text-sm text-gray-300">{order.customerName} • {order.items.length} items</p>
+              <p className="text-sm text-gray-700">{order.customerName} • {order.items.length} items</p>
               <p className="text-xs text-gray-500">
                 {order.finalTotal != null ? `Final: ${formatCents(order.finalTotal)}` : `Est: ${formatCents(order.estimatedTotal)}`}
               </p>
             </div>
             <div className="flex flex-col items-end gap-1">
-              <span className="text-xs text-gray-400">{orderStatusLabel(order.status)}</span>
+              <span className="text-xs text-gray-500">{orderStatusLabel(order.status)}</span>
               <span className="text-gray-600 text-lg">›</span>
             </div>
           </Link>

@@ -105,13 +105,13 @@ export default function StaffPage() {
   return (
     <div className="min-h-screen pb-10">
       {/* Header */}
-      <div className="bg-gray-900 border-b border-gray-800">
+      <div className="bg-white border-b border-gray-200">
         <div className="max-w-2xl mx-auto px-4 py-4 flex items-center justify-between">
           <div>
             <h1 className="font-black text-lg text-brand">Staff Management</h1>
-            <p className="text-sm text-gray-400">{activeStaff.length} active member{activeStaff.length !== 1 ? 's' : ''}</p>
+            <p className="text-sm text-gray-500">{activeStaff.length} active member{activeStaff.length !== 1 ? 's' : ''}</p>
           </div>
-          <Link href={`/admin/${storeId}`} className="text-gray-400 text-2xl leading-none">‹</Link>
+          <Link href={`/admin/${storeId}`} className="text-gray-500 text-2xl leading-none">‹</Link>
         </div>
       </div>
 
@@ -164,7 +164,7 @@ export default function StaffPage() {
                 <option value="admin">Admin</option>
               </select>
             </div>
-            {addError && <p className="text-red-400 text-sm">{addError}</p>}
+            {addError && <p className="text-red-700 text-sm">{addError}</p>}
             <button type="submit" disabled={addLoading} className="btn-primary w-full">
               {addLoading ? 'Adding…' : 'Add Staff Member'}
             </button>
@@ -174,7 +174,7 @@ export default function StaffPage() {
         {/* Active Staff */}
         {activeStaff.length > 0 && (
           <div className="space-y-3">
-            <h2 className="font-bold text-gray-400 text-xs uppercase tracking-wider px-1">Active Staff</h2>
+            <h2 className="font-bold text-gray-500 text-xs uppercase tracking-wider px-1">Active Staff</h2>
             {activeStaff.map(member => (
               <StaffCard
                 key={member.id}
@@ -196,7 +196,7 @@ export default function StaffPage() {
         {/* Inactive Staff */}
         {inactiveStaff.length > 0 && (
           <div className="space-y-3">
-            <h2 className="font-bold text-gray-400 text-xs uppercase tracking-wider px-1">Inactive / Terminated</h2>
+            <h2 className="font-bold text-gray-500 text-xs uppercase tracking-wider px-1">Inactive / Terminated</h2>
             {inactiveStaff.map(member => (
               <StaffCard
                 key={member.id}
@@ -218,7 +218,7 @@ export default function StaffPage() {
         {staff.length === 0 && (
           <div className="card text-center space-y-2">
             <p className="text-3xl">👥</p>
-            <p className="text-gray-400 font-semibold">No staff yet</p>
+            <p className="text-gray-500 font-semibold">No staff yet</p>
             <p className="text-xs text-gray-600">Add staff members so they can log in on the fulfillment tablet.</p>
           </div>
         )}
@@ -267,17 +267,17 @@ function StaffCard({
               <span className="text-xs bg-brand/20 text-brand px-2 py-0.5 rounded-full">Admin</span>
             )}
             {!member.active && (
-              <span className="text-xs bg-gray-700 text-gray-400 px-2 py-0.5 rounded-full">Terminated</span>
+              <span className="text-xs bg-gray-200 text-gray-500 px-2 py-0.5 rounded-full">Terminated</span>
             )}
           </div>
           <div className="flex items-center gap-2 mt-1">
             {isLoggedIn ? (
-              <span className="text-xs text-green-400">● Online</span>
+              <span className="text-xs text-green-700">● Online</span>
             ) : (
               <span className="text-xs text-gray-600">○ Offline</span>
             )}
             {isLocked && (
-              <span className="text-xs text-red-400">🔒 Locked</span>
+              <span className="text-xs text-red-700">🔒 Locked</span>
             )}
           </div>
         </div>
@@ -298,7 +298,7 @@ function StaffCard({
 
       {/* Reset PIN form */}
       {resetPinId === member.id && (
-        <div className="space-y-2 border-t border-gray-700 pt-3">
+        <div className="space-y-2 border-t border-gray-200 pt-3">
           <label className="text-xs text-gray-500 block">New 4-Digit PIN</label>
           <input
             type="text"
@@ -314,7 +314,7 @@ function StaffCard({
             className="input tracking-widest text-center text-lg w-32"
             autoFocus
           />
-          {resetPinError && <p className="text-red-400 text-xs">{resetPinError}</p>}
+          {resetPinError && <p className="text-red-700 text-xs">{resetPinError}</p>}
           <div className="flex gap-2">
             <button
               onClick={() => submitResetPin(member.id)}
@@ -334,7 +334,7 @@ function StaffCard({
 
       {/* Action buttons */}
       {resetPinId !== member.id && (
-        <div className="flex flex-wrap gap-2 border-t border-gray-700 pt-3">
+        <div className="flex flex-wrap gap-2 border-t border-gray-200 pt-3">
           <button
             onClick={() => { setResetPinId(member.id); setResetPinValue(''); setResetPinError('') }}
             className="btn-secondary text-xs"
@@ -344,7 +344,7 @@ function StaffCard({
           {isLocked && (
             <button
               onClick={() => patchStaff(member.id, { clearLockout: true })}
-              className="btn-secondary text-xs text-yellow-400"
+              className="btn-secondary text-xs text-yellow-700"
             >
               Clear Lockout
             </button>
@@ -356,14 +356,14 @@ function StaffCard({
                   patchStaff(member.id, { active: false })
                 }
               }}
-              className="btn-secondary text-xs text-red-400"
+              className="btn-secondary text-xs text-red-700"
             >
               Terminate
             </button>
           ) : (
             <button
               onClick={() => patchStaff(member.id, { active: true })}
-              className="btn-secondary text-xs text-green-400"
+              className="btn-secondary text-xs text-green-700"
             >
               Reactivate
             </button>

@@ -88,12 +88,12 @@ export default function StaffLogin() {
       <div className="min-h-screen flex flex-col items-center justify-center gap-8 px-4">
         <div className="text-center">
           <h1 className="font-black text-3xl text-brand glow-text">WendOS</h1>
-          <p className="text-gray-400 text-sm mt-2">Who&apos;s working?</p>
+          <p className="text-gray-500 text-sm mt-2">Who&apos;s working?</p>
         </div>
 
         {staff.length === 0 ? (
           <div className="card text-center space-y-2 w-full max-w-sm">
-            <p className="text-gray-400">No staff accounts found.</p>
+            <p className="text-gray-500">No staff accounts found.</p>
             <p className="text-xs text-gray-500">Ask your manager to add staff in the admin panel.</p>
           </div>
         ) : (
@@ -112,9 +112,9 @@ export default function StaffLogin() {
                   }`}
                   style={!locked ? { boxShadow: 'none' } : undefined}
                 >
-                  <span className={locked ? 'text-gray-500' : 'text-white'}>{member.name}</span>
+                  <span className={locked ? 'text-gray-500' : 'text-gray-900'}>{member.name}</span>
                   {locked && (
-                    <span className="text-xs text-red-400 block font-normal mt-0.5">
+                    <span className="text-xs text-red-700 block font-normal mt-0.5">
                       Locked — try again later
                     </span>
                   )}
@@ -132,7 +132,7 @@ export default function StaffLogin() {
     <div className="min-h-screen flex flex-col items-center justify-center gap-8 px-4">
       <div className="text-center">
         <h1 className="font-black text-3xl text-brand glow-text">WendOS</h1>
-        <p className="text-white text-lg mt-2 font-bold">{selectedStaff.name}</p>
+        <p className="text-gray-900 text-lg mt-2 font-bold">{selectedStaff.name}</p>
         <p className="text-gray-500 text-sm">Enter your PIN</p>
       </div>
 
@@ -144,13 +144,13 @@ export default function StaffLogin() {
             className={`w-5 h-5 rounded-full border-2 transition-all ${
               i < pin.length
                 ? 'bg-brand border-brand'
-                : 'border-gray-600'
+                : 'border-gray-300'
             }`}
           />
         ))}
       </div>
 
-      {error && <p className="text-red-400 text-sm text-center max-w-xs">{error}</p>}
+      {error && <p className="text-red-700 text-sm text-center max-w-xs">{error}</p>}
 
       {/* Keypad */}
       <div className="grid grid-cols-3 gap-3 w-64">
@@ -162,7 +162,7 @@ export default function StaffLogin() {
               key={i}
               onClick={k === '⌫' ? backspace : () => pressDigit(k)}
               disabled={loading}
-              className={`pin-btn ${k === '⌫' ? 'text-gray-400' : ''}`}
+              className={`pin-btn ${k === '⌫' ? 'text-gray-500' : ''}`}
             >
               {k}
             </button>
@@ -170,7 +170,7 @@ export default function StaffLogin() {
         )}
       </div>
 
-      <button onClick={goBack} className="text-gray-600 text-sm underline hover:text-gray-400 transition-colors">
+      <button onClick={goBack} className="text-gray-600 text-sm underline hover:text-gray-500 transition-colors">
         ← Back
       </button>
     </div>

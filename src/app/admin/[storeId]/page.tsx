@@ -102,10 +102,10 @@ export default function AdminDashboard() {
         <div className="max-w-2xl mx-auto px-4 pt-4 pb-3 flex items-center justify-between gap-3">
           <div>
             <h1 className="font-black text-xl text-brand glow-text leading-none">WendOS</h1>
-            <p className="text-xs text-gray-400 mt-0.5">{store.name}</p>
+            <p className="text-xs text-gray-500 mt-0.5">{store.name}</p>
           </div>
           {!isDemo && (
-            <button onClick={logout} className="text-xs text-gray-500 hover:text-gray-300 transition-colors px-3 py-1.5 rounded-lg bg-gray-800">
+            <button onClick={logout} className="text-xs text-gray-500 hover:text-gray-700 transition-colors px-3 py-1.5 rounded-lg bg-gray-100">
               Sign out
             </button>
           )}
@@ -121,7 +121,7 @@ export default function AdminDashboard() {
             { href: `/fulfillment/${storeId}`, label: '🖥️ Fulfillment' },
           ].map(({ href, label }) => (
             <Link key={href} href={href}
-              className="shrink-0 text-xs font-semibold px-3 py-1.5 rounded-full bg-gray-800 text-gray-300 hover:text-white hover:bg-gray-700 transition-colors whitespace-nowrap">
+              className="shrink-0 text-xs font-semibold px-3 py-1.5 rounded-full bg-gray-100 text-gray-700 hover:text-gray-900 hover:bg-gray-200 transition-colors whitespace-nowrap">
               {label}
             </Link>
           ))}
@@ -135,8 +135,8 @@ export default function AdminDashboard() {
             <div className="flex items-center gap-3">
               <span className="text-xl shrink-0">⚠️</span>
               <div>
-                <p className="font-bold text-sm text-white">Setup not complete</p>
-                <p className="text-xs text-gray-400 mt-0.5">Your starter kit hasn&apos;t been ordered yet. Finish setup to go live.</p>
+                <p className="font-bold text-sm text-gray-900">Setup not complete</p>
+                <p className="text-xs text-gray-500 mt-0.5">Your starter kit hasn&apos;t been ordered yet. Finish setup to go live.</p>
               </div>
             </div>
             <Link href={`/admin/${storeId}/setup`} className="btn-primary block text-center">Complete Setup →</Link>
@@ -151,7 +151,7 @@ export default function AdminDashboard() {
             <h2 className="font-bold">Window Ordering</h2>
             <button
               onClick={() => setWindowModeEnabled(v => !v)}
-              className={`relative w-14 h-7 rounded-full transition-colors shrink-0 ${windowModeEnabled ? 'bg-brand' : 'bg-gray-700'}`}
+              className={`relative w-14 h-7 rounded-full transition-colors shrink-0 ${windowModeEnabled ? 'bg-brand' : 'bg-gray-200'}`}
             >
               <span className={`absolute top-0.5 left-0.5 w-6 h-6 rounded-full bg-white shadow transition-transform ${windowModeEnabled ? 'translate-x-7' : ''}`} />
             </button>
@@ -215,22 +215,22 @@ export default function AdminDashboard() {
 
         {/* Quick links */}
         <div className="grid grid-cols-2 gap-3">
-          <Link href={`/admin/${storeId}/products`} className="card text-center space-y-1 hover:bg-gray-800 transition-colors">
+          <Link href={`/admin/${storeId}/products`} className="card text-center space-y-1 hover:bg-gray-100 transition-colors">
             <p className="text-2xl">📦</p>
             <p className="font-semibold text-sm">Products</p>
             <p className="text-xs text-gray-500">Manage night menu</p>
           </Link>
-          <Link href={`/admin/${storeId}/orders`} className="card text-center space-y-1 hover:bg-gray-800 transition-colors">
+          <Link href={`/admin/${storeId}/orders`} className="card text-center space-y-1 hover:bg-gray-100 transition-colors">
             <p className="text-2xl">📋</p>
             <p className="font-semibold text-sm">Orders</p>
             <p className="text-xs text-gray-500">View all orders</p>
           </Link>
-          <Link href={`/admin/${storeId}/staff`} className="card text-center space-y-1 hover:bg-gray-800 transition-colors">
+          <Link href={`/admin/${storeId}/staff`} className="card text-center space-y-1 hover:bg-gray-100 transition-colors">
             <p className="text-2xl">👥</p>
             <p className="font-semibold text-sm">Staff</p>
             <p className="text-xs text-gray-500">Manage logins & shifts</p>
           </Link>
-          <Link href={`/fulfillment/${storeId}`} className="card text-center space-y-1 hover:bg-gray-800 transition-colors col-span-2">
+          <Link href={`/fulfillment/${storeId}`} className="card text-center space-y-1 hover:bg-gray-100 transition-colors col-span-2">
             <p className="text-2xl">🖥️</p>
             <p className="font-semibold text-sm">Fulfillment Tablet</p>
             <p className="text-xs text-gray-500">Open on dedicated fulfillment tablet – live queue + audio alerts</p>
@@ -239,7 +239,7 @@ export default function AdminDashboard() {
         {/* Demo Controls */}
         {isDemo && (
           <div className="card space-y-2 border border-yellow-800">
-            <h2 className="font-bold text-yellow-400">Demo Controls</h2>
+            <h2 className="font-bold text-yellow-700">Demo Controls</h2>
             <p className="text-xs text-gray-500">Reset the demo store to run through the setup wizard again.</p>
             <button onClick={resetDemo} disabled={demoResetting} className="btn-secondary w-full">
               {demoResetting ? 'Resetting…' : '🔄 Reset Demo & Rerun Setup'}

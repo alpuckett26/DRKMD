@@ -67,7 +67,7 @@ export default function HandoffPage() {
     <div className="min-h-screen pb-10">
       <div className="panel sticky top-0 z-10">
         <div className="max-w-lg mx-auto px-4 py-4 flex items-center gap-3">
-          <button onClick={() => router.back()} className="text-gray-400 text-2xl">‹</button>
+          <button onClick={() => router.back()} className="text-gray-500 text-2xl">‹</button>
           <h1 className="font-bold text-lg">Verify Handoff</h1>
         </div>
       </div>
@@ -76,7 +76,7 @@ export default function HandoffPage() {
         {!confirmed ? (
           <>
             <div className="card space-y-3">
-              <p className="text-sm text-gray-400">Enter the customer&apos;s 6-digit pickup code:</p>
+              <p className="text-sm text-gray-500">Enter the customer&apos;s 6-digit pickup code:</p>
               <input
                 type="text"
                 inputMode="numeric"
@@ -97,7 +97,7 @@ export default function HandoffPage() {
             </div>
 
             {error && (
-              <p className="text-red-400 text-sm text-center bg-red-900/20 rounded-xl px-4 py-3">
+              <p className="text-red-700 text-sm text-center bg-red-100/20 rounded-xl px-4 py-3">
                 {error}
               </p>
             )}
@@ -105,19 +105,19 @@ export default function HandoffPage() {
             {result && (
               <div className="card border border-green-700/50 space-y-3">
                 <div className="flex items-center justify-between">
-                  <p className="font-bold text-green-400">Order Found ✓</p>
+                  <p className="font-bold text-green-700">Order Found ✓</p>
                   <span className="font-black text-xl text-brand">{result.pickupCode}</span>
                 </div>
-                <p className="text-sm text-gray-300">{result.customerName}</p>
+                <p className="text-sm text-gray-700">{result.customerName}</p>
                 <div className="space-y-1">
                   {result.items.filter(i => i.status === 'found' || i.status === 'substituted').map(i => (
                     <div key={i.id} className="flex justify-between text-sm">
-                      <span className="text-gray-300">{i.requestedName} × {i.qtyFound}</span>
-                      <span className="text-green-400">✓</span>
+                      <span className="text-gray-700">{i.requestedName} × {i.qtyFound}</span>
+                      <span className="text-green-700">✓</span>
                     </div>
                   ))}
                 </div>
-                <div className="border-t border-gray-700 pt-2 flex justify-between font-bold">
+                <div className="border-t border-gray-200 pt-2 flex justify-between font-bold">
                   <span>Total Charged</span>
                   <span className="text-brand">{formatCents(result.finalTotal ?? result.estimatedTotal)}</span>
                 </div>
@@ -130,8 +130,8 @@ export default function HandoffPage() {
         ) : (
           <div className="card text-center space-y-4 py-8">
             <p className="text-5xl">✅</p>
-            <p className="text-xl font-bold text-green-400">Handoff Complete</p>
-            <p className="text-gray-400">Order {code} marked as completed.</p>
+            <p className="text-xl font-bold text-green-700">Handoff Complete</p>
+            <p className="text-gray-500">Order {code} marked as completed.</p>
             <button
               onClick={() => { setConfirmed(false); setCode(''); setResult(null); setOrderId('') }}
               className="btn-secondary"

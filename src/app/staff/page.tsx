@@ -18,7 +18,7 @@ export default async function StaffEntryPage() {
             <Link
               key={store.id}
               href={`/staff/${store.id}/orders`}
-              className="card flex items-center justify-between hover:bg-gray-800 transition-colors"
+              className="card flex items-center justify-between hover:bg-gray-100 transition-colors"
             >
               <div>
                 <p className="font-semibold">{store.name}</p>

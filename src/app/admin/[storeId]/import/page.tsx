@@ -98,20 +98,20 @@ export default function ImportPage() {
 
   return (
     <div className="min-h-screen pb-32">
-      <div className="bg-gray-900 border-b border-gray-800 sticky top-0 z-10">
+      <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
         <div className="max-w-2xl mx-auto px-4 py-4 flex items-center gap-3">
-          <Link href={`/admin/${storeId}/products`} className="text-gray-400 text-2xl">‹</Link>
+          <Link href={`/admin/${storeId}/products`} className="text-gray-500 text-2xl">‹</Link>
           <h1 className="font-bold text-lg">Import Products</h1>
         </div>
         <div className="max-w-2xl mx-auto px-4 pb-3 flex gap-3">
-          <button onClick={() => setTab('preset')} className={`text-sm font-semibold px-4 py-1.5 rounded-full ${tab === 'preset' ? 'bg-brand text-white' : 'bg-gray-800 text-gray-400'}`}>Preset Catalog</button>
-          <button onClick={() => setTab('csv')} className={`text-sm font-semibold px-4 py-1.5 rounded-full ${tab === 'csv' ? 'bg-brand text-white' : 'bg-gray-800 text-gray-400'}`}>CSV Upload</button>
+          <button onClick={() => setTab('preset')} className={`text-sm font-semibold px-4 py-1.5 rounded-full ${tab === 'preset' ? 'bg-brand text-white' : 'bg-gray-100 text-gray-500'}`}>Preset Catalog</button>
+          <button onClick={() => setTab('csv')} className={`text-sm font-semibold px-4 py-1.5 rounded-full ${tab === 'csv' ? 'bg-brand text-white' : 'bg-gray-100 text-gray-500'}`}>CSV Upload</button>
         </div>
       </div>
 
       <div className="max-w-2xl mx-auto px-4 pt-4 space-y-4">
         {result && (
-          <div className="card bg-green-900/30 border border-green-700/50 text-green-300 text-sm text-center">
+          <div className="card bg-green-100/30 border border-green-700/50 text-green-700 text-sm text-center">
             {result}
           </div>
         )}
@@ -123,7 +123,7 @@ export default function ImportPage() {
         {tab === 'preset' && !loadingCatalog && catalog.length === 0 && (
           <div className="text-center pt-12 space-y-2">
             <p className="text-4xl">✅</p>
-            <p className="font-bold text-gray-300">All preset products already imported</p>
+            <p className="font-bold text-gray-700">All preset products already imported</p>
             <p className="text-sm text-gray-500">Add custom items via CSV or the products page.</p>
           </div>
         )}
@@ -131,12 +131,12 @@ export default function ImportPage() {
         {tab === 'preset' && !loadingCatalog && catalog.length > 0 && (
           <>
             <div className="flex items-center justify-between">
-              <p className="text-sm text-gray-400">{selected.size} of {catalog.length} selected</p>
+              <p className="text-sm text-gray-500">{selected.size} of {catalog.length} selected</p>
               <div className="flex gap-3">
                 <button onClick={fetchImages} disabled={fetchingImages || loading} className="text-sm text-brand underline">
                   {fetchingImages ? 'Fetching…' : '🖼 Fetch Images'}
                 </button>
-                <button onClick={toggleAll} className="text-sm text-gray-400 underline">
+                <button onClick={toggleAll} className="text-sm text-gray-500 underline">
                   {selected.size === catalog.length ? 'Deselect all' : 'Select all'}
                 </button>
               </div>
@@ -160,13 +160,13 @@ export default function ImportPage() {
                     {p.imageUrl ? (
                       <img src={p.imageUrl} alt={p.name} className="w-10 h-10 rounded-lg object-contain bg-white flex-shrink-0" />
                     ) : (
-                      <div className="w-10 h-10 rounded-lg bg-gray-800 flex-shrink-0 flex items-center justify-center text-lg">🛒</div>
+                      <div className="w-10 h-10 rounded-lg bg-gray-100 flex-shrink-0 flex items-center justify-center text-lg">🛒</div>
                     )}
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium">{p.name}</p>
                     </div>
                     <div className="flex items-center gap-2 flex-shrink-0">
-                      {p.restrictedFlag === 'true' && <span className="badge bg-red-900 text-red-400 text-xs">21+</span>}
+                      {p.restrictedFlag === 'true' && <span className="badge bg-red-100 text-red-700 text-xs">21+</span>}
                       <span className="text-brand font-bold text-sm">${p.price}</span>
                     </div>
                   </label>
@@ -178,8 +178,8 @@ export default function ImportPage() {
 
         {tab === 'csv' && !loadingCatalog && (
           <div className="space-y-3">
-            <div className="card text-xs text-gray-400 space-y-1">
-              <p className="font-semibold text-gray-300">CSV Format (first row = headers):</p>
+            <div className="card text-xs text-gray-500 space-y-1">
+              <p className="font-semibold text-gray-700">CSV Format (first row = headers):</p>
               <p className="font-mono">name,category,price,nighttimeAvailable,restrictedFlag</p>
               <p className="font-mono text-gray-600">Red Bull 8.4oz,Energy Drinks,4.49,true,false</p>
             </div>
@@ -197,7 +197,7 @@ export default function ImportPage() {
       </div>
 
       {tab === 'preset' && (
-        <div className="fixed bottom-0 left-0 right-0 p-4 bg-gray-950 border-t border-gray-800">
+        <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-200">
           <div className="max-w-2xl mx-auto">
             <button onClick={importPreset} disabled={loading || selected.size === 0} className="btn-primary">
               {loading ? 'Importing…' : selected.size === 0 ? 'All products already imported' : `Import ${selected.size} New Products`}
