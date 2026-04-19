@@ -13,7 +13,7 @@ export default function CartPage() {
   if (items.length === 0) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-4 p-6">
-        <p className="text-gray-400">Your cart is empty.</p>
+        <p className="text-gray-500">Your cart is empty.</p>
         <Link href={`/store/${storeId}`} className="btn-primary max-w-xs">
           Browse Menu
         </Link>
@@ -23,9 +23,9 @@ export default function CartPage() {
 
   return (
     <div className="min-h-screen pb-32">
-      <div className="bg-gray-900 border-b border-gray-800 sticky top-0 z-10">
+      <div className="bg-white border-b border-gray-800 sticky top-0 z-10">
         <div className="max-w-lg mx-auto px-4 py-4 flex items-center gap-3">
-          <Link href={`/store/${storeId}`} className="text-gray-400 text-2xl leading-none">‹</Link>
+          <Link href={`/store/${storeId}`} className="text-gray-500 text-2xl leading-none">‹</Link>
           <h1 className="font-bold text-lg">Your Cart</h1>
         </div>
       </div>
@@ -39,20 +39,20 @@ export default function CartPage() {
                 <p className="font-semibold text-sm">{item.name}</p>
                 <p className="text-brand text-sm font-bold">{formatCents(item.price)} ea</p>
                 {item.restricted && (
-                  <p className="text-xs text-red-400 mt-0.5">Age-restricted item</p>
+                  <p className="text-xs text-red-600 mt-0.5">Age-restricted item</p>
                 )}
               </div>
               <div className="flex items-center gap-2 flex-shrink-0">
                 <button
                   onClick={() => updateQty(item.productId, item.qty - 1)}
-                  className="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center text-lg font-bold"
+                  className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-lg font-bold"
                 >
                   −
                 </button>
                 <span className="w-6 text-center font-bold">{item.qty}</span>
                 <button
                   onClick={() => updateQty(item.productId, item.qty + 1)}
-                  className="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center text-lg font-bold"
+                  className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-lg font-bold"
                 >
                   +
                 </button>
@@ -107,13 +107,13 @@ export default function CartPage() {
 
         {/* Total */}
         <div className="card flex justify-between items-center">
-          <span className="text-gray-400 text-sm">Estimated Total</span>
+          <span className="text-gray-500 text-sm">Estimated Total</span>
           <span className="text-xl font-black text-brand">{formatCents(total)}</span>
         </div>
       </div>
 
       {/* Checkout bar */}
-      <div className="fixed bottom-0 left-0 right-0 p-4 bg-gray-950 border-t border-gray-800">
+      <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-800">
         <div className="max-w-lg mx-auto">
           <button
             onClick={() => router.push(`/store/${storeId}/checkout`)}

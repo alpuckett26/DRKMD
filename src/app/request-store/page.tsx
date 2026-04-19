@@ -56,8 +56,8 @@ export default function RequestStorePage() {
         <div className="max-w-sm space-y-4">
           <p className="text-5xl">🔔</p>
           <h1 className="text-2xl font-black">You&apos;re on the list</h1>
-          <p className="text-sm text-gray-400">
-            We&apos;ll reach out to <span className="font-bold text-gray-200">{storeName}</span> about Window Mode — and ping you the moment they go live so you can place your first order.
+          <p className="text-sm text-gray-500">
+            We&apos;ll reach out to <span className="font-bold text-gray-800">{storeName}</span> about Window Mode — and ping you the moment they go live so you can place your first order.
           </p>
           <p className="text-xs text-gray-500">Redirecting to home…</p>
         </div>
@@ -69,7 +69,7 @@ export default function RequestStorePage() {
     <main className="min-h-screen pb-16">
       <header className="panel sticky top-0 z-20">
         <div className="max-w-lg mx-auto px-4 py-3 flex items-center gap-3">
-          <Link href="/" className="text-gray-400 text-2xl leading-none">‹</Link>
+          <Link href="/" className="text-gray-500 text-2xl leading-none">‹</Link>
           <h1 className="font-bold text-lg">Request your store</h1>
         </div>
       </header>
@@ -79,7 +79,7 @@ export default function RequestStorePage() {
         <div className="card space-y-3">
           <p className="text-2xl">🪟</p>
           <h2 className="text-lg font-black leading-tight">Bring Window Mode to your favorite corner store.</h2>
-          <p className="text-sm text-gray-300 leading-relaxed">
+          <p className="text-sm text-gray-700 leading-relaxed">
             Late-night customers order from their phone, pay in-app, and pick up through the locked window.
             Safer shifts for staff, more sales for the owner, zero new hardware.
           </p>
@@ -131,7 +131,7 @@ export default function RequestStorePage() {
             <textarea className="input h-24 resize-none" value={notes} onChange={e => setNotes(e.target.value)} placeholder="Late hours, favorite items, owner contact…" />
           </Field>
 
-          {error && <p className="text-sm text-red-400">{error}</p>}
+          {error && <p className="text-sm text-red-600">{error}</p>}
 
           <button type="submit" disabled={submitting || !storeName.trim() || (!email.trim() && !phone.trim())} className="btn-primary">
             {submitting ? 'Sending…' : '🔔 Notify me when it goes live'}
@@ -149,7 +149,7 @@ export default function RequestStorePage() {
 function Field({ label, children, required }: { label: string; children: React.ReactNode; required?: boolean }) {
   return (
     <label className="block space-y-1.5">
-      <span className="text-xs font-semibold text-gray-300">{label}{required && <span className="text-brand"> *</span>}</span>
+      <span className="text-xs font-semibold text-gray-700">{label}{required && <span className="text-brand"> *</span>}</span>
       {children}
     </label>
   )
@@ -157,9 +157,9 @@ function Field({ label, children, required }: { label: string; children: React.R
 
 function Fact({ value, label }: { value: string; label: string }) {
   return (
-    <div className="rounded-xl bg-white/5 border border-white/10 p-2 text-center">
+    <div className="rounded-xl bg-gray-50 border border-gray-200 p-2 text-center">
       <p className="text-sm font-black text-brand">{value}</p>
-      <p className="text-[10px] text-gray-400 leading-tight mt-0.5">{label}</p>
+      <p className="text-[10px] text-gray-500 leading-tight mt-0.5">{label}</p>
     </div>
   )
 }

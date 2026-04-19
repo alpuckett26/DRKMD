@@ -56,7 +56,7 @@ function ImpulseBuySection({ storeId }: { storeId: string }) {
     <div className="card overflow-hidden !p-0">
       <div className="px-4 pt-3 pb-2 flex items-center gap-2">
         <span>⚡</span>
-        <p className="font-black text-sm uppercase tracking-widest text-gray-300">Add to your order</p>
+        <p className="font-black text-sm uppercase tracking-widest text-gray-700">Add to your order</p>
       </div>
       <div className="flex gap-3 overflow-x-auto px-4 pb-4" style={{ scrollbarWidth: 'none' }}>
         {promoted.map(product => (
@@ -65,7 +65,7 @@ function ImpulseBuySection({ storeId }: { storeId: string }) {
             onClick={() => addItem({ productId: product.id, name: product.name, price: product.price, restricted: product.restrictedFlag })}
             className="product-card shrink-0 w-28 text-left active:scale-95 transition-transform"
           >
-            <div className="relative aspect-square bg-white/5">
+            <div className="relative aspect-square bg-gray-50">
               {product.imageUrl ? (
                 <Image src={product.imageUrl} alt={product.name} fill className="object-contain p-1.5" unoptimized />
               ) : (
@@ -76,7 +76,7 @@ function ImpulseBuySection({ storeId }: { storeId: string }) {
             </div>
             <div className="p-2">
               <p className="text-xs font-semibold leading-tight line-clamp-2 mb-1">{product.name}</p>
-              <p className="text-white font-black text-xs">{formatCents(product.price)}</p>
+              <p className="text-gray-900 font-black text-xs">{formatCents(product.price)}</p>
             </div>
           </button>
         ))}
@@ -207,30 +207,30 @@ export default function CheckoutPage() {
       <div className="min-h-screen pb-10">
         <div className="panel sticky top-0 z-10">
           <div className="max-w-lg mx-auto px-4 py-4 flex items-center gap-3">
-            <Link href={`/store/${storeId}/cart`} className="text-gray-400 text-2xl leading-none">‹</Link>
+            <Link href={`/store/${storeId}/cart`} className="text-gray-500 text-2xl leading-none">‹</Link>
             <h1 className="font-bold text-lg">Checkout</h1>
           </div>
         </div>
         <form onSubmit={handleDemoSubmit} className="max-w-lg mx-auto px-4 pt-4 space-y-4">
           <div className="card space-y-3">
-            <h2 className="font-semibold text-sm text-gray-400 uppercase tracking-wide">Your Info</h2>
+            <h2 className="font-semibold text-sm text-gray-500 uppercase tracking-wide">Your Info</h2>
             <input type="text" placeholder="Name *" value={name} onChange={e => setName(e.target.value)} required className="input" />
             <input type="tel" placeholder="Phone (optional)" value={phone} onChange={e => setPhone(e.target.value)} className="input" />
           </div>
           <div className="card space-y-2">
-            <h2 className="font-semibold text-sm text-gray-400 uppercase tracking-wide">Order Summary</h2>
+            <h2 className="font-semibold text-sm text-gray-500 uppercase tracking-wide">Order Summary</h2>
             {items.map(i => (
               <div key={i.productId} className="flex justify-between text-sm">
-                <span className="text-gray-300">{i.name} × {i.qty}</span>
-                <span className="text-gray-300">{formatCents(i.price * i.qty)}</span>
+                <span className="text-gray-700">{i.name} × {i.qty}</span>
+                <span className="text-gray-700">{formatCents(i.price * i.qty)}</span>
               </div>
             ))}
             <div className="border-t border-gray-700 pt-2 space-y-1">
-              <div className="flex justify-between text-sm text-gray-400">
+              <div className="flex justify-between text-sm text-gray-500">
                 <span>Subtotal</span>
                 <span>{formatCents(total)}</span>
               </div>
-              <div className="flex justify-between text-sm text-gray-400">
+              <div className="flex justify-between text-sm text-gray-500">
                 <span>Convenience Fee (12.5%)</span>
                 <span>{formatCents(serviceFee)}</span>
               </div>
@@ -247,7 +247,7 @@ export default function CheckoutPage() {
             <p className="text-yellow-400 text-xs font-semibold">🎭 Demo Mode — no payment required</p>
             <p className="text-gray-500 text-xs">Orders flow through the full fulfillment process without charging a card.</p>
           </div>
-          {error && <p className="text-red-400 text-sm text-center bg-red-900/20 rounded-xl px-4 py-3">{error}</p>}
+          {error && <p className="text-red-600 text-sm text-center bg-red-600/20 rounded-xl px-4 py-3">{error}</p>}
           <button type="submit" disabled={submitting} className="btn-primary">
             {submitting ? 'Placing order…' : `Place Demo Order – ${formatCents(grandTotal)}`}
           </button>
@@ -263,7 +263,7 @@ export default function CheckoutPage() {
       <div className="min-h-screen pb-10">
         <div className="panel sticky top-0 z-10">
           <div className="max-w-lg mx-auto px-4 py-4 flex items-center gap-3">
-            <Link href={`/store/${storeId}/cart`} className="text-gray-400 text-2xl leading-none">‹</Link>
+            <Link href={`/store/${storeId}/cart`} className="text-gray-500 text-2xl leading-none">‹</Link>
             <h1 className="font-bold text-lg">Checkout</h1>
           </div>
         </div>
@@ -271,7 +271,7 @@ export default function CheckoutPage() {
         <form onSubmit={handleSubmit} className="max-w-lg mx-auto px-4 pt-4 space-y-4">
           {/* Contact */}
           <div className="card space-y-3">
-            <h2 className="font-semibold text-sm text-gray-400 uppercase tracking-wide">Your Info</h2>
+            <h2 className="font-semibold text-sm text-gray-500 uppercase tracking-wide">Your Info</h2>
             <input
               type="text"
               placeholder="Name *"
@@ -291,19 +291,19 @@ export default function CheckoutPage() {
 
           {/* Order summary */}
           <div className="card space-y-2">
-            <h2 className="font-semibold text-sm text-gray-400 uppercase tracking-wide">Order Summary</h2>
+            <h2 className="font-semibold text-sm text-gray-500 uppercase tracking-wide">Order Summary</h2>
             {items.map(i => (
               <div key={i.productId} className="flex justify-between text-sm">
-                <span className="text-gray-300">{i.name} × {i.qty}</span>
-                <span className="text-gray-300">{formatCents(i.price * i.qty)}</span>
+                <span className="text-gray-700">{i.name} × {i.qty}</span>
+                <span className="text-gray-700">{formatCents(i.price * i.qty)}</span>
               </div>
             ))}
             <div className="border-t border-gray-700 pt-2 space-y-1">
-              <div className="flex justify-between text-sm text-gray-400">
+              <div className="flex justify-between text-sm text-gray-500">
                 <span>Subtotal</span>
                 <span>{formatCents(total)}</span>
               </div>
-              <div className="flex justify-between text-sm text-gray-400">
+              <div className="flex justify-between text-sm text-gray-500">
                 <span>Convenience Fee (12.5%)</span>
                 <span>{formatCents(serviceFee)}</span>
               </div>
@@ -319,13 +319,13 @@ export default function CheckoutPage() {
 
           {/* Payment */}
           <div className="card space-y-3">
-            <h2 className="font-semibold text-sm text-gray-400 uppercase tracking-wide">Payment</h2>
+            <h2 className="font-semibold text-sm text-gray-500 uppercase tracking-wide">Payment</h2>
             <p className="text-xs text-gray-500">
               A hold will be placed. You&apos;re only charged for items handed to you.
             </p>
             <div
               id="card-container"
-              className="min-h-[80px] rounded-xl bg-gray-800 px-3 py-3"
+              className="min-h-[80px] rounded-xl bg-gray-100 px-3 py-3"
             />
             {!squareReady && (
               <p className="text-xs text-gray-500 animate-pulse">Loading payment form…</p>
@@ -333,7 +333,7 @@ export default function CheckoutPage() {
           </div>
 
           {error && (
-            <p className="text-red-400 text-sm text-center bg-red-900/20 rounded-xl px-4 py-3">
+            <p className="text-red-600 text-sm text-center bg-red-600/20 rounded-xl px-4 py-3">
               {error}
             </p>
           )}

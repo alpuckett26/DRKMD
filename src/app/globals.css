@@ -4,35 +4,28 @@
 
 @layer base {
   body {
-    background-color: #050a12;
-    color: #f1f5f9;
-    background-image:
-      radial-gradient(ellipse 90% 60% at 50% -5%, rgba(46,168,255,0.12) 0%, transparent 65%),
-      radial-gradient(ellipse 50% 40% at 85% 95%, rgba(46,168,255,0.05) 0%, transparent 55%);
-    background-attachment: fixed;
+    background-color: #ffffff;
+    color: #191919;
     -webkit-font-smoothing: antialiased;
   }
 }
 
 @layer components {
-  /* ── Buttons — DoorDash pill style, dark theme ───────── */
+  /* ── Buttons — DoorDash pill style ───────────── */
   .btn-primary {
     @apply w-full bg-brand text-white font-bold py-3.5 px-6 rounded-full text-base disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer;
   }
   .btn-primary:hover:not(:disabled) {
-    background-color: #44b4ff;
-  }
-  .btn-primary:active:not(:disabled) {
     background-color: #1a8fe3;
   }
+  .btn-primary:active:not(:disabled) {
+    background-color: #146dad;
+  }
   .btn-secondary {
-    @apply w-full font-semibold py-3.5 px-6 rounded-full text-base transition-colors text-gray-100 cursor-pointer;
-    background: rgba(255,255,255,0.08);
-    border: 1px solid rgba(255,255,255,0.12);
+    @apply w-full font-semibold py-3.5 px-6 rounded-full text-base transition-colors text-gray-900 cursor-pointer bg-gray-100;
   }
   .btn-secondary:hover:not(:disabled) {
-    background: rgba(255,255,255,0.12);
-    border-color: rgba(255,255,255,0.18);
+    @apply bg-gray-200;
   }
   .btn-secondary:disabled {
     @apply opacity-40 cursor-not-allowed;
@@ -40,38 +33,28 @@
 
   /* ── Cards ───────────────────────────────────── */
   .card {
-    @apply rounded-2xl p-4;
-    background: rgba(255,255,255,0.04);
-    border: 1px solid rgba(255,255,255,0.08);
+    @apply rounded-2xl p-4 bg-white border border-gray-200;
   }
 
   /* ── Inputs ──────────────────────────────────── */
   .input {
-    @apply w-full text-gray-100 rounded-full px-4 py-3 text-base placeholder-gray-500 focus:outline-none transition-colors;
-    background: rgba(255,255,255,0.06);
-    border: 1px solid rgba(255,255,255,0.10);
+    @apply w-full text-gray-900 rounded-xl px-4 py-3 text-base placeholder-gray-400 focus:outline-none transition-colors bg-gray-100 border border-transparent;
   }
   .input:focus {
-    border-color: rgba(46,168,255,0.6);
-    background: rgba(255,255,255,0.08);
+    @apply border-gray-900 bg-white;
   }
 
   /* ── Panel (nav headers) ─────────────────────── */
   .panel {
-    background: rgba(5,10,18,0.92);
-    border-bottom: 1px solid rgba(255,255,255,0.06);
-    backdrop-filter: blur(20px);
+    @apply bg-white border-b border-gray-200;
   }
 
   /* ── Product card ────────────────────────────── */
   .product-card {
-    @apply rounded-2xl overflow-hidden flex flex-col transition-colors;
-    background: rgba(255,255,255,0.04);
-    border: 1px solid rgba(255,255,255,0.08);
+    @apply rounded-2xl overflow-hidden flex flex-col transition-shadow bg-white border border-gray-200;
   }
   .product-card:hover {
-    background: rgba(255,255,255,0.06);
-    border-color: rgba(255,255,255,0.14);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.08);
   }
 
   /* ── Misc utils ──────────────────────────────── */
@@ -79,57 +62,50 @@
     @apply text-xs font-semibold px-2 py-0.5 rounded-full;
   }
   .pin-btn {
-    @apply h-16 rounded-2xl font-bold text-xl transition-colors text-white;
-    background: rgba(255,255,255,0.06);
-    border: 1px solid rgba(255,255,255,0.10);
+    @apply h-16 rounded-2xl font-bold text-xl transition-colors bg-gray-100 text-gray-900;
   }
   .pin-btn:active {
-    background: rgba(46,168,255,0.25);
-    border-color: rgba(46,168,255,0.6);
+    @apply bg-gray-200;
   }
 
   /* ── DoorDash-style top nav category chips ───── */
   .cat-chip {
-    @apply flex flex-col items-center gap-1 min-w-[64px] text-gray-100 text-[13px] font-semibold;
+    @apply flex flex-col items-center gap-1 min-w-[64px] text-gray-900 text-[13px] font-semibold;
   }
   .cat-chip-icon {
-    @apply w-10 h-10 flex items-center justify-center text-gray-100;
+    @apply w-10 h-10 flex items-center justify-center text-gray-900;
   }
 
-  /* ── DoorDash-style category pill (filter/cuisine row) ── */
+  /* ── DoorDash-style category pill (filter row) ──── */
   .cat-pill {
-    @apply inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold text-gray-100 transition-colors whitespace-nowrap;
-    background: rgba(255,255,255,0.06);
-    border: 1px solid rgba(255,255,255,0.08);
+    @apply inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold text-gray-900 transition-colors whitespace-nowrap bg-gray-100 border border-gray-200;
   }
   .cat-pill:hover {
-    background: rgba(255,255,255,0.1);
+    @apply bg-gray-200;
   }
   .cat-pill.active {
-    @apply bg-brand text-white border-transparent;
+    @apply bg-gray-900 text-white border-transparent;
   }
 
   /* ── Icon-button (top-right header circles) ──── */
   .icon-btn {
-    @apply w-10 h-10 rounded-full flex items-center justify-center text-gray-100 transition-colors;
-    background: rgba(255,255,255,0.06);
-    border: 1px solid rgba(255,255,255,0.08);
+    @apply w-10 h-10 rounded-full flex items-center justify-center text-gray-900 transition-colors bg-gray-100 border border-gray-200;
   }
   .icon-btn:hover {
-    background: rgba(255,255,255,0.1);
+    @apply bg-gray-200;
   }
 
-  /* ── Section header row (Your past orders →) ─── */
+  /* ── Section header row ──────────────────────── */
   .section-header {
     @apply flex items-center justify-between;
   }
   .section-header h2 {
-    @apply text-lg font-bold text-white;
+    @apply text-lg font-bold text-gray-900;
   }
 
   /* ── Horizontal scroller ─────────────────────── */
   .h-scroll {
-    @apply flex gap-3 overflow-x-auto scrollbar-none -mx-4 px-4 pb-1;
+    @apply flex gap-3 overflow-x-auto -mx-4 px-4 pb-1;
     scrollbar-width: none;
   }
   .h-scroll::-webkit-scrollbar {

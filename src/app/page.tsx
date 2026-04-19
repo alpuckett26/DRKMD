@@ -38,7 +38,7 @@ export default function Home() {
   }
 
   return (
-    <main className="min-h-screen pb-28">
+    <main className="min-h-screen pb-36">
       {/* Top bar */}
       <header className="panel sticky top-0 z-20">
         <div className="max-w-lg mx-auto px-4 py-3 flex items-center justify-between">
@@ -59,8 +59,8 @@ export default function Home() {
       <div className="max-w-lg mx-auto px-4 pt-4 space-y-6">
         {/* Greeting */}
         <div>
-          <h1 className="text-2xl font-black text-white">{greeting()}</h1>
-          <p className="text-sm text-gray-400 mt-0.5">Order from a locked, safe window shop near you.</p>
+          <h1 className="text-2xl font-black text-gray-900">{greeting()}</h1>
+          <p className="text-sm text-gray-500 mt-0.5">Order from a locked, safe window shop near you.</p>
         </div>
 
         {/* Top category chip row (DoorDash-style) */}
@@ -76,17 +76,17 @@ export default function Home() {
         {/* Featured promos (sponsored-style banner — replace src with video URLs) */}
         <div className="flex gap-3 overflow-x-auto -mx-4 px-4 snap-x snap-mandatory" style={{ scrollbarWidth: 'none' }}>
           {FEATURED_PROMOS.map(promo => (
-            <div key={promo.id} className="snap-start shrink-0 w-[88%] rounded-2xl overflow-hidden bg-gray-800 relative" style={{ aspectRatio: '16 / 9' }}>
+            <div key={promo.id} className="snap-start shrink-0 w-[88%] rounded-2xl overflow-hidden bg-gray-100 relative" style={{ aspectRatio: '16 / 9' }}>
               {promo.media ? (
                 <MediaAsset src={promo.media} alt={promo.title} className="object-cover" />
               ) : (
                 <div className="absolute inset-0 bg-gradient-to-br from-brand/30 via-transparent to-black" />
               )}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/25 to-transparent" />
               <div className="absolute bottom-0 left-0 right-0 p-4">
-                <p className="text-[11px] font-semibold text-brand uppercase tracking-widest">{promo.tag}</p>
+                <p className="text-[11px] font-semibold text-white/90 uppercase tracking-widest">{promo.tag}</p>
                 <p className="text-xl font-black text-white leading-tight mt-0.5">{promo.title}</p>
-                <p className="text-xs text-gray-200 mt-0.5">{promo.subtitle}</p>
+                <p className="text-xs text-white/90 mt-0.5">{promo.subtitle}</p>
               </div>
             </div>
           ))}
@@ -132,39 +132,66 @@ export default function Home() {
           <div className="flex items-start gap-3">
             <span className="text-2xl shrink-0">🔔</span>
             <div className="flex-1">
-              <p className="font-bold text-white text-base">Don&apos;t see your favorite store?</p>
-              <p className="text-xs text-gray-300 mt-1 leading-relaxed">Tell us where to roll out Window Mode next — we&apos;ll ping the owner and notify you the moment they go live.</p>
+              <p className="font-bold text-gray-900 text-base">Don&apos;t see your favorite store?</p>
+              <p className="text-xs text-gray-700 mt-1 leading-relaxed">Tell us where to roll out Window Mode next — we&apos;ll ping the owner and notify you the moment they go live.</p>
               <p className="text-sm text-brand font-semibold mt-2">Request your store →</p>
             </div>
           </div>
         </Link>
 
         {/* How it works */}
-        <div className="card text-sm text-gray-400 space-y-2">
-          <p className="font-bold text-gray-200">How Window Mode works</p>
+        <div className="card text-sm text-gray-500 space-y-2">
+          <p className="font-bold text-gray-800">How Window Mode works</p>
           <p>🪟 Pick a store → tap items → pay → show your code at the window.</p>
           <p>🔒 Store stays locked for safety. Staff brings your order out.</p>
         </div>
 
         <div className="flex justify-center gap-6 text-xs text-gray-500 pt-2">
-          <Link href="/legal/service-agreement" className="hover:text-gray-300">Terms</Link>
-          <Link href="/legal/pilot-agreement" className="hover:text-gray-300">Pilot agreement</Link>
+          <Link href="/legal/service-agreement" className="hover:text-gray-700">Terms</Link>
+          <Link href="/legal/pilot-agreement" className="hover:text-gray-700">Pilot agreement</Link>
         </div>
       </div>
 
-      {/* Sticky bottom search pill (DoorDash-style) */}
-      <div className="fixed bottom-4 left-0 right-0 z-30 px-4 pointer-events-none">
-        <div className="max-w-lg mx-auto pointer-events-auto">
-          <div className="relative">
-            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 text-sm pointer-events-none">🔍</span>
+      {/* Sticky bottom search (DoorDash-style, elevated) */}
+      <div className="fixed bottom-0 left-0 right-0 z-30 pointer-events-none">
+        <div
+          className="absolute inset-x-0 bottom-0 h-32 pointer-events-none"
+          style={{ background: 'linear-gradient(to top, rgba(255,255,255,1) 35%, rgba(255,255,255,0))' }}
+        />
+        <div className="relative max-w-lg mx-auto px-4 pb-5 pointer-events-auto">
+          <div
+            className="flex items-center gap-2 bg-white rounded-full border border-gray-200 pl-5 pr-2 py-2"
+            style={{ boxShadow: '0 12px 32px rgba(0,0,0,0.14), 0 2px 6px rgba(0,0,0,0.06)' }}
+          >
+            <span className="text-gray-500 text-lg shrink-0">🔍</span>
             <input
               type="search"
-              placeholder="Search stores, cities"
+              placeholder="Search stores, products, brands"
               value={search}
               onChange={e => setSearch(e.target.value)}
-              className="w-full bg-gray-900/95 backdrop-blur-xl border border-white/10 rounded-full pl-10 pr-4 py-3.5 text-sm text-white placeholder-gray-400 focus:outline-none focus:border-brand/50"
-              style={{ boxShadow: '0 8px 24px rgba(0,0,0,0.5)' }}
+              className="flex-1 bg-transparent border-0 py-2.5 text-base font-medium text-gray-900 placeholder-gray-500 focus:outline-none"
             />
+            {search ? (
+              <button
+                onClick={() => setSearch('')}
+                className="w-9 h-9 rounded-full bg-gray-100 text-gray-600 text-sm font-bold hover:bg-gray-200 transition-colors shrink-0"
+                aria-label="Clear"
+              >
+                ✕
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => {
+                  const el = document.querySelector<HTMLInputElement>('input[type=search]')
+                  el?.focus()
+                }}
+                className="w-9 h-9 rounded-full bg-brand text-white text-sm font-bold shrink-0 active:scale-95 transition-transform"
+                aria-label="Search"
+              >
+                →
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -177,9 +204,9 @@ function StoreListCard({ store }: { store: StoreCard }) {
   return (
     <Link
       href={`/store/${store.id}`}
-      className="block rounded-2xl overflow-hidden bg-white/4 border border-white/8 active:scale-[0.99] transition-transform"
+      className="block rounded-2xl overflow-hidden bg-gray-50 border border-gray-200 active:scale-[0.99] transition-transform"
     >
-      <div className="relative w-full bg-gray-800" style={{ aspectRatio: '16 / 9' }}>
+      <div className="relative w-full bg-gray-100" style={{ aspectRatio: '16 / 9' }}>
         {store.logoUrl ? (
           <MediaAsset src={store.logoUrl} alt={store.name} className="object-cover" />
         ) : (
@@ -189,13 +216,13 @@ function StoreListCard({ store }: { store: StoreCard }) {
         )}
         <div className="absolute top-3 left-3">
           {store.windowModeEnabled
-            ? <span className="badge bg-green-900/90 text-green-300 backdrop-blur-sm">● OPEN NOW</span>
-            : <span className="badge bg-gray-900/90 text-gray-300 backdrop-blur-sm">● CLOSED</span>}
+            ? <span className="badge bg-green-100 text-green-700 backdrop-blur-sm">● OPEN NOW</span>
+            : <span className="badge bg-white/90 text-gray-700 backdrop-blur-sm">● CLOSED</span>}
         </div>
       </div>
       <div className="p-3">
-        <p className="font-bold text-white text-base leading-tight">{store.name}</p>
-        <p className="text-xs text-gray-400 mt-1">📍 {locationStr}</p>
+        <p className="font-bold text-gray-900 text-base leading-tight">{store.name}</p>
+        <p className="text-xs text-gray-500 mt-1">📍 {locationStr}</p>
         <p className="text-xs text-gray-500 mt-2">Tap to browse • Window pickup</p>
       </div>
     </Link>

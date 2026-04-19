@@ -11,12 +11,12 @@ const statusColor: Record<string, string> = {
   submitted: 'text-yellow-400',
   authorized: 'text-yellow-400',
   picking: 'text-blue-400',
-  ready: 'text-green-400',
-  partially_ready: 'text-green-400',
-  captured: 'text-green-400',
+  ready: 'text-green-700',
+  partially_ready: 'text-green-700',
+  captured: 'text-green-700',
   completed: 'text-green-500',
-  voided: 'text-gray-400',
-  canceled: 'text-red-400',
+  voided: 'text-gray-500',
+  canceled: 'text-red-600',
 }
 
 export default function OrderStatusPage() {
@@ -47,7 +47,7 @@ export default function OrderStatusPage() {
   if (!order) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <p className="text-red-400">Order not found.</p>
+        <p className="text-red-600">Order not found.</p>
       </div>
     )
   }
@@ -57,7 +57,7 @@ export default function OrderStatusPage() {
 
   return (
     <div className="min-h-screen pb-10">
-      <div className="bg-gray-900 border-b border-gray-800">
+      <div className="bg-white border-b border-gray-800">
         <div className="max-w-lg mx-auto px-4 py-4">
           <h1 className="font-black text-lg text-brand">WendOS</h1>
         </div>
@@ -67,7 +67,7 @@ export default function OrderStatusPage() {
         {/* Status */}
         <div className="card text-center space-y-2">
           <p className="text-xs text-gray-500 uppercase tracking-widest">Order Status</p>
-          <p className={`text-2xl font-black ${statusColor[order.status] ?? 'text-white'}`}>
+          <p className={`text-2xl font-black ${statusColor[order.status] ?? 'text-gray-900'}`}>
             {orderStatusLabel(order.status)}
           </p>
           {!isDone && (
@@ -78,8 +78,8 @@ export default function OrderStatusPage() {
         {/* Pickup code */}
         {isReady && (
           <div className="card text-center space-y-3 border border-green-700/50">
-            <p className="text-xs text-gray-400 uppercase tracking-widest">Show this at the window</p>
-            <p className="text-5xl font-black tracking-widest text-white">{order.pickupCode}</p>
+            <p className="text-xs text-gray-500 uppercase tracking-widest">Show this at the window</p>
+            <p className="text-5xl font-black tracking-widest text-gray-900">{order.pickupCode}</p>
             {order.pickupCodeQr && (
               <img
                 src={order.pickupCodeQr}
@@ -99,7 +99,7 @@ export default function OrderStatusPage() {
 
         {/* Voided notice */}
         {order.status === 'voided' && (
-          <div className="card bg-gray-800 text-center text-gray-400 space-y-1">
+          <div className="card bg-gray-100 text-center text-gray-500 space-y-1">
             <p className="font-bold">No items available</p>
             <p className="text-sm">Your payment hold has been released. No charge.</p>
           </div>
@@ -107,15 +107,15 @@ export default function OrderStatusPage() {
 
         {/* Items */}
         <div className="card space-y-2">
-          <h2 className="font-semibold text-sm text-gray-400 uppercase tracking-wide">Items</h2>
+          <h2 className="font-semibold text-sm text-gray-500 uppercase tracking-wide">Items</h2>
           {order.items.map(item => (
             <div key={item.id} className="flex items-center justify-between gap-2 text-sm">
               <div className="flex-1">
-                <span className="text-gray-200">{item.requestedName}</span>
+                <span className="text-gray-800">{item.requestedName}</span>
                 <span className="text-gray-500 ml-1">× {item.qtyRequested}</span>
               </div>
               <ItemStatusBadge status={item.status} />
-              <span className="text-gray-300 text-right">
+              <span className="text-gray-700 text-right">
                 {formatCents(item.requestedPrice * item.qtyRequested)}
               </span>
             </div>
@@ -124,7 +124,7 @@ export default function OrderStatusPage() {
 
         {/* Total */}
         <div className="card flex justify-between items-center">
-          <span className="text-gray-400 text-sm">
+          <span className="text-gray-500 text-sm">
             {order.finalTotal != null ? 'Final Total' : 'Estimated Total'}
           </span>
           <span className="text-xl font-black text-brand">
@@ -133,7 +133,7 @@ export default function OrderStatusPage() {
         </div>
 
         {isDone && (
-          <div className="card bg-green-900/30 border border-green-700/50 text-center text-green-300 text-sm">
+          <div className="card bg-green-900/30 border border-green-700/50 text-center text-white text-sm">
             ✓ Order complete. Thank you!
           </div>
         )}
@@ -144,12 +144,12 @@ export default function OrderStatusPage() {
 
 function ItemStatusBadge({ status }: { status: string }) {
   const configs: Record<string, { label: string; className: string }> = {
-    requested: { label: 'Pending', className: 'bg-gray-800 text-gray-400' },
-    found: { label: '✓ Found', className: 'bg-green-900 text-green-400' },
-    unavailable: { label: '✗ Out of stock', className: 'bg-red-900 text-red-400' },
+    requested: { label: 'Pending', className: 'bg-gray-100 text-gray-500' },
+    found: { label: '✓ Found', className: 'bg-green-100 text-green-700' },
+    unavailable: { label: '✗ Out of stock', className: 'bg-red-100 text-red-700' },
     substituted: { label: '↔ Substituted', className: 'bg-blue-900 text-blue-400' },
-    refused_restricted: { label: '⛔ ID Required', className: 'bg-red-900 text-red-500' },
+    refused_restricted: { label: '⛔ ID Required', className: 'bg-red-600 text-red-500' },
   }
-  const cfg = configs[status] ?? { label: status, className: 'bg-gray-800 text-gray-400' }
+  const cfg = configs[status] ?? { label: status, className: 'bg-gray-100 text-gray-500' }
   return <span className={`badge ${cfg.className} text-nowrap`}>{cfg.label}</span>
 }

@@ -134,8 +134,8 @@ export default function MenuPage() {
               </div>
             </div>
             {storeId === 'store_demo' || store?.windowModeEnabled
-              ? <span className="badge bg-green-900 text-green-400 text-xs shrink-0">● OPEN</span>
-              : <span className="badge bg-red-900 text-red-400 text-xs shrink-0">● CLOSED</span>
+              ? <span className="badge bg-green-100 text-green-700 text-xs shrink-0">● OPEN</span>
+              : <span className="badge bg-red-100 text-red-700 text-xs shrink-0">● CLOSED</span>
             }
           </div>
 
@@ -154,7 +154,7 @@ export default function MenuPage() {
             {/* Predictive suggestions dropdown */}
             {searchFocused && searchSuggestions.length > 0 && (
               <div
-                className="absolute top-full left-0 right-0 mt-1 rounded-2xl overflow-hidden z-50 bg-gray-900 border border-white/10"
+                className="absolute top-full left-0 right-0 mt-1 rounded-2xl overflow-hidden z-50 bg-white border border-gray-200"
                 style={{ boxShadow: '0 12px 32px rgba(0,0,0,0.6)' }}
               >
                 {searchSuggestions.map(p => (
@@ -204,8 +204,8 @@ export default function MenuPage() {
         {/* Greeting */}
         {!search && activeCategory === 'All' && (
           <div>
-            <h2 className="text-2xl font-black text-white">{greeting()}</h2>
-            <p className="text-sm text-gray-400 mt-0.5">Browse the shelf and we&apos;ll have it ready at the window.</p>
+            <h2 className="text-2xl font-black text-gray-900">{greeting()}</h2>
+            <p className="text-sm text-gray-500 mt-0.5">Browse the shelf and we&apos;ll have it ready at the window.</p>
           </div>
         )}
 
@@ -230,7 +230,7 @@ export default function MenuPage() {
           <div>
             <div className="flex items-center gap-2 mb-3">
               <span className="text-lg">⚡</span>
-              <h2 className="font-black text-sm uppercase tracking-widest text-gray-300">Hot Picks</h2>
+              <h2 className="font-black text-sm uppercase tracking-widest text-gray-700">Hot Picks</h2>
               <span className="text-xs text-brand font-semibold">Staff favorites</span>
             </div>
             <div className="flex gap-3 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
@@ -256,7 +256,7 @@ export default function MenuPage() {
           <div key={category} ref={el => { catRefs.current[category] = el }} style={{ scrollMarginTop: '175px' }}>
             <div className="flex items-center gap-2 mb-3">
               <span className="text-lg">{CAT_ICON[category] ?? '🛒'}</span>
-              <h2 className="font-black text-sm uppercase tracking-widest text-gray-300">{category}</h2>
+              <h2 className="font-black text-sm uppercase tracking-widest text-gray-700">{category}</h2>
               <span className="text-xs text-gray-600">({catProducts.length})</span>
             </div>
             <div className="grid grid-cols-2 gap-3">
@@ -307,10 +307,10 @@ function SearchSuggestionRow({ product, qty, onAdd, onOpen }: { product: Product
   return (
     <div
       onClick={onOpen}
-      className="flex items-center gap-3 px-3 py-2.5 cursor-pointer transition-colors active:bg-white/5 hover:bg-white/5"
+      className="flex items-center gap-3 px-3 py-2.5 cursor-pointer transition-colors active:bg-gray-50 hover:bg-gray-50"
       style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}
     >
-      <div className="w-10 h-10 rounded-xl overflow-hidden bg-gray-800 flex items-center justify-center relative shrink-0">
+      <div className="w-10 h-10 rounded-xl overflow-hidden bg-gray-100 flex items-center justify-center relative shrink-0">
         {product.imageUrl && !imgError ? (
           <Image src={product.imageUrl} alt={product.name} fill className="object-contain p-1" unoptimized onError={() => setImgError(true)} />
         ) : (
@@ -322,7 +322,7 @@ function SearchSuggestionRow({ product, qty, onAdd, onOpen }: { product: Product
         <p className="text-xs text-gray-500 truncate">{product.category ?? 'General'}{product.restrictedFlag ? ' · 21+' : ''}</p>
       </div>
       <div className="flex items-center gap-2 shrink-0">
-        <span className="text-white font-black text-sm">{formatCents(product.price)}</span>
+        <span className="text-gray-900 font-black text-sm">{formatCents(product.price)}</span>
         <AddBtn qty={qty} onAdd={onAdd} />
       </div>
     </div>
@@ -334,10 +334,10 @@ function VarietyChip({ product, onSelect }: { product: ProductInfo; onSelect: ()
   return (
     <button
       onClick={onSelect}
-      className="shrink-0 flex flex-col items-center gap-1.5 p-2 rounded-2xl text-center active:scale-95 transition-transform bg-white/5 border border-white/10 hover:bg-white/10"
+      className="shrink-0 flex flex-col items-center gap-1.5 p-2 rounded-2xl text-center active:scale-95 transition-transform bg-gray-50 border border-gray-200 hover:bg-gray-100"
       style={{ minWidth: 80, maxWidth: 96 }}
     >
-      <div className="w-14 h-14 rounded-xl overflow-hidden bg-gray-800 flex items-center justify-center relative shrink-0">
+      <div className="w-14 h-14 rounded-xl overflow-hidden bg-gray-100 flex items-center justify-center relative shrink-0">
         {product.imageUrl && !imgError ? (
           <Image src={product.imageUrl} alt={product.name} fill className="object-contain p-1" unoptimized onError={() => setImgError(true)} />
         ) : (
@@ -345,7 +345,7 @@ function VarietyChip({ product, onSelect }: { product: ProductInfo; onSelect: ()
         )}
       </div>
       <p className="text-xs font-semibold leading-tight line-clamp-2 w-full">{product.name}</p>
-      <span className="text-white text-xs font-black">{formatCents(product.price)}</span>
+      <span className="text-gray-900 text-xs font-black">{formatCents(product.price)}</span>
     </button>
   )
 }
@@ -357,7 +357,7 @@ function ImpulseCard({ product, qty, onAdd, onOpen }: { product: ProductInfo; qt
       onClick={onOpen}
       className="product-card shrink-0 w-36 cursor-pointer active:scale-95 transition-transform"
     >
-      <div className="relative aspect-square bg-white/5">
+      <div className="relative aspect-square bg-gray-50">
         {product.imageUrl && !imgError ? (
           <Image src={product.imageUrl} alt={product.name} fill className="object-contain p-2" unoptimized onError={() => setImgError(true)} />
         ) : (
@@ -366,13 +366,13 @@ function ImpulseCard({ product, qty, onAdd, onOpen }: { product: ProductInfo; qt
           </div>
         )}
         {qty > 0 && (
-          <span className="absolute top-2 right-2 w-5 h-5 rounded-full bg-brand text-white text-xs font-bold flex items-center justify-center">{qty}</span>
+          <span className="absolute top-2 right-2 w-5 h-5 rounded-full bg-brand text-gray-900 text-xs font-bold flex items-center justify-center">{qty}</span>
         )}
       </div>
       <div className="p-2 flex flex-col gap-1.5">
         <p className="text-xs font-semibold leading-snug line-clamp-2">{product.name}</p>
         <div className="flex items-center justify-between">
-          <span className="text-white font-black text-sm">{formatCents(product.price)}</span>
+          <span className="text-gray-900 font-black text-sm">{formatCents(product.price)}</span>
           <AddBtn qty={qty} onAdd={onAdd} />
         </div>
       </div>
@@ -385,7 +385,7 @@ function AddBtn({ qty, onAdd }: { qty: number; onAdd: () => void }) {
     <button
       onClick={e => { e.stopPropagation(); onAdd() }}
       className={`w-8 h-8 rounded-full font-bold text-base flex items-center justify-center transition-colors shrink-0 ${
-        qty > 0 ? 'bg-brand text-white' : 'bg-white/10 text-white hover:bg-white/20 border border-white/15'
+        qty > 0 ? 'bg-brand text-gray-900' : 'bg-gray-100 text-gray-900 hover:bg-white/20 border border-gray-300'
       }`}
     >
       {qty > 0 ? qty : '+'}
@@ -398,7 +398,7 @@ function ProductCard({ product, qty, onAdd, onOpen }: { product: ProductInfo; qt
   return (
     <div onClick={onOpen} className="product-card cursor-pointer active:scale-95 transition-transform">
       {/* 4:3 image area — 33% taller than before */}
-      <div className="relative w-full bg-gray-800" style={{ paddingBottom: '75%' }}>
+      <div className="relative w-full bg-gray-100" style={{ paddingBottom: '75%' }}>
         <div className="absolute inset-0 flex items-center justify-center">
           {product.imageUrl && !imgError ? (
             <Image src={product.imageUrl} alt={product.name} fill className="object-contain p-2" unoptimized onError={() => setImgError(true)} />
@@ -407,19 +407,19 @@ function ProductCard({ product, qty, onAdd, onOpen }: { product: ProductInfo; qt
           )}
         </div>
         {product.restrictedFlag && (
-          <span className="absolute top-2 left-2 badge bg-red-900/80 text-red-300 text-xs backdrop-blur-sm">21+</span>
+          <span className="absolute top-2 left-2 badge bg-red-600/80 text-white text-xs backdrop-blur-sm">21+</span>
         )}
         {product.promoted && (
           <span className="absolute top-2 right-2 text-base">⚡</span>
         )}
         {qty > 0 && (
-          <span className="absolute top-2 right-2 w-5 h-5 rounded-full bg-brand text-white text-xs font-bold flex items-center justify-center">{qty}</span>
+          <span className="absolute top-2 right-2 w-5 h-5 rounded-full bg-brand text-gray-900 text-xs font-bold flex items-center justify-center">{qty}</span>
         )}
       </div>
       <div className="p-2.5 flex flex-col flex-1 justify-between gap-2">
         <p className="text-xs font-semibold leading-snug line-clamp-2">{product.name}</p>
         <div className="flex items-center justify-between gap-1">
-          <span className="text-white font-black text-sm">{formatCents(product.price)}</span>
+          <span className="text-gray-900 font-black text-sm">{formatCents(product.price)}</span>
           <AddBtn qty={qty} onAdd={onAdd} />
         </div>
       </div>
@@ -472,17 +472,17 @@ function ProductDetailSheet({
     <>
       <div className="fixed inset-0 bg-black/70 z-40" onClick={onClose} />
       <div
-        className="fixed bottom-0 left-0 right-0 z-50 max-w-lg mx-auto bg-gray-900 rounded-t-3xl"
+        className="fixed bottom-0 left-0 right-0 z-50 max-w-lg mx-auto bg-white rounded-t-3xl"
         style={{ maxHeight: '88vh', overflowY: 'auto' }}
       >
         {/* Handle */}
         <div className="flex justify-center pt-3 pb-1">
-          <div className="w-10 h-1 rounded-full bg-gray-700" />
+          <div className="w-10 h-1 rounded-full bg-gray-200" />
         </div>
 
         {/* Image */}
         <div
-          className="mx-4 mt-2 rounded-2xl overflow-hidden bg-gray-800 flex items-center justify-center relative"
+          className="mx-4 mt-2 rounded-2xl overflow-hidden bg-gray-100 flex items-center justify-center relative"
           style={{ height: 220 }}
         >
           {displayImage && !imgError ? (
@@ -498,7 +498,7 @@ function ProductDetailSheet({
             <span className="text-7xl">{CAT_ICON[product.category ?? ''] ?? '🛒'}</span>
           )}
           {product.restrictedFlag && (
-            <span className="absolute top-3 left-3 badge bg-red-900 text-red-400">21+ ID Required</span>
+            <span className="absolute top-3 left-3 badge bg-red-100 text-red-700">21+ ID Required</span>
           )}
         </div>
 
@@ -508,7 +508,7 @@ function ProductDetailSheet({
           <div className="flex items-start justify-between gap-3">
             <div className="flex-1">
               <h2 className="font-black text-xl leading-tight">{product.name}</h2>
-              {brand && <p className="text-sm text-gray-400 mt-0.5">{brand}{size ? ` · ${size}` : ''}</p>}
+              {brand && <p className="text-sm text-gray-500 mt-0.5">{brand}{size ? ` · ${size}` : ''}</p>}
             </div>
             <span className="text-brand font-black text-2xl shrink-0">{formatCents(product.price)}</span>
           </div>
@@ -518,7 +518,7 @@ function ProductDetailSheet({
             <p className="text-sm text-gray-600 animate-pulse">Loading product info…</p>
           )}
           {description && (
-            <p className="text-sm text-gray-400 leading-relaxed">{description}</p>
+            <p className="text-sm text-gray-500 leading-relaxed">{description}</p>
           )}
 
           {/* Category tag */}
