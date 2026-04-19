@@ -130,13 +130,8 @@ export default function MenuPage() {
             {/* Predictive suggestions dropdown */}
             {searchFocused && searchSuggestions.length > 0 && (
               <div
-                className="absolute top-full left-0 right-0 mt-1 rounded-2xl overflow-hidden z-50"
-                style={{
-                  background: 'rgba(10,16,28,0.97)',
-                  border: '1px solid rgba(46,168,255,0.25)',
-                  backdropFilter: 'blur(20px)',
-                  boxShadow: '0 8px 32px rgba(0,0,0,0.6)',
-                }}
+                className="absolute top-full left-0 right-0 mt-1 rounded-2xl overflow-hidden z-50 bg-gray-900 border border-white/10"
+                style={{ boxShadow: '0 12px 32px rgba(0,0,0,0.6)' }}
               >
                 {searchSuggestions.map(p => (
                   <SearchSuggestionRow
@@ -159,13 +154,9 @@ export default function MenuPage() {
               <button
                 key={cat}
                 onClick={() => scrollToCategory(cat)}
-                className={`shrink-0 text-xs font-semibold px-3 py-1.5 rounded-full transition-colors ${
-                  activeCategory === cat
-                    ? 'bg-brand text-white'
-                    : 'bg-gray-800 text-gray-400 hover:text-gray-200'
-                }`}
+                className={`cat-pill shrink-0${activeCategory === cat ? ' active' : ''}`}
               >
-                {cat !== 'All' && (CAT_ICON[cat] ?? '🛒')} {cat}
+                {cat !== 'All' && <span className="text-base">{CAT_ICON[cat] ?? '🛒'}</span>} {cat}
               </button>
             ))}
           </div>
@@ -253,10 +244,10 @@ export default function MenuPage() {
 
       {/* Cart bar */}
       {itemCount > 0 && (
-        <div className="fixed bottom-0 left-0 right-0 p-4 z-30" style={{background:'rgba(5,10,18,0.92)',borderTop:'1px solid rgba(46,168,255,0.25)',backdropFilter:'blur(20px)'}}>
+        <div className="fixed bottom-0 left-0 right-0 p-4 z-30 panel">
           <div className="max-w-lg mx-auto">
             <Link href={`/store/${storeId}/cart`} className="btn-primary flex items-center justify-between">
-              <span className="bg-brand-dark rounded-lg px-2 py-0.5 text-sm font-bold">{itemCount}</span>
+              <span className="bg-brand-dark/60 rounded-lg px-2 py-0.5 text-sm font-bold">{itemCount}</span>
               <span>View Cart</span>
               <span>{formatCents(total)}</span>
             </Link>
@@ -299,18 +290,8 @@ function SearchSuggestionRow({ product, qty, onAdd, onOpen }: { product: Product
         <p className="text-xs text-gray-500 truncate">{product.category ?? 'General'}{product.restrictedFlag ? ' · 21+' : ''}</p>
       </div>
       <div className="flex items-center gap-2 shrink-0">
-        <span className="text-brand font-black text-sm">{formatCents(product.price)}</span>
-        <button
-          onClick={e => { e.stopPropagation(); onAdd() }}
-          className="w-7 h-7 rounded-full font-bold text-xs flex items-center justify-center transition-all"
-          style={{
-            background: qty > 0 ? '#2EA8FF' : 'rgba(46,168,255,0.2)',
-            color: qty > 0 ? 'white' : '#2EA8FF',
-            border: '1px solid rgba(46,168,255,0.5)',
-          }}
-        >
-          {qty > 0 ? qty : '+'}
-        </button>
+        <span className="text-white font-black text-sm">{formatCents(product.price)}</span>
+        <AddBtn qty={qty} onAdd={onAdd} />
       </div>
     </div>
   )
@@ -321,13 +302,8 @@ function VarietyChip({ product, onSelect }: { product: ProductInfo; onSelect: ()
   return (
     <button
       onClick={onSelect}
-      className="shrink-0 flex flex-col items-center gap-1.5 p-2 rounded-2xl text-center active:scale-95 transition-transform"
-      style={{
-        background: 'rgba(255,255,255,0.05)',
-        border: '1px solid rgba(255,255,255,0.1)',
-        minWidth: 80,
-        maxWidth: 96,
-      }}
+      className="shrink-0 flex flex-col items-center gap-1.5 p-2 rounded-2xl text-center active:scale-95 transition-transform bg-white/5 border border-white/10 hover:bg-white/10"
+      style={{ minWidth: 80, maxWidth: 96 }}
     >
       <div className="w-14 h-14 rounded-xl overflow-hidden bg-gray-800 flex items-center justify-center relative shrink-0">
         {product.imageUrl && !imgError ? (
@@ -337,7 +313,7 @@ function VarietyChip({ product, onSelect }: { product: ProductInfo; onSelect: ()
         )}
       </div>
       <p className="text-xs font-semibold leading-tight line-clamp-2 w-full">{product.name}</p>
-      <span className="text-brand text-xs font-black">{formatCents(product.price)}</span>
+      <span className="text-white text-xs font-black">{formatCents(product.price)}</span>
     </button>
   )
 }
@@ -347,14 +323,9 @@ function ImpulseCard({ product, qty, onAdd, onOpen }: { product: ProductInfo; qt
   return (
     <div
       onClick={onOpen}
-      className="shrink-0 w-36 rounded-2xl overflow-hidden flex flex-col cursor-pointer active:scale-95 transition-transform"
-      style={{
-        background: 'rgba(46,168,255,0.08)',
-        border: '1px solid rgba(46,168,255,0.4)',
-        boxShadow: '0 0 20px rgba(46,168,255,0.15), inset 0 1px 0 rgba(255,255,255,0.06)',
-      }}
+      className="product-card shrink-0 w-36 cursor-pointer active:scale-95 transition-transform"
     >
-      <div className="relative aspect-square bg-gray-800/50">
+      <div className="relative aspect-square bg-white/5">
         {product.imageUrl && !imgError ? (
           <Image src={product.imageUrl} alt={product.name} fill className="object-contain p-2" unoptimized onError={() => setImgError(true)} />
         ) : (
@@ -369,21 +340,24 @@ function ImpulseCard({ product, qty, onAdd, onOpen }: { product: ProductInfo; qt
       <div className="p-2 flex flex-col gap-1.5">
         <p className="text-xs font-semibold leading-snug line-clamp-2">{product.name}</p>
         <div className="flex items-center justify-between">
-          <span className="text-brand font-black text-sm">{formatCents(product.price)}</span>
-          <button
-            onClick={e => { e.stopPropagation(); onAdd() }}
-            className="w-7 h-7 rounded-full font-bold text-xs flex items-center justify-center transition-all shrink-0"
-            style={{
-              background: qty > 0 ? '#2EA8FF' : 'rgba(46,168,255,0.2)',
-              color: qty > 0 ? 'white' : '#2EA8FF',
-              border: '1px solid rgba(46,168,255,0.5)',
-            }}
-          >
-            +
-          </button>
+          <span className="text-white font-black text-sm">{formatCents(product.price)}</span>
+          <AddBtn qty={qty} onAdd={onAdd} />
         </div>
       </div>
     </div>
+  )
+}
+
+function AddBtn({ qty, onAdd }: { qty: number; onAdd: () => void }) {
+  return (
+    <button
+      onClick={e => { e.stopPropagation(); onAdd() }}
+      className={`w-8 h-8 rounded-full font-bold text-base flex items-center justify-center transition-colors shrink-0 ${
+        qty > 0 ? 'bg-brand text-white' : 'bg-white/10 text-white hover:bg-white/20 border border-white/15'
+      }`}
+    >
+      {qty > 0 ? qty : '+'}
+    </button>
   )
 }
 
@@ -413,18 +387,8 @@ function ProductCard({ product, qty, onAdd, onOpen }: { product: ProductInfo; qt
       <div className="p-2.5 flex flex-col flex-1 justify-between gap-2">
         <p className="text-xs font-semibold leading-snug line-clamp-2">{product.name}</p>
         <div className="flex items-center justify-between gap-1">
-          <span className="text-brand font-black text-sm">{formatCents(product.price)}</span>
-          <button
-            onClick={e => { e.stopPropagation(); onAdd() }}
-            className="w-8 h-8 rounded-full font-bold text-lg flex items-center justify-center transition-all shrink-0"
-            style={{
-              background: qty > 0 ? '#2EA8FF' : 'rgba(46,168,255,0.18)',
-              color: qty > 0 ? '#fff' : '#2EA8FF',
-              border: '1.5px solid rgba(46,168,255,0.5)',
-            }}
-          >
-            {qty > 0 ? qty : '+'}
-          </button>
+          <span className="text-white font-black text-sm">{formatCents(product.price)}</span>
+          <AddBtn qty={qty} onAdd={onAdd} />
         </div>
       </div>
     </div>
