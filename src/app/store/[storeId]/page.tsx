@@ -10,12 +10,35 @@ import type { ProductInfo, StoreInfo } from '@/types'
 import type { UpcDetail } from '@/app/api/upc-lookup/route'
 
 const CAT_ICON: Record<string, string> = {
-  'Drinks': '🥤', 'Energy': '⚡', 'Coffee & Tea': '☕',
-  'Beer': '🍺', 'Wine & Spirits': '🍷',
-  'Snacks': '🍿', 'Candy & Chocolate': '🍬',
-  'Food': '🌮', 'Health': '💊', 'Health & Beauty': '🧴',
-  'Tobacco': '🚬', 'Electronics': '🔋',
-  'Household': '🏠', 'Baby': '👶', 'General': '🛒',
+  // Drinks family
+  'Drinks': '🥤', 'Soft Drinks': '🥤', 'Water': '💧', 'Juice': '🧃',
+  'Energy': '⚡', 'Energy Drinks': '⚡', 'Sports Drinks': '🧃',
+  'Coffee': '☕', 'Coffee & Tea': '☕', 'Tea': '🍵',
+  // Alcohol (legacy + new)
+  'Beer': '🍺', 'Wine & Spirits': '🍷', 'Wine': '🍷', 'Spirits': '🥃',
+  // Snacks family
+  'Snacks': '🍿', 'Chips': '🍟', 'Nuts': '🥜', 'Meat Snacks': '🥓',
+  'Candy & Chocolate': '🍬', 'Candy': '🍬', 'Chocolate': '🍫',
+  'Bars': '🍫', 'Pastry': '🥐',
+  // Food
+  'Food': '🌮', 'Hot Food': '🌭',
+  // Health/Beauty
+  'Health': '💊', 'Pain Relief': '💊', 'Stomach': '🩹', 'Sleep': '💤',
+  'Health & Beauty': '🧴', 'Personal Care': '🧴',
+  // Tobacco family
+  'Tobacco': '🚬', 'Cigarettes': '🚬', 'Cigars': '🚬',
+  'Smokeless': '🌿', 'Vape': '💨', 'Nicotine Pouches': '🧃',
+  'Accessories': '🔥',
+  // Misc
+  'Electronics': '🔋', 'Household': '🏠', 'Baby': '👶', 'General': '🛒',
+}
+
+function greeting() {
+  const h = new Date().getHours()
+  if (h < 5) return 'Good evening'
+  if (h < 12) return 'Good morning'
+  if (h < 18) return 'Good afternoon'
+  return 'Good evening'
 }
 
 export default function MenuPage() {
@@ -164,9 +187,9 @@ export default function MenuPage() {
       </div>
 
       {/* Hero banner */}
-      {!search && activeCategory === 'All' && (
-        <div className="relative w-full overflow-hidden" style={{ height: '42vw', maxHeight: 220 }}>
-          {(store as StoreInfo & { logoUrl?: string })?.logoUrl ? (
+      {!search && activeCategory === 'All' && (store as StoreInfo & { logoUrl?: string })?.logoUrl && (
+        <div className="max-w-lg mx-auto px-4 pt-3">
+          <div className="relative w-full overflow-hidden rounded-2xl" style={{ height: '42vw', maxHeight: 220 }}>
             <Image
               src={(store as StoreInfo & { logoUrl?: string }).logoUrl!}
               alt={store?.name ?? ''}
@@ -174,24 +197,35 @@ export default function MenuPage() {
               className="object-cover"
               unoptimized
             />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-white/10 to-black">
-              <div className="text-center px-6">
-                <p className="font-black text-2xl text-white">{store?.name}</p>
-                <p className="text-xs text-gray-400 mt-1">Tap any item to add it to your order</p>
-              </div>
-            </div>
-          )}
-          {/* gradient overlay for text legibility */}
-          <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, rgba(5,10,18,0.85) 0%, rgba(5,10,18,0.1) 60%, transparent 100%)' }} />
-          <div className="absolute bottom-0 left-0 right-0 px-4 pb-3">
-            <p className="font-black text-lg text-white leading-tight">{store?.name}</p>
-            <p className="text-xs text-gray-300 mt-0.5">📍 Tap any item · Pay at checkout · Pick up at window</p>
           </div>
         </div>
       )}
 
       <div className="max-w-lg mx-auto px-4 pt-4 space-y-6">
+        {/* Greeting */}
+        {!search && activeCategory === 'All' && (
+          <div>
+            <h2 className="text-2xl font-black text-white">{greeting()}</h2>
+            <p className="text-sm text-gray-400 mt-0.5">Browse the shelf and we&apos;ll have it ready at the window.</p>
+          </div>
+        )}
+
+        {/* Quick category pills (DoorDash-style cuisine row) */}
+        {!search && activeCategory === 'All' && categories.length > 1 && (
+          <div className="flex gap-2 overflow-x-auto -mx-4 px-4 pb-1" style={{ scrollbarWidth: 'none' }}>
+            {categories.slice(1, 9).map(cat => (
+              <button
+                key={cat}
+                onClick={() => scrollToCategory(cat)}
+                className="cat-pill shrink-0"
+              >
+                <span className="text-base">{CAT_ICON[cat] ?? '🛒'}</span>
+                {cat}
+              </button>
+            ))}
+          </div>
+        )}
+
         {/* Hot Picks impulse strip */}
         {promoted.length > 0 && !search && activeCategory === 'All' && (
           <div>
