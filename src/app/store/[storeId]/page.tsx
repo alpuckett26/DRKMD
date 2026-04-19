@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
+import { MediaAsset } from '@/components/MediaAsset'
 import { useCart } from '@/context/CartContext'
 import { formatCents } from '@/lib/utils'
 import type { ProductInfo, StoreInfo } from '@/types'
@@ -190,12 +191,10 @@ export default function MenuPage() {
       {!search && activeCategory === 'All' && (store as StoreInfo & { logoUrl?: string })?.logoUrl && (
         <div className="max-w-lg mx-auto px-4 pt-3">
           <div className="relative w-full overflow-hidden rounded-2xl" style={{ height: '42vw', maxHeight: 220 }}>
-            <Image
+            <MediaAsset
               src={(store as StoreInfo & { logoUrl?: string }).logoUrl!}
               alt={store?.name ?? ''}
-              fill
               className="object-cover"
-              unoptimized
             />
           </div>
         </div>
