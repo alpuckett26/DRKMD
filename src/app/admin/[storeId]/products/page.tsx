@@ -286,7 +286,7 @@ function ProductRow({
     <button
       onClick={bulkMode ? onToggle : onOpen}
       className="card flex items-center gap-3 w-full text-left active:opacity-70 transition-opacity"
-      style={!bulkMode && product.promoted ? { borderColor: 'rgba(46,168,255,0.45)', boxShadow: '0 0 12px rgba(46,168,255,0.12)' } : {}}
+      style={!bulkMode && product.promoted ? { borderColor: 'rgba(46,168,255,0.45)' } : {}}
     >
       {bulkMode ? (
         <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${

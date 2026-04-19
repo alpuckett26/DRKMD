@@ -143,7 +143,7 @@ export default function StaffLogin() {
             key={i}
             className={`w-5 h-5 rounded-full border-2 transition-all ${
               i < pin.length
-                ? 'bg-brand border-brand shadow-[0_0_12px_rgba(46,168,255,0.8)]'
+                ? 'bg-brand border-brand'
                 : 'border-gray-600'
             }`}
           />

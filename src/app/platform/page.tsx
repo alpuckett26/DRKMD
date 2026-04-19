@@ -312,7 +312,7 @@ export default function PlatformAdmin() {
                   <button
                     onClick={() => toggleWindow(store.id, !store.windowModeEnabled)}
                     className={`relative w-12 h-6 rounded-full transition-colors ${store.windowModeEnabled ? 'bg-brand' : 'bg-gray-700'}`}
-                    style={store.windowModeEnabled ? { boxShadow: '0 0 12px rgba(46,168,255,0.5)' } : {}}
+                    style={{}}
                   >
                     <span className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${store.windowModeEnabled ? 'translate-x-6' : ''}`} />
                   </button>

@@ -131,7 +131,7 @@ export default function AdminDashboard() {
 
       {!onboardingComplete && (
         <div className="max-w-2xl mx-auto px-4 pt-4">
-          <div className="rounded-2xl p-4 space-y-3" style={{ background: 'rgba(46,168,255,0.08)', border: '1px solid rgba(46,168,255,0.3)' }}>
+          <div className="card space-y-3 border-brand/40 bg-brand/10">
             <div className="flex items-center gap-3">
               <span className="text-xl shrink-0">⚠️</span>
               <div>

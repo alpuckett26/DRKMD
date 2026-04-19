@@ -224,8 +224,7 @@ export default function SetupWizard() {
             </div>
             <div className="flex gap-1">
               {STEPS.map((_, i) => (
-                <div key={i} className={`h-1.5 flex-1 rounded-full transition-all ${i <= step ? 'bg-brand' : 'bg-gray-700'}`}
-                  style={i <= step ? { boxShadow: '0 0 6px rgba(46,168,255,0.5)' } : {}} />
+                <div key={i} className={`h-1.5 flex-1 rounded-full transition-colors ${i <= step ? 'bg-brand' : 'bg-gray-700'}`} />
               ))}
             </div>
           </div>
