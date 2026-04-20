@@ -295,7 +295,7 @@ export default function ShelfTourEditor() {
         </div>
       </div>
 
-      <div className="max-w-3xl mx-auto px-4 pt-4 space-y-4">
+      <div className="max-w-3xl mx-auto px-4 pt-4 pb-32 space-y-4">
         <input
           type="text"
           value={photoLabel}
@@ -304,28 +304,9 @@ export default function ShelfTourEditor() {
           className="input text-sm"
         />
 
-        <div className="flex items-center gap-2 flex-wrap">
-          <button
-            onClick={() => setDrawMode(v => !v)}
-            className={`px-4 py-2 rounded-full text-sm font-semibold ${drawMode ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-900 border border-gray-200'}`}
-          >
-            {drawMode ? '✕ Cancel draw' : '＋ Draw new box'}
-          </button>
-          <div className="flex items-center gap-1">
-            <span className="text-xs text-gray-500 pr-1">Shift all:</span>
-            <button onClick={() => shiftAll(0, -0.015)} className="w-8 h-8 rounded-full bg-gray-100 border border-gray-200 text-sm font-bold text-gray-700 active:bg-gray-200" aria-label="Shift up">↑</button>
-            <button onClick={() => shiftAll(0, 0.015)} className="w-8 h-8 rounded-full bg-gray-100 border border-gray-200 text-sm font-bold text-gray-700 active:bg-gray-200" aria-label="Shift down">↓</button>
-            <button onClick={() => shiftAll(-0.015, 0)} className="w-8 h-8 rounded-full bg-gray-100 border border-gray-200 text-sm font-bold text-gray-700 active:bg-gray-200" aria-label="Shift left">←</button>
-            <button onClick={() => shiftAll(0.015, 0)} className="w-8 h-8 rounded-full bg-gray-100 border border-gray-200 text-sm font-bold text-gray-700 active:bg-gray-200" aria-label="Shift right">→</button>
-          </div>
-          <div className="flex items-center gap-1">
-            <span className="text-xs text-gray-500 pr-1">Resize all:</span>
-            <button onClick={() => scaleAll(-0.02, 0)} className="w-auto px-2 h-8 rounded-full bg-gray-100 border border-gray-200 text-xs font-bold text-gray-700 active:bg-gray-200" aria-label="Shrink height">↕−</button>
-            <button onClick={() => scaleAll(0.02, 0)} className="w-auto px-2 h-8 rounded-full bg-gray-100 border border-gray-200 text-xs font-bold text-gray-700 active:bg-gray-200" aria-label="Grow height">↕+</button>
-            <button onClick={() => scaleAll(0, -0.02)} className="w-auto px-2 h-8 rounded-full bg-gray-100 border border-gray-200 text-xs font-bold text-gray-700 active:bg-gray-200" aria-label="Shrink width">↔−</button>
-            <button onClick={() => scaleAll(0, 0.02)} className="w-auto px-2 h-8 rounded-full bg-gray-100 border border-gray-200 text-xs font-bold text-gray-700 active:bg-gray-200" aria-label="Grow width">↔+</button>
-          </div>
-        </div>
+        <p className="text-xs text-gray-500">
+          Tap a hotspot to edit one. Use the bulk adjust dock below to nudge or resize every box at once.
+        </p>
 
         <div
           ref={imgRef}
@@ -391,9 +372,37 @@ export default function ShelfTourEditor() {
           />
         ) : (
           <p className="text-center text-xs text-gray-500 py-2">
-            Tap a hotspot on the photo to edit. {drawMode ? '' : 'Or tap “Draw new box” to add one.'}
+            Tap a hotspot on the photo to edit. {drawMode ? '' : 'Use the dock below to add or bulk-adjust.'}
           </p>
         )}
+      </div>
+
+      {/* Sticky bulk-adjust dock — always reachable while looking at the photo */}
+      <div className="fixed bottom-0 left-0 right-0 z-30 bg-white border-t border-gray-200" style={{ boxShadow: '0 -8px 24px rgba(0,0,0,0.06)' }}>
+        <div className="max-w-3xl mx-auto px-3 py-2 flex items-center gap-2 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
+          <button
+            onClick={() => setDrawMode(v => !v)}
+            className={`shrink-0 px-3 py-2 rounded-full text-xs font-bold ${drawMode ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-900 border border-gray-200'}`}
+          >
+            {drawMode ? '✕ Cancel' : '＋ Draw'}
+          </button>
+
+          <div className="shrink-0 flex items-center gap-1 pl-2 border-l border-gray-200">
+            <span className="text-[10px] uppercase tracking-wider font-bold text-gray-500 pr-0.5">Shift</span>
+            <button onClick={() => shiftAll(0, -0.015)} className="w-9 h-9 rounded-full bg-gray-100 border border-gray-200 text-base font-bold text-gray-700 active:bg-gray-200" aria-label="Shift up">↑</button>
+            <button onClick={() => shiftAll(0, 0.015)} className="w-9 h-9 rounded-full bg-gray-100 border border-gray-200 text-base font-bold text-gray-700 active:bg-gray-200" aria-label="Shift down">↓</button>
+            <button onClick={() => shiftAll(-0.015, 0)} className="w-9 h-9 rounded-full bg-gray-100 border border-gray-200 text-base font-bold text-gray-700 active:bg-gray-200" aria-label="Shift left">←</button>
+            <button onClick={() => shiftAll(0.015, 0)} className="w-9 h-9 rounded-full bg-gray-100 border border-gray-200 text-base font-bold text-gray-700 active:bg-gray-200" aria-label="Shift right">→</button>
+          </div>
+
+          <div className="shrink-0 flex items-center gap-1 pl-2 border-l border-gray-200">
+            <span className="text-[10px] uppercase tracking-wider font-bold text-gray-500 pr-0.5">Resize</span>
+            <button onClick={() => scaleAll(-0.02, 0)} className="px-2.5 h-9 rounded-full bg-gray-100 border border-gray-200 text-xs font-bold text-gray-700 active:bg-gray-200" aria-label="Shrink height">↕−</button>
+            <button onClick={() => scaleAll(0.02, 0)} className="px-2.5 h-9 rounded-full bg-gray-100 border border-gray-200 text-xs font-bold text-gray-700 active:bg-gray-200" aria-label="Grow height">↕+</button>
+            <button onClick={() => scaleAll(0, -0.02)} className="px-2.5 h-9 rounded-full bg-gray-100 border border-gray-200 text-xs font-bold text-gray-700 active:bg-gray-200" aria-label="Shrink width">↔−</button>
+            <button onClick={() => scaleAll(0, 0.02)} className="px-2.5 h-9 rounded-full bg-gray-100 border border-gray-200 text-xs font-bold text-gray-700 active:bg-gray-200" aria-label="Grow width">↔+</button>
+          </div>
+        </div>
       </div>
     </div>
   )

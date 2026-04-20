@@ -138,16 +138,21 @@ function PhotoCard({ photo, storeId, onRemove }: { photo: ShelfPhoto; storeId: s
           ))}
         </div>
       </Link>
-      <div className="px-4 py-3 flex items-center justify-between">
-        <div>
-          <p className="font-semibold text-sm">{photo.label ?? 'Shelf'}</p>
+      <div className="px-4 py-3 flex items-center justify-between gap-3">
+        <div className="min-w-0">
+          <p className="font-semibold text-sm truncate">{photo.label ?? 'Shelf'}</p>
           <p className="text-xs text-gray-500">
             {photo.detections.length} items · <span className="text-brand">{matched} matched</span>
             {unmatched > 0 && <> · <span className="text-yellow-700">{unmatched} unmatched</span></>}
           </p>
         </div>
-        <div className="flex gap-3 items-center">
-          <Link href={`/admin/${storeId}/shelf-tour/${photo.id}`} className="text-xs text-brand font-semibold">Edit</Link>
+        <div className="flex gap-2 items-center shrink-0">
+          <Link
+            href={`/admin/${storeId}/shelf-tour/${photo.id}`}
+            className="text-xs font-semibold text-white bg-brand px-3 py-2 rounded-full"
+          >
+            Adjust hotspots →
+          </Link>
           <button onClick={onRemove} className="text-xs text-red-600 font-semibold">Remove</button>
         </div>
       </div>
