@@ -50,10 +50,19 @@ export async function POST(req: Request, { params }: { params: { storeId: string
       return NextResponse.json({ error: 'ANTHROPIC_API_KEY not configured on the server' }, { status: 500 })
     }
 
-    const cleanBase64 = imageBase64.replace(/^data:image\/\w+;base64,/, '')
+    // Normalize the image server-side: apply any EXIF rotation once so SAM,
+    // Claude, and the browser all see the exact same pixels at the same
+    // orientation. The photo we store and display is this normalized version.
+    const incomingBase64 = imageBase64.replace(/^data:image\/\w+;base64,/, '')
+    const normalizedBuf = await sharp(Buffer.from(incomingBase64, 'base64'))
+      .rotate()
+      .jpeg({ quality: 85 })
+      .toBuffer()
+    const cleanBase64 = normalizedBuf.toString('base64')
+    const normalizedDataUrl = `data:image/jpeg;base64,${cleanBase64}`
 
     // Step 1: SAM finds shapes.
-    const samMasks = await segmentShelf(imageBase64)
+    const samMasks = await segmentShelf(normalizedDataUrl)
     const usable = samMasks ? filterProductLikely(samMasks) : []
 
     let rawDetections: LabeledBBox[] = []
@@ -111,7 +120,7 @@ export async function POST(req: Request, { params }: { params: { storeId: string
     const photo = await db.shelfPhoto.create({
       data: {
         storeId,
-        imageUrl: imageBase64,
+        imageUrl: normalizedDataUrl,
         label: label ?? null,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         detections: detections as any,

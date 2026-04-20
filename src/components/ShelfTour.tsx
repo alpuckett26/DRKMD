@@ -183,30 +183,42 @@ export default function ShelfTour({ storeId, onOpenProduct }: Props) {
             draggable={false}
           />
           {photo.detections.map((d, i) => {
-            const interactive = zoomed && d.productId
+            if (!d.productId) return null // hide unmatched from customers
+            const interactive = !!zoomed
+            const cx = d.bbox.x + d.bbox.w / 2
+            const cy = d.bbox.y + d.bbox.h / 2
+            const isTapped = tapped?.i === i
             return (
               <button
                 key={i}
                 onClick={e => handleHotspotTap(e, d, i)}
                 disabled={!interactive}
-                className={`absolute rounded transition-colors ${
-                  !zoomed
-                    ? d.matched
-                      ? 'border-2 border-brand/40 pointer-events-none'
-                      : 'border-2 border-dashed border-gray-300/50 pointer-events-none'
-                    : d.productId
-                      ? 'border-2 border-transparent active:border-brand active:bg-brand/20'
-                      : 'border-2 border-dashed border-gray-300/60 cursor-not-allowed'
-                } ${tapped?.i === i ? 'bg-brand/30 border-brand' : ''}`}
+                className="absolute flex items-center justify-center -translate-x-1/2 -translate-y-1/2"
                 style={{
-                  left: `${d.bbox.x * 100}%`,
-                  top: `${d.bbox.y * 100}%`,
-                  width: `${d.bbox.w * 100}%`,
-                  height: `${d.bbox.h * 100}%`,
+                  left: `${cx * 100}%`,
+                  top: `${cy * 100}%`,
+                  width: `${Math.max(14, d.bbox.w * 100) / (zoomed ? ZOOM_LEVEL : 1)}%`,
+                  height: `${Math.max(14, d.bbox.h * 100) / (zoomed ? ZOOM_LEVEL : 1)}%`,
+                  minWidth: 28,
+                  minHeight: 28,
                 }}
                 aria-label={d.label}
                 title={d.label}
-              />
+              >
+                <span
+                  className={`rounded-full transition-all ${
+                    isTapped
+                      ? 'bg-brand scale-150 shadow-lg'
+                      : zoomed
+                        ? 'bg-brand ring-2 ring-white/90 shadow'
+                        : 'bg-white/90 ring-2 ring-brand shadow-sm'
+                  }`}
+                  style={{
+                    width: zoomed ? 14 : 10,
+                    height: zoomed ? 14 : 10,
+                  }}
+                />
+              </button>
             )
           })}
         </div>
