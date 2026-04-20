@@ -13,9 +13,10 @@ export const maxDuration = 300
  *  admin captured each section individually, but without having to. */
 export async function POST(req: Request, { params }: { params: { storeId: string } }) {
   try {
-    const { imageBase64, yBoundaries, areaName, rows: bodyRows, cols: bodyCols } = await req.json() as {
+    const { imageBase64, yBoundaries, xBoundaries, areaName, rows: bodyRows, cols: bodyCols } = await req.json() as {
       imageBase64: string
       yBoundaries?: number[]
+      xBoundaries?: [number, number] // normalized [leftX, rightX] to crop sides
       areaName?: string | null
       rows?: number
       cols?: number
@@ -49,7 +50,18 @@ export async function POST(req: Request, { params }: { params: { storeId: string
     const H = meta.height ?? 0
     if (!W || !H) return NextResponse.json({ error: 'Could not read image dimensions' }, { status: 400 })
 
-    const cellW = Math.floor(W / cols)
+    // Horizontal crop: defaults to full width unless the admin pushed the
+    // left/right crop lines in the calibration step.
+    const xLeftN = Array.isArray(xBoundaries) && typeof xBoundaries[0] === 'number'
+      ? Math.max(0, Math.min(1, xBoundaries[0]))
+      : 0
+    const xRightN = Array.isArray(xBoundaries) && typeof xBoundaries[1] === 'number'
+      ? Math.max(xLeftN + 0.02, Math.min(1, xBoundaries[1]))
+      : 1
+    const xLeftPx = Math.floor(xLeftN * W)
+    const xRightPx = Math.floor(xRightN * W)
+    const workW = Math.max(1, xRightPx - xLeftPx)
+    const cellW = Math.floor(workW / cols)
 
     // Y boundaries in pixels. If the admin calibrated shelves (yBoundaries
     // length = rows + 1, normalized 0..1), use those. Otherwise fall back
@@ -81,8 +93,8 @@ export async function POST(req: Request, { params }: { params: { storeId: string
       const bottom = yEdges[r + 1]
       const height = Math.max(1, bottom - top)
       for (let c = 0; c < cols; c++) {
-        const left = c * cellW
-        const width = c === cols - 1 ? W - left : cellW
+        const left = xLeftPx + c * cellW
+        const width = c === cols - 1 ? xRightPx - left : cellW
         cellJobs.push({ r, c, left, top, width, height })
       }
     }

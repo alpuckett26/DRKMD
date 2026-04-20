@@ -171,7 +171,7 @@ export default function ShelfGridPage() {
     }
   }
 
-  async function runAutoSplit(imageBase64: string, yBoundaries: number[]) {
+  async function runAutoSplit(imageBase64: string, yBoundaries: number[], xBoundaries: [number, number]) {
     setSplitting(true)
     setSplitResult('')
     setError('')
@@ -179,7 +179,7 @@ export default function ShelfGridPage() {
       const res = await fetch(`/api/admin/${storeId}/shelf-tour/auto-split`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ imageBase64, yBoundaries, areaName: activeArea, rows, cols }),
+        body: JSON.stringify({ imageBase64, yBoundaries, xBoundaries, areaName: activeArea, rows, cols }),
       })
       if (!res.ok) {
         const d = await res.json().catch(() => ({}))
@@ -440,7 +440,7 @@ export default function ShelfGridPage() {
           rows={rows}
           submitting={splitting}
           onCancel={() => { if (!splitting) setCalibrating(null) }}
-          onConfirm={yBoundaries => runAutoSplit(calibrating, yBoundaries)}
+          onConfirm={(yBoundaries, xBoundaries) => runAutoSplit(calibrating, yBoundaries, xBoundaries)}
         />
       )}
     </div>

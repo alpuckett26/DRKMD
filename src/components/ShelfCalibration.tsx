@@ -7,7 +7,7 @@ interface Props {
   rows: number // expected number of shelves
   submitting?: boolean
   onCancel: () => void
-  onConfirm: (yBoundaries: number[]) => void
+  onConfirm: (yBoundaries: number[], xBoundaries: [number, number]) => void
 }
 
 /**
@@ -20,7 +20,10 @@ export default function ShelfCalibration({ imageDataUrl, rows, submitting, onCan
   const [lines, setLines] = useState<number[]>(() =>
     Array.from({ length: expected }, (_, i) => i / rows),
   )
+  const [xLeft, setXLeft] = useState(0)
+  const [xRight, setXRight] = useState(1)
   const [dragIdx, setDragIdx] = useState<number | null>(null)
+  const [dragSide, setDragSide] = useState<'left' | 'right' | null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -34,6 +37,12 @@ export default function ShelfCalibration({ imageDataUrl, rows, submitting, onCan
     const y = (clientY - rect.top) / rect.height
     return Math.max(0.001, Math.min(0.999, y))
   }
+  function xFromEvent(clientX: number): number {
+    const rect = containerRef.current?.getBoundingClientRect()
+    if (!rect) return 0
+    const x = (clientX - rect.left) / rect.width
+    return Math.max(0.001, Math.min(0.999, x))
+  }
 
   function onPointerDownLine(e: React.PointerEvent, i: number) {
     e.stopPropagation()
@@ -41,29 +50,44 @@ export default function ShelfCalibration({ imageDataUrl, rows, submitting, onCan
     setDragIdx(i)
   }
 
+  function onPointerDownSide(e: React.PointerEvent, side: 'left' | 'right') {
+    e.stopPropagation()
+    ;(e.target as HTMLElement).setPointerCapture?.(e.pointerId)
+    setDragSide(side)
+  }
+
   function onPointerMove(e: React.PointerEvent) {
-    if (dragIdx === null) return
-    const y = yFromEvent(e.clientY)
-    setLines(prev => {
-      const next = [...prev]
-      next[dragIdx] = y
-      return next
-    })
+    if (dragIdx !== null) {
+      const y = yFromEvent(e.clientY)
+      setLines(prev => {
+        const next = [...prev]
+        next[dragIdx] = y
+        return next
+      })
+    }
+    if (dragSide) {
+      const x = xFromEvent(e.clientX)
+      if (dragSide === 'left') setXLeft(Math.min(x, xRight - 0.02))
+      else setXRight(Math.max(x, xLeft + 0.02))
+    }
   }
 
   function onPointerUp() {
-    if (dragIdx === null) return
-    setLines(prev => [...prev].sort((a, b) => a - b))
+    if (dragIdx !== null) setLines(prev => [...prev].sort((a, b) => a - b))
     setDragIdx(null)
+    setDragSide(null)
   }
 
   function resetEven() {
     setLines(Array.from({ length: expected }, (_, i) => i / rows))
+    setXLeft(0)
+    setXRight(1)
   }
 
   function confirm() {
     const sorted = [...lines].sort((a, b) => a - b)
-    onConfirm(sorted)
+    const xb: [number, number] = [Math.min(xLeft, xRight), Math.max(xLeft, xRight)]
+    onConfirm(sorted, xb)
   }
 
   return (
@@ -92,6 +116,42 @@ export default function ShelfCalibration({ imageDataUrl, rows, submitting, onCan
               className="block w-full h-auto rounded-xl"
               draggable={false}
             />
+
+            {/* Dim-out masks for the area OUTSIDE the left/right crop lines.
+                Purely visual — makes the croppable region obvious. */}
+            <div className="absolute top-0 bottom-0 bg-black/60 pointer-events-none rounded-l-xl"
+                 style={{ left: 0, width: `${xLeft * 100}%` }} />
+            <div className="absolute top-0 bottom-0 bg-black/60 pointer-events-none rounded-r-xl"
+                 style={{ right: 0, width: `${(1 - xRight) * 100}%` }} />
+
+            {/* Draggable vertical crop lines */}
+            {(['left', 'right'] as const).map(side => {
+              const x = side === 'left' ? xLeft : xRight
+              const isActive = dragSide === side
+              return (
+                <div
+                  key={side}
+                  onPointerDown={e => onPointerDownSide(e, side)}
+                  className="absolute top-0 bottom-0 flex flex-col items-center justify-center cursor-ew-resize"
+                  style={{
+                    left: `${x * 100}%`,
+                    transform: 'translateX(-50%)',
+                    width: 24,
+                    touchAction: 'none',
+                  }}
+                >
+                  <div
+                    className={`w-[2px] flex-1 ${isActive ? 'bg-brand' : 'bg-white/85'}`}
+                    style={{ boxShadow: isActive ? '0 0 12px rgba(46,168,255,0.8)' : '0 0 4px rgba(0,0,0,0.4)' }}
+                  />
+                  <div
+                    className={`absolute top-1/2 -translate-y-1/2 w-4 h-10 rounded-full border-2 border-white ${isActive ? 'bg-brand scale-110' : 'bg-white/90'}`}
+                    style={{ boxShadow: '0 2px 6px rgba(0,0,0,0.3)' }}
+                  />
+                </div>
+              )
+            })}
+
             {lines.map((y, i) => {
               const isEdge = i === 0 || i === lines.length - 1
               const isActive = dragIdx === i
@@ -99,9 +159,11 @@ export default function ShelfCalibration({ imageDataUrl, rows, submitting, onCan
                 <div
                   key={i}
                   onPointerDown={e => onPointerDownLine(e, i)}
-                  className="absolute left-0 right-0 flex items-center cursor-ns-resize"
+                  className="absolute flex items-center cursor-ns-resize"
                   style={{
                     top: `${y * 100}%`,
+                    left: `${xLeft * 100}%`,
+                    right: `${(1 - xRight) * 100}%`,
                     transform: 'translateY(-50%)',
                     touchAction: 'none',
                     padding: '10px 0',
