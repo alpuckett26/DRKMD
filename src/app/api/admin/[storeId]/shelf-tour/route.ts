@@ -32,26 +32,30 @@ export async function GET(_req: Request, { params }: { params: { storeId: string
 }
 
 export async function POST(req: Request, { params }: { params: { storeId: string } }) {
-  const { imageBase64, label } = await req.json() as { imageBase64: string; label?: string }
-  const storeId = params.storeId
-  if (!imageBase64) return NextResponse.json({ error: 'No image provided' }, { status: 400 })
+  try {
+    const { imageBase64, label } = await req.json() as { imageBase64: string; label?: string }
+    const storeId = params.storeId
+    if (!imageBase64) return NextResponse.json({ error: 'No image provided' }, { status: 400 })
+    if (!process.env.ANTHROPIC_API_KEY) {
+      return NextResponse.json({ error: 'ANTHROPIC_API_KEY not configured on the server' }, { status: 500 })
+    }
 
-  const cleanBase64 = imageBase64.replace(/^data:image\/\w+;base64,/, '')
+    const cleanBase64 = imageBase64.replace(/^data:image\/\w+;base64,/, '')
 
-  const message = await client.messages.create({
-    model: 'claude-opus-4-7',
-    max_tokens: 3000,
-    thinking: { type: 'adaptive' },
-    messages: [{
-      role: 'user',
-      content: [
-        {
-          type: 'image',
-          source: { type: 'base64', media_type: 'image/jpeg', data: cleanBase64 },
-        },
-        {
-          type: 'text',
-          text: `This is a photo of a convenience-store shelf (or a fridge/cabinet acting as one for testing).
+    const message = await client.messages.create({
+      model: 'claude-opus-4-7',
+      max_tokens: 3000,
+      thinking: { type: 'adaptive' },
+      messages: [{
+        role: 'user',
+        content: [
+          {
+            type: 'image',
+            source: { type: 'base64', media_type: 'image/jpeg', data: cleanBase64 },
+          },
+          {
+            type: 'text',
+            text: `This is a photo of a convenience-store shelf (or a fridge/cabinet acting as one for testing).
 Identify every distinct consumable product visible and return a tight bounding box for each.
 
 For each product return:
@@ -65,50 +69,59 @@ Rules:
 - Skip prices, price tags, shelves, and non-product clutter.
 - Return ONLY a JSON array, no other text:
 [{"label":"Coca-Cola 20oz","bbox":{"x":0.1,"y":0.2,"w":0.08,"h":0.3},"confidence":0.94}]`,
-        },
-      ],
-    }],
-  })
+          },
+        ],
+      }],
+    })
 
-  const text = message.content.find(b => b.type === 'text')?.text ?? '[]'
-  const match = text.match(/\[[\s\S]*\]/)
-  let raw: { label: string; bbox: BBox; confidence?: number }[] = []
-  if (match) {
-    try { raw = JSON.parse(match[0]) } catch {}
-  }
-
-  // Match each detection to an existing store product by fuzzy name similarity.
-  const products = await db.product.findMany({
-    where: { storeId, active: true },
-    select: { id: true, name: true },
-  })
-
-  const detections: Detection[] = raw.map(r => {
-    const hit = products.find(p => tooSimilar(p.name, r.label))
-    return {
-      productId: hit?.id ?? null,
-      label: r.label,
-      bbox: r.bbox,
-      confidence: typeof r.confidence === 'number' ? r.confidence : 0.75,
-      matched: !!hit,
+    const text = message.content.find(b => b.type === 'text')?.text ?? '[]'
+    const match = text.match(/\[[\s\S]*\]/)
+    let raw: { label: string; bbox: BBox; confidence?: number }[] = []
+    if (match) {
+      try { raw = JSON.parse(match[0]) } catch {}
     }
-  })
 
-  // Guard: require at least one detection
-  if (detections.length === 0) {
-    return NextResponse.json({ error: 'No products detected. Try a clearer photo.' }, { status: 422 })
+    // Match each detection to an existing store product by fuzzy name similarity.
+    const products = await db.product.findMany({
+      where: { storeId, active: true },
+      select: { id: true, name: true },
+    })
+
+    const detections: Detection[] = raw.map(r => {
+      const hit = products.find(p => tooSimilar(p.name, r.label))
+      return {
+        productId: hit?.id ?? null,
+        label: r.label,
+        bbox: r.bbox,
+        confidence: typeof r.confidence === 'number' ? r.confidence : 0.75,
+        matched: !!hit,
+      }
+    })
+
+    // Guard: require at least one detection
+    if (detections.length === 0) {
+      return NextResponse.json({ error: 'No products detected. Try a clearer, better-lit photo.' }, { status: 422 })
+    }
+
+    const photo = await db.shelfPhoto.create({
+      data: {
+        storeId,
+        imageUrl: imageBase64,
+        label: label ?? null,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        detections: detections as any,
+      },
+    })
+
+    return NextResponse.json(photo)
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err)
+    console.error('shelf-tour POST failed:', msg)
+    const hint = /does not exist|relation|shelfphoto/i.test(msg)
+      ? '. Run /api/migrate to create the ShelfPhoto table.'
+      : /anthropic|api key/i.test(msg)
+        ? '. Check ANTHROPIC_API_KEY on Vercel.'
+        : ''
+    return NextResponse.json({ error: `${msg}${hint}` }, { status: 500 })
   }
-
-  const photo = await db.shelfPhoto.create({
-    data: {
-      storeId,
-      imageUrl: imageBase64,
-      label: label ?? null,
-      // Prisma JSON type accepts plain JS
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      detections: detections as any,
-    },
-  })
-
-  return NextResponse.json(photo)
 }

@@ -41,7 +41,7 @@ export default function ShelfTourAdmin() {
     setError('')
     setUploading(true)
     try {
-      const base64 = await compressImage(file, 1600, 0.8)
+      const base64 = await compressImage(file, 1200, 0.75)
       const res = await fetch(`/api/admin/${storeId}/shelf-tour`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
