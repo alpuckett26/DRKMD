@@ -49,6 +49,21 @@ export async function segmentShelf(imageBase64: string): Promise<SamMaskBBox[] |
       },
     })
 
+    // Log a compact sample so we can verify the output shape in Vercel
+    // logs when bboxes land in the wrong place.
+    try {
+      const preview = Array.isArray(raw)
+        ? raw.slice(0, 2)
+        : raw && typeof raw === 'object'
+          ? Object.fromEntries(
+              Object.entries(raw as Record<string, unknown>)
+                .slice(0, 3)
+                .map(([k, v]) => [k, Array.isArray(v) ? v.slice(0, 2) : v]),
+            )
+          : raw
+      console.info('[sam] raw preview:', JSON.stringify(preview).slice(0, 500))
+    } catch {}
+
     return parseReplicateOutput(raw)
   } catch (err) {
     console.error('[sam] segmentation failed:', err)

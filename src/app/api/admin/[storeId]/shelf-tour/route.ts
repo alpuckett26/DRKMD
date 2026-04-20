@@ -171,7 +171,10 @@ Return JSON only:
  *  labels. Drops masks Claude says aren't products. */
 async function labelMasksWithClaude(cleanBase64: string, masks: SamMaskBBox[]): Promise<LabeledBBox[]> {
   const buf = Buffer.from(cleanBase64, 'base64')
-  const meta = await sharp(buf).metadata()
+  // .rotate() auto-applies EXIF orientation so our crop coordinates match
+  // how the browser renders the uploaded image.
+  const rotated = await sharp(buf).rotate().toBuffer()
+  const meta = await sharp(rotated).metadata()
   const W = meta.width ?? 0
   const H = meta.height ?? 0
   if (!W || !H) return []
@@ -185,7 +188,7 @@ async function labelMasksWithClaude(cleanBase64: string, masks: SamMaskBBox[]): 
     const top = Math.max(0, Math.round(m.bbox.y * H))
     const width = Math.min(W - left, Math.max(2, Math.round(m.bbox.w * W)))
     const height = Math.min(H - top, Math.max(2, Math.round(m.bbox.h * H)))
-    const cropped = await sharp(buf).extract({ left, top, width, height }).jpeg({ quality: 82 }).toBuffer()
+    const cropped = await sharp(rotated).extract({ left, top, width, height }).jpeg({ quality: 82 }).toBuffer()
     return cropped.toString('base64')
   }))
 
