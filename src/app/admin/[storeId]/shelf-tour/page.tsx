@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { useParams } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 
 interface Detection {
@@ -21,6 +21,7 @@ interface ShelfPhoto {
 
 export default function ShelfTourAdmin() {
   const { storeId } = useParams<{ storeId: string }>()
+  const router = useRouter()
   const fileRef = useRef<HTMLInputElement>(null)
   const [photos, setPhotos] = useState<ShelfPhoto[]>([])
   const [uploading, setUploading] = useState(false)
@@ -50,8 +51,10 @@ export default function ShelfTourAdmin() {
         const d = await res.json().catch(() => ({}))
         throw new Error(d.error || 'Upload failed')
       }
+      const created = await res.json() as ShelfPhoto
       setLabel('')
-      await load()
+      // Jump straight into the editor so admin can nudge boxes.
+      router.push(`/admin/${storeId}/shelf-tour/${created.id}`)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Upload failed')
     } finally {
@@ -105,43 +108,48 @@ export default function ShelfTourAdmin() {
         )}
 
         {photos.map(photo => (
-          <PhotoCard key={photo.id} photo={photo} onRemove={() => remove(photo.id)} />
+          <PhotoCard key={photo.id} photo={photo} storeId={storeId} onRemove={() => remove(photo.id)} />
         ))}
       </div>
     </div>
   )
 }
 
-function PhotoCard({ photo, onRemove }: { photo: ShelfPhoto; onRemove: () => void }) {
+function PhotoCard({ photo, storeId, onRemove }: { photo: ShelfPhoto; storeId: string; onRemove: () => void }) {
   const matched = photo.detections.filter(d => d.matched).length
   const unmatched = photo.detections.length - matched
   return (
-    <div className="card space-y-3 !p-0 overflow-hidden">
-      <div className="relative w-full bg-gray-100">
-        <img src={photo.imageUrl} alt={photo.label ?? 'Shelf'} className="block w-full h-auto" />
-        {photo.detections.map((d, i) => (
-          <div
-            key={i}
-            className={`absolute border-2 ${d.matched ? 'border-brand' : 'border-yellow-400'} rounded pointer-events-none`}
-            style={{
-              left: `${d.bbox.x * 100}%`,
-              top: `${d.bbox.y * 100}%`,
-              width: `${d.bbox.w * 100}%`,
-              height: `${d.bbox.h * 100}%`,
-            }}
-            title={d.label}
-          />
-        ))}
-      </div>
-      <div className="px-4 pb-3 flex items-center justify-between">
+    <div className="card !p-0 overflow-hidden">
+      <Link href={`/admin/${storeId}/shelf-tour/${photo.id}`} className="block">
+        <div className="relative w-full bg-gray-100">
+          <img src={photo.imageUrl} alt={photo.label ?? 'Shelf'} className="block w-full h-auto" />
+          {photo.detections.map((d, i) => (
+            <div
+              key={i}
+              className={`absolute border-2 ${d.matched ? 'border-brand' : 'border-yellow-400'} rounded pointer-events-none`}
+              style={{
+                left: `${d.bbox.x * 100}%`,
+                top: `${d.bbox.y * 100}%`,
+                width: `${d.bbox.w * 100}%`,
+                height: `${d.bbox.h * 100}%`,
+              }}
+              title={d.label}
+            />
+          ))}
+        </div>
+      </Link>
+      <div className="px-4 py-3 flex items-center justify-between">
         <div>
           <p className="font-semibold text-sm">{photo.label ?? 'Shelf'}</p>
           <p className="text-xs text-gray-500">
-            {photo.detections.length} items detected · <span className="text-brand">{matched} in menu</span>
+            {photo.detections.length} items · <span className="text-brand">{matched} matched</span>
             {unmatched > 0 && <> · <span className="text-yellow-700">{unmatched} unmatched</span></>}
           </p>
         </div>
-        <button onClick={onRemove} className="text-xs text-red-600 font-semibold">Remove</button>
+        <div className="flex gap-3 items-center">
+          <Link href={`/admin/${storeId}/shelf-tour/${photo.id}`} className="text-xs text-brand font-semibold">Edit</Link>
+          <button onClick={onRemove} className="text-xs text-red-600 font-semibold">Remove</button>
+        </div>
       </div>
     </div>
   )

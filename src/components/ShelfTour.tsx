@@ -21,11 +21,15 @@ interface Props {
   onOpenProduct: (productId: string) => void
 }
 
+const ZOOM_LEVEL = 2.5
+
 export default function ShelfTour({ storeId, onOpenProduct }: Props) {
   const [photos, setPhotos] = useState<ShelfPhoto[]>([])
   const [loading, setLoading] = useState(true)
   const [active, setActive] = useState(0)
+  const [zoomed, setZoomed] = useState<{ cx: number; cy: number } | null>(null)
   const [tapped, setTapped] = useState<{ i: number; t: number } | null>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     fetch(`/api/stores/${storeId}/shelf-tour`)
@@ -34,12 +38,23 @@ export default function ShelfTour({ storeId, onOpenProduct }: Props) {
       .catch(() => setLoading(false))
   }, [storeId])
 
+  // Reset zoom when switching photos
+  useEffect(() => { setZoomed(null) }, [active])
+
   if (loading) return null
   if (photos.length === 0) return null
 
   const photo = photos[active]
 
-  function handleTap(det: Detection, i: number) {
+  function handleOverviewTap(e: React.MouseEvent<HTMLDivElement>) {
+    const rect = containerRef.current!.getBoundingClientRect()
+    const cx = (e.clientX - rect.left) / rect.width
+    const cy = (e.clientY - rect.top) / rect.height
+    setZoomed({ cx: clamp01(cx), cy: clamp01(cy) })
+  }
+
+  function handleHotspotTap(e: React.MouseEvent, det: Detection, i: number) {
+    e.stopPropagation()
     if (!det.productId) return
     setTapped({ i, t: Date.now() })
     setTimeout(() => setTapped(t => (t?.i === i ? null : t)), 400)
@@ -51,50 +66,94 @@ export default function ShelfTour({ storeId, onOpenProduct }: Props) {
       <div className="flex items-end justify-between">
         <div>
           <h2 className="text-lg font-bold text-gray-900">🛒 Browse the shelf</h2>
-          <p className="text-xs text-gray-500">Tap any item to add it to your order.</p>
+          <p className="text-xs text-gray-500">
+            {zoomed ? 'Tap the exact item to confirm quantity.' : 'Tap an area of the shelf to zoom in.'}
+          </p>
         </div>
-        {photos.length > 1 && (
-          <div className="flex gap-1">
-            {photos.map((_, i) => (
+        <div className="flex items-center gap-3">
+          {zoomed && (
+            <button
+              onClick={() => setZoomed(null)}
+              className="text-xs font-semibold text-brand flex items-center gap-1"
+            >
+              ⛶ Zoom out
+            </button>
+          )}
+          {photos.length > 1 && (
+            <div className="flex gap-1">
+              {photos.map((_, i) => (
+                <button
+                  key={i}
+                  onClick={() => setActive(i)}
+                  className={`w-2 h-2 rounded-full ${i === active ? 'bg-gray-900' : 'bg-gray-300'}`}
+                  aria-label={`Shelf ${i + 1}`}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div
+        ref={containerRef}
+        onClick={zoomed ? undefined : handleOverviewTap}
+        className={`relative overflow-hidden rounded-2xl border border-gray-200 bg-gray-50 select-none ${zoomed ? '' : 'cursor-zoom-in'}`}
+        style={{ touchAction: 'none' }}
+      >
+        {/* Transformed wrapper — everything inside scales/translates together so
+            hotspot positions stay aligned with the image pixels. */}
+        <div
+          className="relative"
+          style={{
+            transform: zoomed ? zoomTransform(zoomed.cx, zoomed.cy, ZOOM_LEVEL) : 'none',
+            transformOrigin: '0 0',
+            transition: 'transform 0.2s ease-out',
+          }}
+        >
+          <img
+            src={photo.imageUrl}
+            alt={photo.label ?? 'Shelf'}
+            className="block w-full h-auto"
+            draggable={false}
+          />
+          {photo.detections.map((d, i) => {
+            const interactive = zoomed && d.productId
+            return (
               <button
                 key={i}
-                onClick={() => setActive(i)}
-                className={`w-2 h-2 rounded-full ${i === active ? 'bg-gray-900' : 'bg-gray-300'}`}
-                aria-label={`Shelf ${i + 1}`}
+                onClick={e => handleHotspotTap(e, d, i)}
+                disabled={!interactive}
+                className={`absolute rounded transition-colors ${
+                  !zoomed
+                    ? d.matched
+                      ? 'border-2 border-brand/40 pointer-events-none'
+                      : 'border-2 border-dashed border-gray-300/50 pointer-events-none'
+                    : d.productId
+                      ? 'border-2 border-transparent active:border-brand active:bg-brand/20'
+                      : 'border-2 border-dashed border-gray-300/60 cursor-not-allowed'
+                } ${tapped?.i === i ? 'bg-brand/30 border-brand' : ''}`}
+                style={{
+                  left: `${d.bbox.x * 100}%`,
+                  top: `${d.bbox.y * 100}%`,
+                  width: `${d.bbox.w * 100}%`,
+                  height: `${d.bbox.h * 100}%`,
+                }}
+                aria-label={d.label}
+                title={d.label}
               />
-            ))}
+            )
+          })}
+        </div>
+
+        {/* Cue overlay when not zoomed */}
+        {!zoomed && (
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <div className="bg-black/55 backdrop-blur-sm text-white text-xs font-semibold px-3 py-1.5 rounded-full flex items-center gap-1.5">
+              <span>🔍</span> Tap to zoom in
+            </div>
           </div>
         )}
       </div>
-
-      <Zoomable>
-        <img
-          src={photo.imageUrl}
-          alt={photo.label ?? 'Shelf'}
-          className="block w-full h-auto select-none"
-          draggable={false}
-        />
-        {photo.detections.map((d, i) => (
-          <button
-            key={i}
-            onClick={() => handleTap(d, i)}
-            disabled={!d.productId}
-            className={`absolute rounded transition-colors ${
-              d.productId
-                ? 'border-2 border-transparent hover:border-brand active:border-brand'
-                : 'border-2 border-dashed border-gray-300/60 cursor-not-allowed'
-            } ${tapped?.i === i ? 'bg-brand/30 border-brand' : ''}`}
-            style={{
-              left: `${d.bbox.x * 100}%`,
-              top: `${d.bbox.y * 100}%`,
-              width: `${d.bbox.w * 100}%`,
-              height: `${d.bbox.h * 100}%`,
-            }}
-            aria-label={d.label}
-            title={d.label}
-          />
-        ))}
-      </Zoomable>
 
       {photo.label && (
         <p className="text-xs text-gray-600 text-center">{photo.label}</p>
@@ -103,63 +162,24 @@ export default function ShelfTour({ storeId, onOpenProduct }: Props) {
   )
 }
 
-// Minimal pinch-zoom / pan wrapper so tiny items are tappable.
-function Zoomable({ children }: { children: React.ReactNode }) {
-  const ref = useRef<HTMLDivElement>(null)
-  const [scale, setScale] = useState(1)
-  const [pos, setPos] = useState({ x: 0, y: 0 })
-  const pinch = useRef<{ dist: number; scale: number } | null>(null)
-  const pan = useRef<{ x: number; y: number; px: number; py: number } | null>(null)
-
-  function onTouchStart(e: React.TouchEvent) {
-    if (e.touches.length === 2) {
-      const [a, b] = [e.touches[0], e.touches[1]]
-      const dx = a.clientX - b.clientX
-      const dy = a.clientY - b.clientY
-      pinch.current = { dist: Math.hypot(dx, dy), scale }
-    } else if (e.touches.length === 1 && scale > 1) {
-      pan.current = { x: e.touches[0].clientX, y: e.touches[0].clientY, px: pos.x, py: pos.y }
-    }
-  }
-
-  function onTouchMove(e: React.TouchEvent) {
-    if (e.touches.length === 2 && pinch.current) {
-      const [a, b] = [e.touches[0], e.touches[1]]
-      const d = Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY)
-      const next = Math.max(1, Math.min(4, pinch.current.scale * (d / pinch.current.dist)))
-      setScale(next)
-    } else if (e.touches.length === 1 && pan.current && scale > 1) {
-      const dx = e.touches[0].clientX - pan.current.x
-      const dy = e.touches[0].clientY - pan.current.y
-      setPos({ x: pan.current.px + dx, y: pan.current.py + dy })
-    }
-  }
-
-  function onTouchEnd() {
-    pinch.current = null
-    pan.current = null
-    if (scale <= 1.05) { setScale(1); setPos({ x: 0, y: 0 }) }
-  }
-
-  return (
-    <div
-      ref={ref}
-      onTouchStart={onTouchStart}
-      onTouchMove={onTouchMove}
-      onTouchEnd={onTouchEnd}
-      className="relative overflow-hidden rounded-2xl border border-gray-200 bg-gray-50"
-      style={{ touchAction: 'none' }}
-    >
-      <div
-        className="relative"
-        style={{
-          transform: `translate(${pos.x}px, ${pos.y}px) scale(${scale})`,
-          transformOrigin: '0 0',
-          transition: pinch.current || pan.current ? 'none' : 'transform 0.15s ease',
-        }}
-      >
-        {children}
-      </div>
-    </div>
-  )
+/** Compute a CSS transform that zooms the content so that (cx,cy) — given as
+ *  a normalized point in the *unscaled* image — ends up at the center of the
+ *  container after scaling by `scale`. Clamped so we never show empty edges. */
+function zoomTransform(cx: number, cy: number, scale: number): string {
+  // target translate so the point (cx,cy) lands at (0.5, 0.5) in the container
+  // after scaling. In %: tx = (0.5 - cx*scale) * 100 / scale (since origin is
+  // 0,0 and transform scale is applied first). Simpler: work in pre-scale
+  // coords for translate.
+  const txPct = (0.5 / scale - cx) * 100
+  const tyPct = (0.5 / scale - cy) * 100
+  // Clamp so the scaled image covers the container.
+  const maxTxPct = 0
+  const minTxPct = -((scale - 1) / scale) * 100
+  const maxTyPct = 0
+  const minTyPct = -((scale - 1) / scale) * 100
+  const clampedTx = Math.max(minTxPct, Math.min(maxTxPct, txPct))
+  const clampedTy = Math.max(minTyPct, Math.min(maxTyPct, tyPct))
+  return `scale(${scale}) translate(${clampedTx}%, ${clampedTy}%)`
 }
+
+function clamp01(v: number) { return Math.max(0, Math.min(1, v)) }
