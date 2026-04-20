@@ -76,7 +76,12 @@ export default function AreaBoard({ rows, cols, photos, onOpenProduct }: Props) 
   }
 
   function onBoardClick(e: React.MouseEvent<HTMLDivElement>) {
-    if (zoomed) return
+    if (zoomed) {
+      // Tapping empty space while zoomed = exit zoom. Dots call
+      // stopPropagation in handleDotTap so they keep their own behavior.
+      setZoomed(null)
+      return
+    }
     const rect = containerRef.current?.getBoundingClientRect()
     if (!rect) return
     const cx = (e.clientX - rect.left) / rect.width
@@ -94,8 +99,8 @@ export default function AreaBoard({ rows, cols, photos, onOpenProduct }: Props) 
   return (
     <div
       ref={containerRef}
-      onClick={zoomed ? undefined : onBoardClick}
-      className={`relative overflow-hidden rounded-2xl bg-gray-50 border border-gray-100 select-none ${zoomed ? '' : 'cursor-zoom-in'}`}
+      onClick={onBoardClick}
+      className={`relative overflow-hidden rounded-2xl bg-gray-50 border border-gray-100 select-none ${zoomed ? 'cursor-zoom-out' : 'cursor-zoom-in'}`}
       style={{ boxShadow: '0 1px 2px rgba(0,0,0,0.04)' }}
     >
         {/* The tiled grid — no gap, no border, looks like one photo */}
@@ -121,14 +126,13 @@ export default function AreaBoard({ rows, cols, photos, onOpenProduct }: Props) 
                 return (
                   <div
                     key={`${r}:${c}`}
-                    className="relative bg-gray-100 overflow-hidden"
-                    style={{ aspectRatio: '3 / 4' }}
+                    className="relative bg-gray-100"
                   >
                     {photo ? (
                       <img
                         src={photo.imageUrl}
                         alt=""
-                        className="absolute inset-0 w-full h-full object-cover"
+                        className="block w-full h-auto"
                         draggable={false}
                       />
                     ) : null}
@@ -166,15 +170,6 @@ export default function AreaBoard({ rows, cols, photos, onOpenProduct }: Props) 
           })}
         </div>
 
-      {zoomed && (
-        <button
-          onClick={e => { e.stopPropagation(); setZoomed(null) }}
-          className="absolute top-2 right-2 w-9 h-9 rounded-full bg-white/95 border border-gray-200 text-gray-900 text-sm font-bold shadow-md flex items-center justify-center active:scale-95"
-          aria-label="Exit zoom"
-        >
-          ✕
-        </button>
-      )}
     </div>
   )
 }

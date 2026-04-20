@@ -222,22 +222,6 @@ export default function MenuPage() {
           />
         )}
 
-        {/* Quick category pills (DoorDash-style cuisine row) */}
-        {!search && activeCategory === 'All' && categories.length > 1 && (
-          <div className="flex gap-2 overflow-x-auto -mx-4 px-4 pb-1" style={{ scrollbarWidth: 'none' }}>
-            {categories.slice(1, 9).map(cat => (
-              <button
-                key={cat}
-                onClick={() => scrollToCategory(cat)}
-                className="cat-pill shrink-0"
-              >
-                <span className="text-base">{CAT_ICON[cat] ?? '🛒'}</span>
-                {cat}
-              </button>
-            ))}
-          </div>
-        )}
-
         {/* Hot Picks impulse strip */}
         {promoted.length > 0 && !search && activeCategory === 'All' && (
           <div>
