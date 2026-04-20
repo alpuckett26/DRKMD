@@ -66,18 +66,46 @@ export default function ShelfGridPage() {
       fetch(`/api/admin/${storeId}/shelf-tour`).then(r => r.json()),
     ])
     setStore(s)
-    setRows(s.shelfRows ?? 0)
-    setCols(s.shelfCols ?? 0)
-    // Back-derive length from saved sections (3 ft per section is our default)
-    setShelfLengthFt(s.shelfCols ? s.shelfCols * SECTION_WIDTH_FT : 0)
     setPhotos(ps)
+
+    // Bootstrap scan list from store.shelfAreas. Legacy stores with only
+    // shelfRows/shelfCols set get migrated into a 'Main' scan on first load.
+    let nextAreas: ShelfArea[] = Array.isArray(s.shelfAreas) ? s.shelfAreas : []
+    if (nextAreas.length === 0 && (s.shelfRows || s.shelfCols)) {
+      nextAreas = [{ name: 'Main shelf', rows: s.shelfRows ?? 0, cols: s.shelfCols ?? 0 }]
+    }
+    setAreas(nextAreas)
+
+    // Preserve current selection if possible, otherwise pick the first.
+    setActiveArea(prev => {
+      if (prev && nextAreas.some(a => a.name === prev)) return prev
+      return nextAreas[0]?.name ?? null
+    })
   }
 
   useEffect(() => { load() }, [storeId])
 
+  // When the active scan changes, load its rows/cols/length into edit state.
+  useEffect(() => {
+    const a = areas.find(x => x.name === activeArea)
+    setRows(a?.rows ?? 0)
+    setCols(a?.cols ?? 0)
+    setShelfLengthFt(a?.cols ? a.cols * SECTION_WIDTH_FT : 0)
+    setDirty(false)
+  }, [activeArea, areas])
+
+  // Photos scoped to the active scan. Legacy (null areaName) photos count
+  // toward the 'Main shelf' scan, so old data stays visible after migration.
+  const activePhotos = photos.filter(p => {
+    if (!activeArea) return false
+    if (p.areaName === activeArea) return true
+    if (activeArea === 'Main shelf' && !p.areaName) return true
+    return false
+  })
+
   // Lookup table: { "r:c": ShelfPhoto }
   const cellMap: Record<string, ShelfPhoto> = {}
-  for (const p of photos) {
+  for (const p of activePhotos) {
     if (p.shelfIndex != null && p.sectionIndex != null) {
       cellMap[`${p.shelfIndex}:${p.sectionIndex}`] = p
     }
@@ -87,11 +115,19 @@ export default function ShelfGridPage() {
   const total = rows * cols
 
   async function saveGridConfig() {
+    if (!activeArea) return
     setSavingConfig(true)
+    // Upsert the active scan in the areas list with the edited dims.
+    const nextAreas = areas.some(a => a.name === activeArea)
+      ? areas.map(a => a.name === activeArea ? { ...a, rows, cols } : a)
+      : [...areas, { name: activeArea, rows, cols }]
+    setAreas(nextAreas)
     await fetch(`/api/stores/${storeId}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ shelfRows: rows, shelfCols: cols }),
+      // Keep shelfRows/shelfCols in sync with the *active* scan so legacy
+      // callers (auto-split without an override) still default sensibly.
+      body: JSON.stringify({ shelfRows: rows, shelfCols: cols, shelfAreas: nextAreas }),
     })
     setSavingConfig(false)
     setDirty(false)
@@ -133,7 +169,7 @@ export default function ShelfGridPage() {
       const res = await fetch(`/api/admin/${storeId}/shelf-tour/auto-split`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ imageBase64, yBoundaries }),
+        body: JSON.stringify({ imageBase64, yBoundaries, areaName: activeArea, rows, cols }),
       })
       if (!res.ok) {
         const d = await res.json().catch(() => ({}))
@@ -165,6 +201,7 @@ export default function ShelfGridPage() {
           shelfIndex: activeCell.r,
           sectionIndex: activeCell.c,
           label: `Shelf ${activeCell.r + 1} · Section ${activeCell.c + 1}`,
+          areaName: activeArea,
         }),
       })
       if (!res.ok) {
@@ -201,6 +238,42 @@ export default function ShelfGridPage() {
       </div>
 
       <div className="max-w-3xl mx-auto px-4 pt-4 space-y-5">
+        <ScanSelector
+          areas={areas}
+          activeArea={activeArea}
+          onSelect={name => setActiveArea(name)}
+          onNew={async () => {
+            const name = prompt('Name this scan (e.g. "Candy aisle", "Beer cooler")')?.trim()
+            if (!name) return
+            if (areas.some(a => a.name === name)) { alert('A scan with that name already exists.'); return }
+            const nextAreas = [...areas, { name, rows: 0, cols: 0 }]
+            setAreas(nextAreas)
+            setActiveArea(name)
+            await fetch(`/api/stores/${storeId}`, {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ shelfAreas: nextAreas }),
+            })
+          }}
+          onDelete={async name => {
+            if (!confirm(`Delete "${name}" and all of its photos? This cannot be undone.`)) return
+            // Soft-deactivate all photos for this area.
+            await fetch(`/api/admin/${storeId}/shelf-tour`, { method: 'GET' }) // no-op, just to be safe
+            const toRemove = photos.filter(p => (p.areaName ?? 'Main shelf') === name)
+            await Promise.all(toRemove.map(p =>
+              fetch(`/api/admin/${storeId}/shelf-tour/${p.id}`, { method: 'DELETE' }),
+            ))
+            const nextAreas = areas.filter(a => a.name !== name)
+            setAreas(nextAreas)
+            setActiveArea(nextAreas[0]?.name ?? null)
+            await fetch(`/api/stores/${storeId}`, {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ shelfAreas: nextAreas }),
+            })
+            load()
+          }}
+        />
         {/* Grid config */}
         <div className="card space-y-3">
           <div>
@@ -358,6 +431,59 @@ export default function ShelfGridPage() {
           onCancel={() => setCalibrating(null)}
           onConfirm={yBoundaries => runAutoSplit(calibrating, yBoundaries)}
         />
+      )}
+    </div>
+  )
+}
+
+function ScanSelector({
+  areas, activeArea, onSelect, onNew, onDelete,
+}: {
+  areas: ShelfArea[]
+  activeArea: string | null
+  onSelect: (name: string) => void
+  onNew: () => void | Promise<void>
+  onDelete: (name: string) => void | Promise<void>
+}) {
+  if (areas.length === 0) {
+    return (
+      <div className="card space-y-3 border-brand/30 bg-brand/5 text-center">
+        <p className="font-bold text-sm">No scans yet</p>
+        <p className="text-xs text-gray-600">A scan is one physical display — e.g. &ldquo;Candy aisle&rdquo; or &ldquo;Beer cooler&rdquo;. Start by creating one.</p>
+        <button onClick={onNew} className="btn-primary">＋ New scan</button>
+      </div>
+    )
+  }
+  return (
+    <div className="card space-y-2">
+      <div className="flex items-center justify-between">
+        <p className="text-[11px] font-bold uppercase tracking-widest text-gray-500">Active scan</p>
+        <button onClick={onNew} className="text-xs font-semibold text-brand">＋ New scan</button>
+      </div>
+      <div className="flex gap-2 overflow-x-auto -mx-1 px-1 pb-1" style={{ scrollbarWidth: 'none' }}>
+        {areas.map(a => {
+          const active = a.name === activeArea
+          return (
+            <button
+              key={a.name}
+              onClick={() => onSelect(a.name)}
+              className={`shrink-0 px-3 py-2 rounded-full text-sm font-semibold whitespace-nowrap transition-colors ${
+                active ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-900 border border-gray-200'
+              }`}
+            >
+              {a.name}
+              {a.rows > 0 && <span className={active ? 'text-white/70 ml-1' : 'text-gray-500 ml-1'}> · {a.rows}×{a.cols}</span>}
+            </button>
+          )
+        })}
+      </div>
+      {activeArea && (
+        <button
+          onClick={() => onDelete(activeArea)}
+          className="text-xs text-red-600 font-semibold self-end"
+        >
+          Delete &ldquo;{activeArea}&rdquo;
+        </button>
       )}
     </div>
   )

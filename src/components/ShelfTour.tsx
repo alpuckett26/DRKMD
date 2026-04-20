@@ -16,11 +16,19 @@ interface ShelfPhoto {
   detections: Detection[]
   shelfIndex: number | null
   sectionIndex: number | null
+  areaName: string | null
+}
+
+interface ShelfArea {
+  name: string
+  rows: number
+  cols: number
 }
 
 interface StoreMeta {
   shelfRows: number | null
   shelfCols: number | null
+  shelfAreas: ShelfArea[] | null
 }
 
 interface Props {
@@ -49,6 +57,35 @@ export default function ShelfTour({ storeId, onOpenProduct }: Props) {
   if (photos.length === 0) return null
 
   const hasGrid = (store?.shelfRows ?? 0) > 0 && photos.some(p => p.shelfIndex != null)
+
+  // Multi-scan path: one or more named areas with grid photos.
+  const areas = Array.isArray(store?.shelfAreas) ? store!.shelfAreas ?? [] : []
+  const multiScan = hasGrid && areas.length > 0
+
+  if (multiScan) {
+    return (
+      <section className="space-y-6">
+        {areas.map(area => {
+          const areaPhotos = photos.filter(p => {
+            if (p.areaName === area.name) return true
+            if (!p.areaName && area.name === 'Main shelf') return true
+            return false
+          })
+          if (areaPhotos.length === 0 || area.rows < 1 || area.cols < 1) return null
+          return (
+            <div key={area.name} className="space-y-2">
+              <p className="text-[11px] font-bold uppercase tracking-widest text-gray-500">{area.name}</p>
+              <GridView
+                store={{ shelfRows: area.rows, shelfCols: area.cols, shelfAreas: null }}
+                photos={areaPhotos}
+                onOpenProduct={onOpenProduct}
+              />
+            </div>
+          )
+        })}
+      </section>
+    )
+  }
 
   if (hasGrid) {
     return <GridView store={store!} photos={photos} onOpenProduct={onOpenProduct} />
