@@ -62,18 +62,16 @@ export default function ShelfTour({ storeId, onOpenProduct }: Props) {
   }
 
   function onPointerDown(e: React.PointerEvent<HTMLDivElement>) {
-    if (zoomed) return
-    ;(e.target as HTMLElement).setPointerCapture?.(e.pointerId)
+    if (zoomed || !hasMultiple) return
     pointer.current = { id: e.pointerId, sx: e.clientX, sy: e.clientY, moved: false }
   }
 
   function onPointerMove(e: React.PointerEvent<HTMLDivElement>) {
     const p = pointer.current
-    if (!p || p.id !== e.pointerId || zoomed) return
+    if (!p || p.id !== e.pointerId || zoomed || !hasMultiple) return
     const dx = e.clientX - p.sx
     const dy = e.clientY - p.sy
     if (!p.moved && Math.hypot(dx, dy) > 8) p.moved = true
-    if (!hasMultiple) return
     // Only show horizontal drag feedback if horizontal travel dominates
     if (Math.abs(dx) > Math.abs(dy)) {
       // Resist on edges so user feels the boundary
@@ -88,26 +86,36 @@ export default function ShelfTour({ storeId, onOpenProduct }: Props) {
   function onPointerUp(e: React.PointerEvent<HTMLDivElement>) {
     const p = pointer.current
     pointer.current = null
-    if (!p || p.id !== e.pointerId || zoomed) { setDragX(0); return }
+    if (!p || p.id !== e.pointerId || zoomed || !hasMultiple) { setDragX(0); return }
     const dx = e.clientX - p.sx
     const dy = e.clientY - p.sy
     const horizontal = Math.abs(dx) > Math.abs(dy)
 
-    if (horizontal && Math.abs(dx) >= SWIPE_THRESHOLD && hasMultiple) {
+    setDragX(0)
+    if (horizontal && Math.abs(dx) >= SWIPE_THRESHOLD) {
       if (dx < 0) goNext()
       else goPrev()
-      setDragX(0)
       return
     }
-
-    setDragX(0)
-    // Not a swipe → treat as a tap → zoom to that position
+    // Not a swipe → treat as a tap → zoom to that position.
+    // When p.moved is true the user was scrolling/panning; ignore.
     if (!p.moved && containerRef.current) {
       const rect = containerRef.current.getBoundingClientRect()
       const cx = (e.clientX - rect.left) / rect.width
       const cy = (e.clientY - rect.top) / rect.height
       setZoomed({ cx: clamp01(cx), cy: clamp01(cy) })
     }
+  }
+
+  // Simple click handler for the single-photo case — no swipe detection
+  // needed so we keep the original, working behavior.
+  function onContainerClick(e: React.MouseEvent<HTMLDivElement>) {
+    if (zoomed) return
+    if (!containerRef.current) return
+    const rect = containerRef.current.getBoundingClientRect()
+    const cx = (e.clientX - rect.left) / rect.width
+    const cy = (e.clientY - rect.top) / rect.height
+    setZoomed({ cx: clamp01(cx), cy: clamp01(cy) })
   }
 
   return (
@@ -149,12 +157,12 @@ export default function ShelfTour({ storeId, onOpenProduct }: Props) {
 
       <div
         ref={containerRef}
-        onPointerDown={onPointerDown}
-        onPointerMove={onPointerMove}
-        onPointerUp={onPointerUp}
-        onPointerCancel={() => { pointer.current = null; setDragX(0) }}
+        onClick={hasMultiple ? undefined : onContainerClick}
+        onPointerDown={hasMultiple ? onPointerDown : undefined}
+        onPointerMove={hasMultiple ? onPointerMove : undefined}
+        onPointerUp={hasMultiple ? onPointerUp : undefined}
+        onPointerCancel={hasMultiple ? () => { pointer.current = null; setDragX(0) } : undefined}
         className={`relative overflow-hidden rounded-2xl border border-gray-200 bg-gray-50 select-none ${zoomed ? '' : 'cursor-zoom-in'}`}
-        style={{ touchAction: zoomed ? 'none' : 'pan-y' }}
       >
         {/* Transformed wrapper — everything inside scales/translates together so
             hotspot positions stay aligned with the image pixels. */}
