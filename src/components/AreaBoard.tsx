@@ -33,7 +33,7 @@ function pickZoom(cols: number, _rows: number): number {
   if (cols === 4) return 2.5
   if (cols === 3) return 2
   if (cols === 2) return 1.5
-  return 1.25 // cols === 1: the whole shelf already fills the width
+  return 1.1 // cols === 1: whole shelf spans the width, just a nudge for tap precision
 }
 
 /**
@@ -88,8 +88,6 @@ export default function AreaBoard({ rows, cols, photos, onOpenProduct }: Props) 
 
   function onBoardClick(e: React.MouseEvent<HTMLDivElement>) {
     if (zoomed) {
-      // Tapping empty space while zoomed = exit zoom. Dots call
-      // stopPropagation in handleDotTap so they keep their own behavior.
       setZoomed(null)
       return
     }
@@ -97,6 +95,9 @@ export default function AreaBoard({ rows, cols, photos, onOpenProduct }: Props) 
     if (!rect) return
     const cx = (e.clientX - rect.left) / rect.width
     const cy = (e.clientY - rect.top) / rect.height
+    // Diagnostic so we can tell in the console whether the expected zoom
+    // level is actually being applied when bottles get cut off.
+    console.info('[AreaBoard] zoom', { cols, rows, zoom: ZOOM_LEVEL, board: { w: rect.width, h: rect.height }, tap: { cx, cy } })
     setZoomed({ cx: clamp01(cx), cy: clamp01(cy) })
   }
 
