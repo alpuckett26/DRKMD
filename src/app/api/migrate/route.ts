@@ -221,6 +221,17 @@ export async function POST() {
       )`)
     await db.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "ShelfPhoto_storeId_active_sortOrder_idx" ON "ShelfPhoto"("storeId", "active", "sortOrder")`)
 
+    // Shelf grid (Crown Jewel v1)
+    for (const sql of [
+      `ALTER TABLE "Store" ADD COLUMN IF NOT EXISTS "shelfRows" INTEGER`,
+      `ALTER TABLE "Store" ADD COLUMN IF NOT EXISTS "shelfCols" INTEGER`,
+      `ALTER TABLE "ShelfPhoto" ADD COLUMN IF NOT EXISTS "shelfIndex" INTEGER`,
+      `ALTER TABLE "ShelfPhoto" ADD COLUMN IF NOT EXISTS "sectionIndex" INTEGER`,
+    ]) {
+      await db.$executeRawUnsafe(sql)
+    }
+    await db.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "ShelfPhoto_storeId_shelfIndex_sectionIndex_idx" ON "ShelfPhoto"("storeId", "shelfIndex", "sectionIndex")`)
+
     return NextResponse.json({ ok: true, message: 'Migration complete' })
   } catch (e) {
     return NextResponse.json({ ok: false, error: String(e) }, { status: 500 })

@@ -117,6 +117,7 @@ export default function AdminDashboard() {
             { href: `/admin/${storeId}/products`, label: '📦 Products' },
             { href: `/admin/${storeId}/orders`, label: '📋 Orders' },
             { href: `/admin/${storeId}/staff`, label: '👥 Staff' },
+            { href: `/admin/${storeId}/shelf-grid`, label: '🗺 Shelf Grid' },
             { href: `/admin/${storeId}/shelf-tour`, label: '🛒 Shelf Tour' },
             { href: `/staff/${storeId}/orders`, label: '🧾 Staff View' },
             { href: `/fulfillment/${storeId}`, label: '🖥️ Fulfillment' },

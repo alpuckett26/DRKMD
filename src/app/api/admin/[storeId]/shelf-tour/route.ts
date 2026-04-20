@@ -43,7 +43,12 @@ export async function GET(_req: Request, { params }: { params: { storeId: string
 
 export async function POST(req: Request, { params }: { params: { storeId: string } }) {
   try {
-    const { imageBase64, label } = await req.json() as { imageBase64: string; label?: string }
+    const { imageBase64, label, shelfIndex, sectionIndex } = await req.json() as {
+      imageBase64: string
+      label?: string
+      shelfIndex?: number
+      sectionIndex?: number
+    }
     const storeId = params.storeId
     if (!imageBase64) return NextResponse.json({ error: 'No image provided' }, { status: 400 })
     if (!process.env.ANTHROPIC_API_KEY) {
@@ -119,11 +124,22 @@ export async function POST(req: Request, { params }: { params: { storeId: string
       matched: detections.filter(d => d.matched).length,
     })
 
+    // When the admin is re-taking a specific grid cell, soft-deactivate the
+    // previous photo for that cell so only the newest wins in customer view.
+    if (typeof shelfIndex === 'number' && typeof sectionIndex === 'number') {
+      await db.shelfPhoto.updateMany({
+        where: { storeId, shelfIndex, sectionIndex, active: true },
+        data: { active: false },
+      })
+    }
+
     const photo = await db.shelfPhoto.create({
       data: {
         storeId,
         imageUrl: normalizedDataUrl,
         label: label ?? null,
+        shelfIndex: typeof shelfIndex === 'number' ? shelfIndex : null,
+        sectionIndex: typeof sectionIndex === 'number' ? sectionIndex : null,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         detections: detections as any,
       },
