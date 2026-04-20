@@ -48,11 +48,13 @@ export async function GET() {
     report.error = msg
     report.conclusion = /404/.test(msg)
       ? 'Model version does not exist. Pick a real one at replicate.com and set REPLICATE_SAM_MODEL as owner/name:version.'
-      : /401|403|authen|unauth/i.test(msg)
-        ? 'Auth failed. Double-check REPLICATE_API_TOKEN and that billing/payment is set up.'
-        : /input/i.test(msg)
-          ? "Model exists but our input shape doesn't match it. Pick a different SAM auto-mask model or update sam.ts."
-          : 'Unknown failure — see error field.'
+      : /402|insufficient credit|payment required/i.test(msg)
+        ? 'Replicate credit is $0. Go to replicate.com/account/billing and load some credit (a few dollars gets you hundreds of runs).'
+        : /401|403|authen|unauth/i.test(msg)
+          ? 'Auth failed. Double-check REPLICATE_API_TOKEN and that billing is set up.'
+          : /input/i.test(msg)
+            ? "Model exists but our input shape doesn't match it. Pick a different SAM auto-mask model or update sam.ts."
+            : 'Unknown failure — see error field.'
   }
   return NextResponse.json(report)
 }
