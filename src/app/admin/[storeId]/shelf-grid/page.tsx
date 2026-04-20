@@ -42,9 +42,12 @@ export default function ShelfGridPage() {
   const [savingConfig, setSavingConfig] = useState(false)
   const [activeCell, setActiveCell] = useState<{ r: number; c: number } | null>(null)
   const [uploadingCell, setUploadingCell] = useState<{ r: number; c: number } | null>(null)
+  const [splitting, setSplitting] = useState(false)
+  const [splitResult, setSplitResult] = useState<string>('')
   const [error, setError] = useState('')
   const captureRef = useRef<HTMLInputElement>(null)
   const libraryRef = useRef<HTMLInputElement>(null)
+  const splitFileRef = useRef<HTMLInputElement>(null)
 
   async function load() {
     const [s, ps] = await Promise.all([
@@ -91,6 +94,35 @@ export default function ShelfGridPage() {
   function triggerCapture(source: 'camera' | 'library') {
     if (source === 'camera') captureRef.current?.click()
     else libraryRef.current?.click()
+  }
+
+  async function handleSplitFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setError('')
+    setSplitting(true)
+    setSplitResult('')
+    try {
+      // Keep the source image big — we're slicing it so compression hurts more.
+      const base64 = await compressImage(file, 2400, 0.88)
+      const res = await fetch(`/api/admin/${storeId}/shelf-tour/auto-split`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ imageBase64: base64 }),
+      })
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}))
+        throw new Error(d.error || 'Auto-split failed')
+      }
+      const data = await res.json() as { cells: number; detected: number; matched: number; failedCells: number }
+      setSplitResult(`✅ Sliced into ${data.cells} sections · found ${data.detected} items · ${data.matched} matched${data.failedCells ? ` · ${data.failedCells} cells failed` : ''}`)
+      await load()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Auto-split failed')
+    } finally {
+      setSplitting(false)
+      if (splitFileRef.current) splitFileRef.current.value = ''
+    }
   }
 
   async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
@@ -192,6 +224,23 @@ export default function ShelfGridPage() {
             </button>
           )}
         </div>
+
+        {/* One-photo auto-split */}
+        {configured && (
+          <div className="card space-y-3 border-brand/30 bg-brand/5">
+            <div>
+              <p className="font-bold text-sm">✨ One photo, auto-sliced</p>
+              <p className="text-xs text-gray-600">Upload a single high-res photo of the whole shelf — we&apos;ll slice it into your {rows}×{cols} grid and run detection on each section. Fastest way to light up the whole tour.</p>
+              <p className="text-[11px] text-gray-500 mt-1">Stand back far enough to fit the full unit in the frame. Straight-on, level, good light. 8–12 MP phones work great.</p>
+            </div>
+            <input ref={splitFileRef} type="file" accept="image/*" onChange={handleSplitFile} className="hidden" />
+            <button onClick={() => splitFileRef.current?.click()} disabled={splitting} className="btn-primary">
+              {splitting ? `Slicing ${rows * cols} sections…` : '📸 Upload whole-shelf photo'}
+            </button>
+            {splitResult && <p className="text-xs text-gray-700">{splitResult}</p>}
+            <p className="text-[11px] text-gray-500 text-center">or tap a cell below to capture section-by-section</p>
+          </div>
+        )}
 
         {/* Grid preview */}
         {configured && (
