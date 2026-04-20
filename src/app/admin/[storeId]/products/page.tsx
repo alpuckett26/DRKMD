@@ -137,6 +137,12 @@ export default function ProductsPage() {
 
   const featured = products.filter(p => p.promoted)
   const regular = products.filter(p => !p.promoted)
+  const emptyUpsells = products.filter(p => !p.similarProductIds || p.similarProductIds.length === 0).length
+
+  async function backfillAllSimilars() {
+    const r = await fetch(`/api/admin/stores/${storeId}/seed-similars`, { method: 'POST' })
+    if (r.ok) fetchProducts()
+  }
 
   return (
     <div className="min-h-screen pb-10">
@@ -188,6 +194,19 @@ export default function ProductsPage() {
       </div>
 
       <div className="max-w-2xl mx-auto px-4 pt-4 space-y-4">
+        {!showAdd && !bulkMode && emptyUpsells > 0 && (
+          <button
+            onClick={backfillAllSimilars}
+            className="w-full rounded-2xl p-3 bg-brand/10 border border-brand/30 text-left flex items-center gap-3 active:scale-[0.99] transition-transform"
+          >
+            <span className="text-xl shrink-0">✨</span>
+            <div className="flex-1">
+              <p className="font-bold text-sm text-gray-900">Auto-fill related items for {emptyUpsells} products</p>
+              <p className="text-xs text-gray-700">Pulls same-category siblings by price proximity. You can still edit per-product.</p>
+            </div>
+            <span className="text-sm font-semibold text-brand">Run →</span>
+          </button>
+        )}
         {showAdd && (
           <form onSubmit={addProduct} className="card space-y-3">
             <h2 className="font-semibold">New Item</h2>
@@ -333,6 +352,7 @@ function ProductDetailSheet({
   const [refreshingImage, setRefreshingImage] = useState(false)
   const [imgError, setImgError] = useState(false)
   const [similarSearch, setSimilarSearch] = useState('')
+  const [autofilling, setAutofilling] = useState(false)
 
   async function save() {
     setSaving(true)
@@ -386,6 +406,18 @@ function ProductDetailSheet({
       ;[ids[i], ids[j]] = [ids[j], ids[i]]
       return { ...d, similarProductIds: ids }
     })
+  }
+  async function autofillSimilar() {
+    setAutofilling(true)
+    try {
+      const r = await fetch(`/api/admin/products/${draft.id}/seed-similar`, { method: 'POST' })
+      if (r.ok) {
+        const data = await r.json() as { similarProductIds: string[] }
+        setDraft(d => ({ ...d, similarProductIds: data.similarProductIds }))
+      }
+    } finally {
+      setAutofilling(false)
+    }
   }
 
   async function remove() {
@@ -484,11 +516,20 @@ function ProductDetailSheet({
 
           {/* Related / similar items */}
           <div className="card space-y-3">
-            <div>
-              <p className="text-sm font-semibold">Related items</p>
-              <p className="text-xs text-gray-500">
-                Shown as &ldquo;Try these instead&rdquo; when this product is out of stock.
-              </p>
+            <div className="flex items-start justify-between gap-2">
+              <div className="flex-1">
+                <p className="text-sm font-semibold">Related items</p>
+                <p className="text-xs text-gray-500">
+                  Shown as &ldquo;Try these instead&rdquo; when this product is out of stock.
+                </p>
+              </div>
+              <button
+                onClick={autofillSimilar}
+                disabled={autofilling}
+                className="text-xs font-semibold text-brand whitespace-nowrap"
+              >
+                {autofilling ? 'Filling…' : '✨ Auto-fill'}
+              </button>
             </div>
 
             {similarProducts.length > 0 ? (
