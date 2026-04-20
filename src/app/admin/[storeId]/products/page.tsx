@@ -265,6 +265,7 @@ export default function ProductsPage() {
       {selected && !bulkMode && (
         <ProductDetailSheet
           product={selected}
+          allProducts={products}
           onClose={() => { setSelected(null); fetchProducts() }}
           onUpdate={updateSelected}
         />
@@ -320,9 +321,10 @@ function ProductRow({
 }
 
 function ProductDetailSheet({
-  product, onClose, onUpdate,
+  product, allProducts, onClose, onUpdate,
 }: {
   product: ExtendedProduct
+  allProducts: ExtendedProduct[]
   onClose: () => void
   onUpdate: (p: ExtendedProduct) => void
 }) {
@@ -330,6 +332,7 @@ function ProductDetailSheet({
   const [saving, setSaving] = useState(false)
   const [refreshingImage, setRefreshingImage] = useState(false)
   const [imgError, setImgError] = useState(false)
+  const [similarSearch, setSimilarSearch] = useState('')
 
   async function save() {
     setSaving(true)
@@ -345,11 +348,44 @@ function ProductDetailSheet({
         promoted: draft.promoted,
         imageUrl: draft.imageUrl,
         availabilityStatus: draft.availabilityStatus ?? 'available',
+        similarProductIds: draft.similarProductIds ?? [],
       }),
     })
     setSaving(false)
     onUpdate(draft)
     onClose()
+  }
+
+  const similarIds = draft.similarProductIds ?? []
+  const similarProducts = similarIds
+    .map(id => allProducts.find(p => p.id === id))
+    .filter((p): p is ExtendedProduct => !!p)
+  const similarMatches = similarSearch.trim()
+    ? allProducts
+        .filter(p =>
+          p.id !== draft.id &&
+          !similarIds.includes(p.id) &&
+          p.name.toLowerCase().includes(similarSearch.toLowerCase()),
+        )
+        .slice(0, 12)
+    : []
+
+  function addSimilar(id: string) {
+    setDraft(d => ({ ...d, similarProductIds: [...(d.similarProductIds ?? []), id] }))
+    setSimilarSearch('')
+  }
+  function removeSimilar(id: string) {
+    setDraft(d => ({ ...d, similarProductIds: (d.similarProductIds ?? []).filter(x => x !== id) }))
+  }
+  function moveSimilar(id: string, direction: -1 | 1) {
+    setDraft(d => {
+      const ids = [...(d.similarProductIds ?? [])]
+      const i = ids.indexOf(id)
+      const j = i + direction
+      if (i < 0 || j < 0 || j >= ids.length) return d
+      ;[ids[i], ids[j]] = [ids[j], ids[i]]
+      return { ...d, similarProductIds: ids }
+    })
   }
 
   async function remove() {
@@ -445,6 +481,62 @@ function ProductDetailSheet({
               </label>
             ))}
           </div>
+
+          {/* Related / similar items */}
+          <div className="card space-y-3">
+            <div>
+              <p className="text-sm font-semibold">Related items</p>
+              <p className="text-xs text-gray-500">
+                Shown as &ldquo;Try these instead&rdquo; when this product is out of stock.
+              </p>
+            </div>
+
+            {similarProducts.length > 0 ? (
+              <div className="space-y-1.5">
+                {similarProducts.map((s, i) => (
+                  <div key={s.id} className="flex items-center gap-2 rounded-xl bg-gray-50 border border-gray-200 px-2 py-1.5">
+                    <div className="flex flex-col -my-1">
+                      <button onClick={() => moveSimilar(s.id, -1)} disabled={i === 0}
+                        className="text-xs text-gray-500 disabled:opacity-30 leading-none">▲</button>
+                      <button onClick={() => moveSimilar(s.id, 1)} disabled={i === similarProducts.length - 1}
+                        className="text-xs text-gray-500 disabled:opacity-30 leading-none">▼</button>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">{s.name}</p>
+                      <p className="text-xs text-gray-500">{s.category ?? ''} · ${(s.price / 100).toFixed(2)}</p>
+                    </div>
+                    <button onClick={() => removeSimilar(s.id)} className="text-xs text-red-700 font-semibold shrink-0">Remove</button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-xs text-gray-500 italic">No related items yet — search below to add some.</p>
+            )}
+
+            <div>
+              <input
+                value={similarSearch}
+                onChange={e => setSimilarSearch(e.target.value)}
+                placeholder="Search products to add…"
+                className="input text-sm"
+              />
+              {similarMatches.length > 0 && (
+                <div className="mt-1 max-h-52 overflow-y-auto rounded-xl border border-gray-200 divide-y divide-gray-100">
+                  {similarMatches.map(m => (
+                    <button
+                      key={m.id}
+                      onClick={() => addSimilar(m.id)}
+                      className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50"
+                    >
+                      <span className="font-medium">{m.name}</span>
+                      <span className="text-xs text-gray-500 ml-2">${(m.price / 100).toFixed(2)}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
           <button onClick={save} disabled={saving} className="btn-primary w-full">
             {saving ? 'Saving…' : 'Save Changes'}
           </button>
