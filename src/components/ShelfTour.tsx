@@ -64,18 +64,33 @@ export default function ShelfTour({ storeId, onOpenProduct }: Props) {
   const multiScan = hasGrid && areas.length > 0
 
   if (multiScan) {
+    const visibleAreas = areas
+      .map(area => {
+        const areaPhotos = photos.filter(p => {
+          if (p.areaName === area.name) return true
+          if (!p.areaName && area.name === 'Main shelf') return true
+          return false
+        })
+        return { area, areaPhotos }
+      })
+      .filter(({ area, areaPhotos }) => areaPhotos.length > 0 && area.rows > 0 && area.cols > 0)
+
+    if (visibleAreas.length === 0) return null
+
     return (
-      <section className="space-y-6">
-        {areas.map(area => {
-          const areaPhotos = photos.filter(p => {
-            if (p.areaName === area.name) return true
-            if (!p.areaName && area.name === 'Main shelf') return true
-            return false
-          })
-          if (areaPhotos.length === 0 || area.rows < 1 || area.cols < 1) return null
+      <section className="space-y-5">
+        <div>
+          <h2 className="text-lg font-bold text-gray-900">Shop the aisle</h2>
+          <p className="text-xs text-gray-500 mt-0.5">Tap a shelf to zoom in, then tap the item you want.</p>
+        </div>
+        {visibleAreas.map(({ area, areaPhotos }) => {
+          const itemCount = areaPhotos.reduce((sum, p) => sum + p.detections.filter(d => d.productId).length, 0)
           return (
             <div key={area.name} className="space-y-2">
-              <p className="text-[11px] font-bold uppercase tracking-widest text-gray-500">{area.name}</p>
+              <div className="flex items-baseline justify-between">
+                <h3 className="text-base font-bold text-gray-900">{area.name}</h3>
+                {itemCount > 0 && <span className="text-xs text-gray-500">{itemCount} items</span>}
+              </div>
               <AreaBoard
                 rows={area.rows}
                 cols={area.cols}
@@ -90,14 +105,23 @@ export default function ShelfTour({ storeId, onOpenProduct }: Props) {
   }
 
   if (hasGrid) {
-    // Single-scan store: render the whole unit as one clean board.
+    const itemCount = photos.reduce((sum, p) => sum + p.detections.filter(d => d.productId).length, 0)
     return (
-      <AreaBoard
-        rows={store!.shelfRows ?? 0}
-        cols={store!.shelfCols ?? 0}
-        photos={photos}
-        onOpenProduct={onOpenProduct}
-      />
+      <section className="space-y-3">
+        <div className="flex items-baseline justify-between">
+          <div>
+            <h2 className="text-lg font-bold text-gray-900">Shop the shelf</h2>
+            <p className="text-xs text-gray-500 mt-0.5">Tap to zoom in, then tap the item you want.</p>
+          </div>
+          {itemCount > 0 && <span className="text-xs text-gray-500">{itemCount} items</span>}
+        </div>
+        <AreaBoard
+          rows={store!.shelfRows ?? 0}
+          cols={store!.shelfCols ?? 0}
+          photos={photos}
+          onOpenProduct={onOpenProduct}
+        />
+      </section>
     )
   }
   return <LegacyView photos={photos} onOpenProduct={onOpenProduct} />

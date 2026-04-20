@@ -92,20 +92,12 @@ export default function AreaBoard({ rows, cols, photos, onOpenProduct }: Props) 
   }
 
   return (
-    <div className="space-y-2">
-      <div className="flex items-center justify-end">
-        {zoomed && (
-          <button onClick={() => setZoomed(null)} className="text-xs font-semibold text-brand">
-            ⛶ Zoom out
-          </button>
-        )}
-      </div>
-
-      <div
-        ref={containerRef}
-        onClick={zoomed ? undefined : onBoardClick}
-        className={`relative overflow-hidden rounded-2xl bg-gray-50 select-none ${zoomed ? '' : 'cursor-zoom-in'}`}
-      >
+    <div
+      ref={containerRef}
+      onClick={zoomed ? undefined : onBoardClick}
+      className={`relative overflow-hidden rounded-2xl bg-gray-50 border border-gray-100 select-none ${zoomed ? '' : 'cursor-zoom-in'}`}
+      style={{ boxShadow: '0 1px 2px rgba(0,0,0,0.04)' }}
+    >
         {/* The tiled grid — no gap, no border, looks like one photo */}
         <div
           className="relative"
@@ -174,14 +166,15 @@ export default function AreaBoard({ rows, cols, photos, onOpenProduct }: Props) 
           })}
         </div>
 
-        {!zoomed && (
-          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-            <div className="bg-black/55 backdrop-blur-sm text-white text-[11px] font-semibold px-2.5 py-1 rounded-full">
-              🔍 Tap to zoom
-            </div>
-          </div>
-        )}
-      </div>
+      {zoomed && (
+        <button
+          onClick={e => { e.stopPropagation(); setZoomed(null) }}
+          className="absolute top-2 right-2 w-9 h-9 rounded-full bg-white/95 border border-gray-200 text-gray-900 text-sm font-bold shadow-md flex items-center justify-center active:scale-95"
+          aria-label="Exit zoom"
+        >
+          ✕
+        </button>
+      )}
     </div>
   )
 }
