@@ -413,7 +413,12 @@ export default function ShelfTourEditor() {
           <EditPanel
             det={selectedDet}
             products={products}
+            storeId={storeId}
             onChange={patch => updateDet(selected, patch)}
+            onProductCreated={product => {
+              setProducts(prev => prev.some(p => p.id === product.id) ? prev : [...prev, product])
+              updateDet(selected, { productId: product.id, label: product.name })
+            }}
             onDelete={() => removeDet(selected)}
           />
         ) : (
@@ -776,21 +781,59 @@ function looksRestricted(label: string): boolean {
 function EditPanel({
   det,
   products,
+  storeId,
   onChange,
+  onProductCreated,
   onDelete,
 }: {
   det: Detection
   products: ProductLite[]
+  storeId: string
   onChange: (patch: Partial<Detection>) => void
+  onProductCreated: (product: ProductLite) => void
   onDelete: () => void
 }) {
   const [search, setSearch] = useState('')
+  const [priceInput, setPriceInput] = useState<string>(() =>
+    det.estimatedPrice != null ? det.estimatedPrice.toFixed(2) : '',
+  )
+  const [adding, setAdding] = useState(false)
+  const [addError, setAddError] = useState('')
+
   const linked = useMemo(() => products.find(p => p.id === det.productId) ?? null, [products, det.productId])
   const filtered = useMemo(() => {
     if (!search.trim()) return products.slice(0, 12)
     const q = search.toLowerCase()
     return products.filter(p => p.name.toLowerCase().includes(q)).slice(0, 20)
   }, [products, search])
+
+  async function addAsNewProduct() {
+    setAddError('')
+    const name = det.label.trim()
+    if (!name) { setAddError('Give it a name first'); return }
+    const priceNum = parseFloat(priceInput)
+    if (isNaN(priceNum) || priceNum < 0) { setAddError('Enter a price'); return }
+    setAdding(true)
+    try {
+      const res = await fetch('/api/admin/products', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          storeId,
+          name,
+          price: Math.round(priceNum * 100),
+          nighttimeAvailable: true,
+        }),
+      })
+      if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error ?? 'Create failed')
+      const product = await res.json() as ProductLite
+      onProductCreated(product)
+    } catch (e) {
+      setAddError(e instanceof Error ? e.message : 'Create failed')
+    } finally {
+      setAdding(false)
+    }
+  }
 
   return (
     <div className="card space-y-3">
@@ -827,9 +870,42 @@ function EditPanel({
           </div>
         ) : (
           <>
+            {/* Primary action for unmatched: create as a new menu item with a price.
+                Pre-filled with Claude's estimated price when available. */}
+            <div className="rounded-xl bg-brand/5 border border-brand/25 p-3 space-y-2">
+              <p className="text-xs font-semibold text-gray-700">
+                Add &ldquo;{det.label}&rdquo; to the menu
+              </p>
+              <div className="flex items-center gap-2">
+                <span className="text-gray-500 text-sm">$</span>
+                <input
+                  type="number"
+                  inputMode="decimal"
+                  step="0.01"
+                  min="0"
+                  className="input text-sm flex-1"
+                  placeholder="2.49"
+                  value={priceInput}
+                  onChange={e => setPriceInput(e.target.value)}
+                />
+                <button
+                  onClick={addAsNewProduct}
+                  disabled={adding || !priceInput.trim()}
+                  className="bg-brand text-white font-semibold text-sm px-4 py-2 rounded-full disabled:opacity-40 whitespace-nowrap"
+                >
+                  {adding ? 'Adding…' : '＋ Add & link'}
+                </button>
+              </div>
+              {det.estimatedPrice != null && (
+                <p className="text-[11px] text-gray-500">Claude suggested ${det.estimatedPrice.toFixed(2)}</p>
+              )}
+              {addError && <p className="text-xs text-red-600">{addError}</p>}
+            </div>
+
+            <p className="text-[11px] uppercase tracking-widest text-gray-500 font-bold pt-1">Or link an existing item</p>
             <input
               className="input text-sm"
-              placeholder="Search menu to link…"
+              placeholder="Search menu…"
               value={search}
               onChange={e => setSearch(e.target.value)}
             />
