@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import AreaBoard from './AreaBoard'
 
 interface Detection {
   productId: string | null
@@ -75,8 +76,9 @@ export default function ShelfTour({ storeId, onOpenProduct }: Props) {
           return (
             <div key={area.name} className="space-y-2">
               <p className="text-[11px] font-bold uppercase tracking-widest text-gray-500">{area.name}</p>
-              <GridView
-                store={{ shelfRows: area.rows, shelfCols: area.cols, shelfAreas: null }}
+              <AreaBoard
+                rows={area.rows}
+                cols={area.cols}
                 photos={areaPhotos}
                 onOpenProduct={onOpenProduct}
               />
@@ -88,7 +90,15 @@ export default function ShelfTour({ storeId, onOpenProduct }: Props) {
   }
 
   if (hasGrid) {
-    return <GridView store={store!} photos={photos} onOpenProduct={onOpenProduct} />
+    // Single-scan store: render the whole unit as one clean board.
+    return (
+      <AreaBoard
+        rows={store!.shelfRows ?? 0}
+        cols={store!.shelfCols ?? 0}
+        photos={photos}
+        onOpenProduct={onOpenProduct}
+      />
+    )
   }
   return <LegacyView photos={photos} onOpenProduct={onOpenProduct} />
 }
