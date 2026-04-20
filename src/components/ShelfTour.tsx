@@ -97,91 +97,31 @@ export default function ShelfTour({ storeId, onOpenProduct }: Props) {
 
 function GridView({ store, photos, onOpenProduct }: { store: StoreMeta; photos: ShelfPhoto[]; onOpenProduct: (id: string) => void }) {
   const rows = store.shelfRows ?? 0
-  const cols = store.shelfCols ?? 0
-  const [activeCell, setActiveCell] = useState<{ r: number; c: number } | null>(null)
 
-  // Lookup by "r:c"
-  const cellMap = new Map<string, ShelfPhoto>()
+  // Group photos by shelfIndex, sorted by sectionIndex
+  const byShelf = new Map<number, ShelfPhoto[]>()
   for (const p of photos) {
     if (p.shelfIndex == null || p.sectionIndex == null) continue
-    cellMap.set(`${p.shelfIndex}:${p.sectionIndex}`, p)
+    const arr = byShelf.get(p.shelfIndex) ?? []
+    arr.push(p)
+    byShelf.set(p.shelfIndex, arr)
   }
-
-  const expanded = activeCell ? cellMap.get(`${activeCell.r}:${activeCell.c}`) : null
-
-  if (activeCell && expanded) {
-    return (
-      <section className="space-y-3">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-lg font-bold text-gray-900">🛒 Shelf {activeCell.r + 1} · Section {activeCell.c + 1}</h2>
-            <p className="text-xs text-gray-500">Tap anywhere to zoom · tap the dot to add.</p>
-          </div>
-          <button onClick={() => setActiveCell(null)} className="text-xs font-semibold text-brand">← All sections</button>
-        </div>
-        <ExpandedCell photo={expanded} onOpenProduct={onOpenProduct} />
-      </section>
-    )
+  for (const [k, arr] of byShelf) {
+    arr.sort((a, b) => (a.sectionIndex ?? 0) - (b.sectionIndex ?? 0))
+    byShelf.set(k, arr)
   }
 
   return (
-    <section className="space-y-3">
-      <div>
-        <h2 className="text-lg font-bold text-gray-900">🛒 Browse the shelf</h2>
-        <p className="text-xs text-gray-500">Tap any section to zoom in and shop.</p>
-      </div>
-      <div className="space-y-1.5">
-        {Array.from({ length: rows }).map((_, r) => (
-          <div
-            key={r}
-            className="grid gap-1.5"
-            style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}
-          >
-            {Array.from({ length: cols }).map((_, c) => {
-              const photo = cellMap.get(`${r}:${c}`)
-              const itemCount = photo?.detections.filter(d => d.productId).length ?? 0
-              return (
-                <button
-                  key={c}
-                  onClick={() => photo && setActiveCell({ r, c })}
-                  disabled={!photo}
-                  className={`relative rounded-lg overflow-hidden border ${photo ? 'border-gray-200 active:scale-[0.98]' : 'border-dashed border-gray-300 bg-gray-50'} transition-transform`}
-                  style={{ aspectRatio: '3 / 4' }}
-                >
-                  {photo ? (
-                    <>
-                      <img src={photo.imageUrl} alt="" className="absolute inset-0 w-full h-full object-cover" />
-                      {/* Subtle dot markers so the customer sees tap targets exist */}
-                      {photo.detections.filter(d => d.productId).slice(0, 30).map((d, i) => (
-                        <span
-                          key={i}
-                          className="absolute w-1.5 h-1.5 rounded-full bg-white ring-1 ring-brand/80 -translate-x-1/2 -translate-y-1/2"
-                          style={{
-                            left: `${(d.bbox.x + d.bbox.w / 2) * 100}%`,
-                            top: `${(d.bbox.y + d.bbox.h / 2) * 100}%`,
-                          }}
-                        />
-                      ))}
-                      {itemCount > 0 && (
-                        <span className="absolute bottom-1 left-1 right-1 bg-black/70 text-white text-[10px] font-semibold px-1.5 py-0.5 rounded text-center">
-                          {itemCount} items
-                        </span>
-                      )}
-                    </>
-                  ) : null}
-                </button>
-              )
-            })}
-          </div>
-        ))}
-      </div>
-    </section>
+    <div className="space-y-3">
+      {Array.from({ length: rows }).map((_, r) => {
+        const sections = byShelf.get(r) ?? []
+        if (sections.length === 0) return null
+        return (
+          <ShelfRow key={r} shelfIndex={r} sections={sections} onOpenProduct={onOpenProduct} />
+        )
+      })}
+    </div>
   )
-}
-
-function ExpandedCell({ photo, onOpenProduct }: { photo: ShelfPhoto; onOpenProduct: (id: string) => void }) {
-  // Reuse ShelfRow with a single-photo array. Disables swipe cleanly.
-  return <ShelfRow shelfIndex={photo.shelfIndex ?? 0} sections={[photo]} onOpenProduct={onOpenProduct} />
 }
 
 function ShelfRow({ shelfIndex, sections, onOpenProduct }: {
@@ -297,9 +237,10 @@ function ShelfRow({ shelfIndex, sections, onOpenProduct }: {
           }}
         >
           <img src={photo.imageUrl} alt={photo.label ?? ''} className="block w-full h-auto" draggable={false} />
-          {photo.detections.map((d, i) => {
+          {/* Dots only exist once the customer has zoomed into a section —
+              before that the shelf should look like a normal photo. */}
+          {zoomed && photo.detections.map((d, i) => {
             if (!d.productId) return null
-            const interactive = !!zoomed
             const cx = d.bbox.x + d.bbox.w / 2
             const cy = d.bbox.y + d.bbox.h / 2
             const isTapped = tapped?.i === i
@@ -307,24 +248,21 @@ function ShelfRow({ shelfIndex, sections, onOpenProduct }: {
               <button
                 key={i}
                 onClick={e => handleHotspotTap(e, d, i)}
-                disabled={!interactive}
-                className={`absolute flex items-center justify-center -translate-x-1/2 -translate-y-1/2 ${!interactive ? 'pointer-events-none' : ''}`}
+                className="absolute flex items-center justify-center -translate-x-1/2 -translate-y-1/2"
                 style={{
                   left: `${cx * 100}%`,
                   top: `${cy * 100}%`,
-                  width: `${Math.max(14, d.bbox.w * 100) / (zoomed ? ZOOM_LEVEL : 1)}%`,
-                  height: `${Math.max(14, d.bbox.h * 100) / (zoomed ? ZOOM_LEVEL : 1)}%`,
+                  width: `${Math.max(14, d.bbox.w * 100) / ZOOM_LEVEL}%`,
+                  height: `${Math.max(14, d.bbox.h * 100) / ZOOM_LEVEL}%`,
                   minWidth: 28, minHeight: 28,
                 }}
                 aria-label={d.label}
               >
                 <span
                   className={`rounded-full transition-all ${
-                    isTapped ? 'bg-brand scale-150 shadow-lg'
-                    : zoomed ? 'bg-brand ring-2 ring-white/90 shadow'
-                    : 'bg-white/90 ring-2 ring-brand shadow-sm'
+                    isTapped ? 'bg-brand scale-150 shadow-lg' : 'bg-brand ring-2 ring-white/90 shadow'
                   }`}
-                  style={{ width: zoomed ? 14 : 10, height: zoomed ? 14 : 10 }}
+                  style={{ width: 14, height: 14 }}
                 />
               </button>
             )
