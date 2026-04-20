@@ -8,6 +8,7 @@ import { MediaAsset } from '@/components/MediaAsset'
 import ShelfTour from '@/components/ShelfTour'
 import { useCart } from '@/context/CartContext'
 import { formatCents } from '@/lib/utils'
+import { getSimilarAvailableProducts, isOutOfStock } from '@/lib/similarProducts'
 import type { ProductInfo, StoreInfo } from '@/types'
 import type { UpcDetail } from '@/app/api/upc-lookup/route'
 
@@ -481,6 +482,10 @@ function ProductDetailSheet({
   const brand = detail?.brand
   const description = detail?.description
   const size = detail?.size
+  const outOfStock = isOutOfStock(product)
+  const similarItems = outOfStock
+    ? getSimilarAvailableProducts(product, allProducts, { limit: 4 })
+    : []
 
   return (
     <>
@@ -555,38 +560,77 @@ function ProductDetailSheet({
             </div>
           )}
 
-          {/* Qty stepper + Add to cart */}
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-1 rounded-full border border-gray-200 bg-gray-50 px-1">
-              <button
-                type="button"
-                onClick={() => setPickQty(q => Math.max(1, q - 1))}
-                className="w-10 h-10 rounded-full text-xl font-bold text-gray-900 active:bg-gray-200"
-                aria-label="Decrease"
-              >
-                −
-              </button>
-              <span className="w-8 text-center font-bold text-gray-900 tabular-nums">{pickQty}</span>
-              <button
-                type="button"
-                onClick={() => setPickQty(q => Math.min(99, q + 1))}
-                className="w-10 h-10 rounded-full text-xl font-bold text-gray-900 active:bg-gray-200"
-                aria-label="Increase"
-              >
-                +
-              </button>
-            </div>
-            <button
-              onClick={() => { for (let i = 0; i < pickQty; i++) onAdd(); onClose() }}
-              className="btn-primary flex-1 flex items-center justify-between px-6"
-            >
-              <span className="text-base font-black">Add {pickQty} to cart</span>
-              <span className="text-base font-black">{formatCents(product.price * pickQty)}</span>
-            </button>
-          </div>
+          {outOfStock ? (
+            <div className="space-y-4">
+              <div className="rounded-2xl bg-red-50 border border-red-200 p-4 text-center space-y-1">
+                <p className="badge bg-red-100 text-red-700 inline-block">Out of stock</p>
+                <p className="text-sm text-gray-700">This item is temporarily unavailable.</p>
+              </div>
 
-          {qty > 0 && (
-            <p className="text-center text-xs text-gray-500">{qty} already in your cart</p>
+              {similarItems.length > 0 && (
+                <div className="space-y-2">
+                  <p className="text-xs font-bold uppercase tracking-widest text-gray-500">Try these instead</p>
+                  <div className="space-y-1.5">
+                    {similarItems.map(s => (
+                      <button
+                        key={s.id}
+                        onClick={() => onSelectVariety(s)}
+                        className="w-full flex items-center gap-3 rounded-2xl bg-gray-50 border border-gray-200 p-2.5 text-left active:bg-gray-100"
+                      >
+                        <div className="w-12 h-12 rounded-xl overflow-hidden bg-white flex items-center justify-center relative shrink-0">
+                          {s.imageUrl ? (
+                            <Image src={s.imageUrl} alt={s.name} fill className="object-contain p-1" unoptimized />
+                          ) : (
+                            <span className="text-2xl">{CAT_ICON[s.category ?? ''] ?? '🛒'}</span>
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-semibold text-gray-900 truncate">{s.name}</p>
+                          <p className="text-xs text-gray-500">{s.category ?? ''}</p>
+                        </div>
+                        <span className="text-sm font-black text-brand shrink-0">{formatCents(s.price)}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : (
+            <>
+              {/* Qty stepper + Add to cart */}
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-1 rounded-full border border-gray-200 bg-gray-50 px-1">
+                  <button
+                    type="button"
+                    onClick={() => setPickQty(q => Math.max(1, q - 1))}
+                    className="w-10 h-10 rounded-full text-xl font-bold text-gray-900 active:bg-gray-200"
+                    aria-label="Decrease"
+                  >
+                    −
+                  </button>
+                  <span className="w-8 text-center font-bold text-gray-900 tabular-nums">{pickQty}</span>
+                  <button
+                    type="button"
+                    onClick={() => setPickQty(q => Math.min(99, q + 1))}
+                    className="w-10 h-10 rounded-full text-xl font-bold text-gray-900 active:bg-gray-200"
+                    aria-label="Increase"
+                  >
+                    +
+                  </button>
+                </div>
+                <button
+                  onClick={() => { for (let i = 0; i < pickQty; i++) onAdd(); onClose() }}
+                  className="btn-primary flex-1 flex items-center justify-between px-6"
+                >
+                  <span className="text-base font-black">Add {pickQty} to cart</span>
+                  <span className="text-base font-black">{formatCents(product.price * pickQty)}</span>
+                </button>
+              </div>
+
+              {qty > 0 && (
+                <p className="text-center text-xs text-gray-500">{qty} already in your cart</p>
+              )}
+            </>
           )}
         </div>
       </div>

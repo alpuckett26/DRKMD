@@ -131,6 +131,8 @@ model Product {
   imageUrl           String?
   active             Boolean     @default(true)
   promoted           Boolean     @default(false)
+  availabilityStatus String      @default("available")
+  similarProductIds  String[]    @default([])
   orderItems         OrderItem[]
   createdAt          DateTime    @default(now())
   updatedAt          DateTime    @updatedAt

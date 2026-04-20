@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { isRestrictedProduct } from '@/lib/restrictedKeywords'
+import { seedSimilarProductIds } from '@/lib/similarProducts'
 import { z } from 'zod'
 
 const ProductSchema = z.object({
@@ -28,5 +29,18 @@ export async function POST(req: Request) {
     update: { ...data, active: true },
     create: { storeId, name, ...data, active: true },
   })
+
+  // Seed similar-item suggestions from same-category siblings. Only for
+  // fresh creates that don't have any yet — preserves admin overrides.
+  if (!product.similarProductIds || product.similarProductIds.length === 0) {
+    const similar = await seedSimilarProductIds(storeId, product)
+    if (similar.length > 0) {
+      await db.product.update({
+        where: { id: product.id },
+        data: { similarProductIds: similar },
+      })
+    }
+  }
+
   return NextResponse.json(product, { status: 201 })
 }

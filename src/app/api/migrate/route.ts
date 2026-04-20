@@ -232,6 +232,10 @@ export async function POST() {
     }
     await db.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "ShelfPhoto_storeId_shelfIndex_sectionIndex_idx" ON "ShelfPhoto"("storeId", "shelfIndex", "sectionIndex")`)
 
+    // Product availability + similar items
+    await db.$executeRawUnsafe(`ALTER TABLE "Product" ADD COLUMN IF NOT EXISTS "availabilityStatus" TEXT NOT NULL DEFAULT 'available'`)
+    await db.$executeRawUnsafe(`ALTER TABLE "Product" ADD COLUMN IF NOT EXISTS "similarProductIds" TEXT[] NOT NULL DEFAULT '{}'`)
+
     return NextResponse.json({ ok: true, message: 'Migration complete' })
   } catch (e) {
     return NextResponse.json({ ok: false, error: String(e) }, { status: 500 })

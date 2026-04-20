@@ -49,6 +49,9 @@ export interface ProductInfo {
   restrictedFlag: boolean
   imageUrl: string | null
   promoted: boolean
+  availabilityStatus?: string
+  similarProductIds?: string[]
+  active?: boolean
 }
 
 export interface OrderSummary {
