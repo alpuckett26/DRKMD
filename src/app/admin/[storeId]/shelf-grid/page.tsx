@@ -293,9 +293,19 @@ function CellSheet({
               : 'Hold your phone parallel to the shelf, ~2 ft back. Fill the frame with this section only.'}
           </p>
         </div>
-        {photo && (
+        {photo ? (
           <div className="rounded-xl overflow-hidden border border-gray-200 bg-gray-50" style={{ aspectRatio: '3 / 4' }}>
             <img src={photo.imageUrl} alt={title} className="w-full h-full object-cover" />
+          </div>
+        ) : (
+          <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50 p-4 space-y-2">
+            <p className="text-xs font-bold text-gray-900">For best detection</p>
+            <ul className="text-xs text-gray-600 space-y-1">
+              <li>• Stand <b>~2 ft back</b> so one section fills the frame</li>
+              <li>• Hold phone <b>parallel to the shelf</b> — no upward tilt</li>
+              <li>• Even light, no glare, <b>one section per photo</b></li>
+              <li>• It&apos;s OK if the photo is portrait or landscape</li>
+            </ul>
           </div>
         )}
         <div className="grid grid-cols-2 gap-2">

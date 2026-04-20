@@ -91,6 +91,20 @@ export default function ShelfTourAdmin() {
       </div>
 
       <div className="max-w-2xl mx-auto px-4 pt-4 space-y-4">
+        <Link
+          href={`/admin/${storeId}/shelf-grid`}
+          className="block rounded-2xl p-4 bg-brand/10 border border-brand/30 active:scale-[0.99] transition-transform"
+        >
+          <div className="flex items-start gap-3">
+            <span className="text-2xl">🗺</span>
+            <div className="flex-1">
+              <p className="font-bold text-sm text-gray-900">Try Shelf Grid for cleaner results</p>
+              <p className="text-xs text-gray-700 mt-0.5 leading-relaxed">Takes photos section-by-section with a guide. Each shot stays close and straight-on, so detection lands way tighter.</p>
+              <p className="text-sm text-brand font-semibold mt-2">Set up my grid →</p>
+            </div>
+          </div>
+        </Link>
+
         <div className="card space-y-3">
           <p className="font-bold">Snap your shelves</p>
           <p className="text-sm text-gray-600">
