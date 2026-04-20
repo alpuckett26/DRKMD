@@ -14,11 +14,12 @@ export async function GET(_req: Request, { params }: { params: { storeId: string
 
 export async function POST(req: Request, { params }: { params: { storeId: string } }) {
   try {
-    const { imageBase64, label, shelfIndex, sectionIndex } = await req.json() as {
+    const { imageBase64, label, shelfIndex, sectionIndex, areaName } = await req.json() as {
       imageBase64: string
       label?: string
       shelfIndex?: number
       sectionIndex?: number
+      areaName?: string | null
     }
     const storeId = params.storeId
     if (!imageBase64) return NextResponse.json({ error: 'No image provided' }, { status: 400 })
@@ -45,7 +46,13 @@ export async function POST(req: Request, { params }: { params: { storeId: string
 
     if (typeof shelfIndex === 'number' && typeof sectionIndex === 'number') {
       await db.shelfPhoto.updateMany({
-        where: { storeId, shelfIndex, sectionIndex, active: true },
+        where: {
+          storeId,
+          shelfIndex,
+          sectionIndex,
+          active: true,
+          ...(areaName !== undefined && { areaName: areaName ?? null }),
+        },
         data: { active: false },
       })
     }
@@ -57,6 +64,7 @@ export async function POST(req: Request, { params }: { params: { storeId: string
         label: label ?? null,
         shelfIndex: typeof shelfIndex === 'number' ? shelfIndex : null,
         sectionIndex: typeof sectionIndex === 'number' ? sectionIndex : null,
+        areaName: areaName ?? null,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         detections: detections as any,
       },

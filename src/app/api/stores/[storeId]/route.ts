@@ -28,6 +28,7 @@ export async function PATCH(req: Request, { params }: { params: { storeId: strin
       ...(body.tosAcceptedAt !== undefined && { tosAcceptedAt: body.tosAcceptedAt }),
       ...(body.shelfRows !== undefined && { shelfRows: body.shelfRows }),
       ...(body.shelfCols !== undefined && { shelfCols: body.shelfCols }),
+      ...(body.shelfAreas !== undefined && { shelfAreas: body.shelfAreas }),
     },
   })
   return NextResponse.json(store)

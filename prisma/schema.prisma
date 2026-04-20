@@ -20,6 +20,7 @@ model Store {
   onboardingComplete Boolean   @default(false)
   shelfRows          Int?
   shelfCols          Int?
+  shelfAreas         Json?     @default("[]")
   ownerName          String?
   ownerEmail         String?
   phone              String?
@@ -51,6 +52,7 @@ model ShelfPhoto {
   active        Boolean  @default(true)
   shelfIndex    Int?
   sectionIndex  Int?
+  areaName      String?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 

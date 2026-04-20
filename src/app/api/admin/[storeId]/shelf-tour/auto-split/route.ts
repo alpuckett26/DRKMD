@@ -13,9 +13,12 @@ export const maxDuration = 300
  *  admin captured each section individually, but without having to. */
 export async function POST(req: Request, { params }: { params: { storeId: string } }) {
   try {
-    const { imageBase64, yBoundaries } = await req.json() as {
+    const { imageBase64, yBoundaries, areaName, rows: bodyRows, cols: bodyCols } = await req.json() as {
       imageBase64: string
-      yBoundaries?: number[] // normalized 0..1, length = shelfRows + 1 ideally
+      yBoundaries?: number[]
+      areaName?: string | null
+      rows?: number
+      cols?: number
     }
     const storeId = params.storeId
     if (!imageBase64) return NextResponse.json({ error: 'No image provided' }, { status: 400 })
@@ -27,8 +30,8 @@ export async function POST(req: Request, { params }: { params: { storeId: string
       where: { id: storeId },
       select: { shelfRows: true, shelfCols: true },
     })
-    const rows = store?.shelfRows ?? 0
-    const cols = store?.shelfCols ?? 0
+    const rows = typeof bodyRows === 'number' && bodyRows > 0 ? bodyRows : (store?.shelfRows ?? 0)
+    const cols = typeof bodyCols === 'number' && bodyCols > 0 ? bodyCols : (store?.shelfCols ?? 0)
     if (rows < 1 || cols < 1) {
       return NextResponse.json({
         error: 'Configure shelves and shelf length first.',
@@ -58,10 +61,15 @@ export async function POST(req: Request, { params }: { params: { storeId: string
           .map(v => Math.round(v * H))
       : Array.from({ length: rows + 1 }, (_, i) => Math.round((i / rows) * H))
 
-    // Clear any existing grid photos for this store so the new split
-    // cleanly replaces them. Preserves free-form photos (null coords).
+    // Clear existing grid photos for THIS area only (or legacy null-area
+    // photos when areaName isn't supplied) so we cleanly re-slice.
     await db.shelfPhoto.updateMany({
-      where: { storeId, active: true, NOT: { shelfIndex: null } },
+      where: {
+        storeId,
+        active: true,
+        NOT: { shelfIndex: null },
+        areaName: areaName ?? null,
+      },
       data: { active: false },
     })
 
@@ -97,6 +105,7 @@ export async function POST(req: Request, { params }: { params: { storeId: string
             label: `Shelf ${job.r + 1} · Section ${job.c + 1}`,
             shelfIndex: job.r,
             sectionIndex: job.c,
+            areaName: areaName ?? null,
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             detections: detections as any,
           },

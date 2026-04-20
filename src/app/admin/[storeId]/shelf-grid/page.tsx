@@ -20,11 +20,18 @@ interface ShelfPhoto {
   sectionIndex: number | null
 }
 
+interface ShelfArea {
+  name: string
+  rows: number
+  cols: number
+}
+
 interface StoreInfo {
   id: string
   name: string
   shelfRows: number | null
   shelfCols: number | null
+  shelfAreas: ShelfArea[] | null
 }
 
 /** Each section is ~2.5 feet wide — the sweet spot where a phone held
@@ -36,6 +43,8 @@ export default function ShelfGridPage() {
   const router = useRouter()
   const [store, setStore] = useState<StoreInfo | null>(null)
   const [photos, setPhotos] = useState<ShelfPhoto[]>([])
+  const [areas, setAreas] = useState<ShelfArea[]>([])
+  const [activeArea, setActiveArea] = useState<string | null>(null)
   const [rows, setRows] = useState(0)
   const [cols, setCols] = useState(0)
   const [shelfLengthFt, setShelfLengthFt] = useState(0)
