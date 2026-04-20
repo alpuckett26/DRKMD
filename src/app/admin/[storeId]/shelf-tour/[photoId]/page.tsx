@@ -98,6 +98,22 @@ export default function ShelfTourEditor() {
     setDirty(true)
   }
 
+  // Scale height/width for every box. Keeps the top edge fixed for height
+  // changes and the left edge fixed for width changes — which matches what
+  // you want when Claude's boxes drift down past the product base.
+  function scaleAll(dh: number, dw: number) {
+    setDetections(prev => prev.map(d => ({
+      ...d,
+      bbox: clampBox({
+        x: d.bbox.x,
+        y: d.bbox.y,
+        w: d.bbox.w + dw,
+        h: d.bbox.h + dh,
+      }),
+    })))
+    setDirty(true)
+  }
+
   async function addDetectionToMenu(index: number, price: number, category: string, restricted: boolean) {
     const det = detections[index]
     const res = await fetch('/api/admin/products', {
@@ -300,6 +316,13 @@ export default function ShelfTourEditor() {
             <button onClick={() => shiftAll(0, 0.015)} className="w-8 h-8 rounded-full bg-gray-100 border border-gray-200 text-sm font-bold text-gray-700 active:bg-gray-200" aria-label="Shift down">↓</button>
             <button onClick={() => shiftAll(-0.015, 0)} className="w-8 h-8 rounded-full bg-gray-100 border border-gray-200 text-sm font-bold text-gray-700 active:bg-gray-200" aria-label="Shift left">←</button>
             <button onClick={() => shiftAll(0.015, 0)} className="w-8 h-8 rounded-full bg-gray-100 border border-gray-200 text-sm font-bold text-gray-700 active:bg-gray-200" aria-label="Shift right">→</button>
+          </div>
+          <div className="flex items-center gap-1">
+            <span className="text-xs text-gray-500 pr-1">Resize all:</span>
+            <button onClick={() => scaleAll(-0.02, 0)} className="w-auto px-2 h-8 rounded-full bg-gray-100 border border-gray-200 text-xs font-bold text-gray-700 active:bg-gray-200" aria-label="Shrink height">↕−</button>
+            <button onClick={() => scaleAll(0.02, 0)} className="w-auto px-2 h-8 rounded-full bg-gray-100 border border-gray-200 text-xs font-bold text-gray-700 active:bg-gray-200" aria-label="Grow height">↕+</button>
+            <button onClick={() => scaleAll(0, -0.02)} className="w-auto px-2 h-8 rounded-full bg-gray-100 border border-gray-200 text-xs font-bold text-gray-700 active:bg-gray-200" aria-label="Shrink width">↔−</button>
+            <button onClick={() => scaleAll(0, 0.02)} className="w-auto px-2 h-8 rounded-full bg-gray-100 border border-gray-200 text-xs font-bold text-gray-700 active:bg-gray-200" aria-label="Grow width">↔+</button>
           </div>
         </div>
 
