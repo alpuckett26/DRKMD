@@ -24,7 +24,16 @@ interface Props {
   onOpenProduct: (productId: string) => void
 }
 
-const ZOOM_LEVEL = 3
+// Pick a zoom factor that's useful without being claustrophobic. Dense
+// grids need more magnification to separate products; skinny grids
+// (like 7x1 coolers) look fine at ~1.5x.
+function pickZoom(cols: number, rows: number): number {
+  const bigger = Math.max(cols, rows)
+  if (bigger >= 4) return 3
+  if (bigger === 3) return 2.5
+  if (bigger === 2) return 2
+  return 1.6
+}
 
 /**
  * Renders all of an area's cells as one seamless board — no grid lines,
@@ -33,6 +42,7 @@ const ZOOM_LEVEL = 3
  * matched product. Tap a dot → opens the product sheet.
  */
 export default function AreaBoard({ rows, cols, photos, onOpenProduct }: Props) {
+  const ZOOM_LEVEL = pickZoom(cols, rows)
   const [zoomed, setZoomed] = useState<{ cx: number; cy: number } | null>(null)
   const [tapped, setTapped] = useState<{ id: string; t: number } | null>(null)
   const containerRef = useRef<HTMLDivElement>(null)

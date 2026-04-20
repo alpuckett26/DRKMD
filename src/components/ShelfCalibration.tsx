@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from 'react'
 interface Props {
   imageDataUrl: string
   rows: number // expected number of shelves
+  submitting?: boolean
   onCancel: () => void
   onConfirm: (yBoundaries: number[]) => void
 }
@@ -14,7 +15,7 @@ interface Props {
  * Admin sees `rows + 1` horizontal lines starting evenly spaced; drags each
  * onto the real shelf edge. Sorts lines after drag so they stay top-down.
  */
-export default function ShelfCalibration({ imageDataUrl, rows, onCancel, onConfirm }: Props) {
+export default function ShelfCalibration({ imageDataUrl, rows, submitting, onCancel, onConfirm }: Props) {
   const expected = rows + 1
   const [lines, setLines] = useState<number[]>(() =>
     Array.from({ length: expected }, (_, i) => i / rows),
@@ -131,8 +132,19 @@ export default function ShelfCalibration({ imageDataUrl, rows, onCancel, onConfi
             </p>
             <button onClick={resetEven} className="text-xs font-semibold text-brand">Reset evenly</button>
           </div>
-          <button onClick={confirm} className="w-full bg-brand text-white font-bold py-3.5 rounded-full">
-            Slice along these lines →
+          <button
+            onClick={confirm}
+            disabled={submitting}
+            className="w-full bg-brand text-white font-bold py-3.5 rounded-full disabled:opacity-70 flex items-center justify-center gap-2"
+          >
+            {submitting ? (
+              <>
+                <span className="inline-block w-4 h-4 rounded-full border-2 border-white/50 border-t-white animate-spin" />
+                Slicing {rows} sections…
+              </>
+            ) : (
+              <>Slice along these lines →</>
+            )}
           </button>
         </div>
       </div>

@@ -62,12 +62,21 @@ export default function ShelfGridPage() {
   const splitFileRef = useRef<HTMLInputElement>(null)
 
   async function load() {
-    const [s, ps] = await Promise.all([
-      fetch(`/api/stores/${storeId}`).then(r => r.json()),
-      fetch(`/api/admin/${storeId}/shelf-tour`).then(r => r.json()),
-    ])
+    let s: StoreInfo | null = null
+    let ps: ShelfPhoto[] = []
+    try {
+      const [sr, pr] = await Promise.all([
+        fetch(`/api/stores/${storeId}`),
+        fetch(`/api/admin/${storeId}/shelf-tour`),
+      ])
+      if (sr.ok) s = await sr.json()
+      if (pr.ok) ps = await pr.json()
+    } catch (err) {
+      console.error('shelf-grid load failed', err)
+    }
+    if (!s) return
     setStore(s)
-    setPhotos(ps)
+    setPhotos(Array.isArray(ps) ? ps : [])
 
     // Bootstrap scan list from store.shelfAreas. Legacy stores with only
     // shelfRows/shelfCols set get migrated into a 'Main' scan on first load.
@@ -429,7 +438,8 @@ export default function ShelfGridPage() {
         <ShelfCalibration
           imageDataUrl={calibrating}
           rows={rows}
-          onCancel={() => setCalibrating(null)}
+          submitting={splitting}
+          onCancel={() => { if (!splitting) setCalibrating(null) }}
           onConfirm={yBoundaries => runAutoSplit(calibrating, yBoundaries)}
         />
       )}
