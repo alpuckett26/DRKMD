@@ -133,22 +133,21 @@ function GridView({ store, photos, onOpenProduct }: { store: StoreMeta; photos: 
   const rows = store.shelfRows ?? 0
 
   // Group photos by shelfIndex, sorted by sectionIndex
-  const byShelf = new Map<number, ShelfPhoto[]>()
+  const byShelf: Record<number, ShelfPhoto[]> = {}
   for (const p of photos) {
     if (p.shelfIndex == null || p.sectionIndex == null) continue
-    const arr = byShelf.get(p.shelfIndex) ?? []
+    const arr = byShelf[p.shelfIndex] ?? []
     arr.push(p)
-    byShelf.set(p.shelfIndex, arr)
+    byShelf[p.shelfIndex] = arr
   }
-  for (const [k, arr] of byShelf) {
-    arr.sort((a, b) => (a.sectionIndex ?? 0) - (b.sectionIndex ?? 0))
-    byShelf.set(k, arr)
+  for (const k of Object.keys(byShelf)) {
+    byShelf[Number(k)].sort((a, b) => (a.sectionIndex ?? 0) - (b.sectionIndex ?? 0))
   }
 
   return (
     <div className="space-y-3">
       {Array.from({ length: rows }).map((_, r) => {
-        const sections = byShelf.get(r) ?? []
+        const sections = byShelf[r] ?? []
         if (sections.length === 0) return null
         return (
           <ShelfRow key={r} shelfIndex={r} sections={sections} onOpenProduct={onOpenProduct} />
