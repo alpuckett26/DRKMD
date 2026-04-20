@@ -21,7 +21,7 @@ interface Props {
   onOpenProduct: (productId: string) => void
 }
 
-const ZOOM_LEVEL = 2.5
+const ZOOM_LEVEL = 3.5
 const SWIPE_THRESHOLD = 50 // pixels of horizontal travel before it counts as a swipe
 
 export default function ShelfTour({ storeId, onOpenProduct }: Props) {
