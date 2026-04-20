@@ -187,6 +187,40 @@ export async function POST() {
       )`)
     await db.$executeRawUnsafe(`CREATE UNIQUE INDEX IF NOT EXISTS "Product_storeId_name_key" ON "Product"("storeId", "name")`)
 
+    // Store leads — customers asking us to onboard their corner store.
+    await db.$executeRawUnsafe(`
+      CREATE TABLE IF NOT EXISTS "StoreRequest" (
+        "id" TEXT NOT NULL,
+        "storeName" TEXT NOT NULL,
+        "city" TEXT,
+        "state" TEXT,
+        "address" TEXT,
+        "ownerName" TEXT,
+        "contactEmail" TEXT,
+        "contactPhone" TEXT,
+        "notes" TEXT,
+        "status" TEXT NOT NULL DEFAULT 'new',
+        "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        CONSTRAINT "StoreRequest_pkey" PRIMARY KEY ("id")
+      )`)
+
+    // Shelf Tour — cached Claude Vision hotspot maps per shelf photo.
+    await db.$executeRawUnsafe(`
+      CREATE TABLE IF NOT EXISTS "ShelfPhoto" (
+        "id" TEXT NOT NULL,
+        "storeId" TEXT NOT NULL,
+        "imageUrl" TEXT NOT NULL,
+        "label" TEXT,
+        "detections" JSONB NOT NULL,
+        "sortOrder" INTEGER NOT NULL DEFAULT 0,
+        "active" BOOLEAN NOT NULL DEFAULT true,
+        "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        CONSTRAINT "ShelfPhoto_pkey" PRIMARY KEY ("id"),
+        CONSTRAINT "ShelfPhoto_storeId_fkey" FOREIGN KEY ("storeId") REFERENCES "Store"("id") ON DELETE CASCADE
+      )`)
+    await db.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "ShelfPhoto_storeId_active_sortOrder_idx" ON "ShelfPhoto"("storeId", "active", "sortOrder")`)
+
     return NextResponse.json({ ok: true, message: 'Migration complete' })
   } catch (e) {
     return NextResponse.json({ ok: false, error: String(e) }, { status: 500 })
