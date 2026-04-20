@@ -12,6 +12,7 @@ interface Detection {
   label: string
   bbox: BBox
   confidence: number
+  estimatedPrice: number | null
   matched: boolean
 }
 
@@ -79,13 +80,14 @@ For each product return:
 - label: specific product name including brand and size if readable (e.g. "Coca-Cola 20oz", "Lay's Classic").
 - bbox: {"x": leftEdge, "y": topEdge, "w": width, "h": height} — all normalized 0.0–1.0.
 - confidence: decimal 0.0–1.0 reflecting how sure you are of the label. Use 0.9+ for unambiguous branded items, 0.6–0.8 for partial guesses, below 0.5 for genuine uncertainty.
+- estimatedPrice: realistic US convenience-store retail price in dollars as a number (e.g. 2.49, 12.99). If there's a visible price tag in the photo, read it and use that value. Otherwise estimate based on typical convenience-store pricing. Use null only if you have absolutely no idea.
 
 Rules:
 - One entry per visible unit. If four identical bottles are lined up side by side, return four entries with distinct bboxes.
 - Err toward a smaller, tighter bbox. A box inside the product is always better than a box that crosses into the shelf or neighbor.
 - Skip shelves, price tags, signage, and non-product clutter.
 - Return ONLY a JSON array, no prose:
-[{"label":"Coca-Cola 20oz","bbox":{"x":0.12,"y":0.08,"w":0.06,"h":0.22},"confidence":0.94}]`,
+[{"label":"Coca-Cola 20oz","bbox":{"x":0.12,"y":0.08,"w":0.06,"h":0.22},"confidence":0.94,"estimatedPrice":2.79}]`,
           },
         ],
       }],
@@ -93,7 +95,7 @@ Rules:
 
     const text = message.content.find(b => b.type === 'text')?.text ?? '[]'
     const match = text.match(/\[[\s\S]*\]/)
-    let raw: { label: string; bbox: BBox; confidence?: number }[] = []
+    let raw: { label: string; bbox: BBox; confidence?: number; estimatedPrice?: number | null }[] = []
     if (match) {
       try { raw = JSON.parse(match[0]) } catch {}
     }
@@ -111,6 +113,7 @@ Rules:
         label: r.label,
         bbox: r.bbox,
         confidence: typeof r.confidence === 'number' ? r.confidence : 0.75,
+        estimatedPrice: typeof r.estimatedPrice === 'number' && r.estimatedPrice > 0 ? r.estimatedPrice : null,
         matched: !!hit,
       }
     })

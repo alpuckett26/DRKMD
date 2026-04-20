@@ -7,6 +7,7 @@ interface Detection {
   label: string
   bbox: BBox
   confidence: number
+  estimatedPrice: number | null
   matched: boolean
 }
 
@@ -28,6 +29,7 @@ export async function PATCH(req: Request, { params }: { params: { storeId: strin
       label: d.label,
       bbox: d.bbox,
       confidence: typeof d.confidence === 'number' ? d.confidence : 0.75,
+      estimatedPrice: typeof d.estimatedPrice === 'number' && d.estimatedPrice > 0 ? d.estimatedPrice : null,
       matched: !!d.productId,
     }))
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

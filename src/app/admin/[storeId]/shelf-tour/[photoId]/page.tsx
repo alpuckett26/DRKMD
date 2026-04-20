@@ -10,6 +10,7 @@ interface Detection {
   label: string
   bbox: BBox
   confidence: number
+  estimatedPrice: number | null
   matched: boolean
 }
 interface ShelfPhoto {
@@ -417,13 +418,13 @@ function ReviewFlow({
     if (det) {
       setMode('choose')
       setLabelEdit(det.label)
-      setPrice('')
+      setPrice(det.estimatedPrice ? det.estimatedPrice.toFixed(2) : '')
       setCategory(guessCategory(det.label))
       setRestricted(looksRestricted(det.label))
       setError('')
       setSearch('')
     }
-  }, [cursor, det?.label])
+  }, [cursor, det?.label, det?.estimatedPrice])
 
   if (!det) {
     return (
@@ -559,7 +560,14 @@ function ReviewFlow({
           <div className="card space-y-3">
             <p className="font-bold text-sm">Add &ldquo;{labelEdit}&rdquo; to your menu</p>
             <label className="block space-y-1">
-              <span className="text-xs font-semibold text-gray-700">Price (USD)</span>
+              <span className="text-xs font-semibold text-gray-700 flex items-center gap-2">
+                Price (USD)
+                {det.estimatedPrice != null && (
+                  <span className="text-[10px] font-normal text-brand bg-brand/10 px-1.5 py-0.5 rounded-full">
+                    Claude suggested ${det.estimatedPrice.toFixed(2)}
+                  </span>
+                )}
+              </span>
               <input
                 type="number"
                 inputMode="decimal"
