@@ -13,7 +13,10 @@ export const maxDuration = 300
  *  admin captured each section individually, but without having to. */
 export async function POST(req: Request, { params }: { params: { storeId: string } }) {
   try {
-    const { imageBase64 } = await req.json() as { imageBase64: string }
+    const { imageBase64, yBoundaries } = await req.json() as {
+      imageBase64: string
+      yBoundaries?: number[] // normalized 0..1, length = shelfRows + 1 ideally
+    }
     const storeId = params.storeId
     if (!imageBase64) return NextResponse.json({ error: 'No image provided' }, { status: 400 })
     if (!process.env.ANTHROPIC_API_KEY) {
@@ -44,7 +47,16 @@ export async function POST(req: Request, { params }: { params: { storeId: string
     if (!W || !H) return NextResponse.json({ error: 'Could not read image dimensions' }, { status: 400 })
 
     const cellW = Math.floor(W / cols)
-    const cellH = Math.floor(H / rows)
+
+    // Y boundaries in pixels. If the admin calibrated shelves (yBoundaries
+    // length = rows + 1, normalized 0..1), use those. Otherwise fall back
+    // to equal-height rows.
+    const yEdges: number[] = Array.isArray(yBoundaries) && yBoundaries.length === rows + 1
+      ? [...yBoundaries]
+          .map(v => Math.max(0, Math.min(1, v)))
+          .sort((a, b) => a - b)
+          .map(v => Math.round(v * H))
+      : Array.from({ length: rows + 1 }, (_, i) => Math.round((i / rows) * H))
 
     // Clear any existing grid photos for this store so the new split
     // cleanly replaces them. Preserves free-form photos (null coords).
@@ -57,11 +69,12 @@ export async function POST(req: Request, { params }: { params: { storeId: string
     // Sequential 16-cell loop blew through Vercel's 60s function timeout.
     const cellJobs: Array<{ r: number; c: number; left: number; top: number; width: number; height: number }> = []
     for (let r = 0; r < rows; r++) {
+      const top = yEdges[r]
+      const bottom = yEdges[r + 1]
+      const height = Math.max(1, bottom - top)
       for (let c = 0; c < cols; c++) {
         const left = c * cellW
-        const top = r * cellH
         const width = c === cols - 1 ? W - left : cellW
-        const height = r === rows - 1 ? H - top : cellH
         cellJobs.push({ r, c, left, top, width, height })
       }
     }

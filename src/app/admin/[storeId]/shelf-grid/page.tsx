@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
+import ShelfCalibration from '@/components/ShelfCalibration'
 
 interface Detection {
   productId: string | null
@@ -44,6 +45,7 @@ export default function ShelfGridPage() {
   const [uploadingCell, setUploadingCell] = useState<{ r: number; c: number } | null>(null)
   const [splitting, setSplitting] = useState(false)
   const [splitResult, setSplitResult] = useState<string>('')
+  const [calibrating, setCalibrating] = useState<string | null>(null) // holds imageBase64 data URL
   const [error, setError] = useState('')
   const captureRef = useRef<HTMLInputElement>(null)
   const libraryRef = useRef<HTMLInputElement>(null)
@@ -100,15 +102,29 @@ export default function ShelfGridPage() {
     const file = e.target.files?.[0]
     if (!file) return
     setError('')
-    setSplitting(true)
     setSplitResult('')
     try {
       // Keep the source image big — we're slicing it so compression hurts more.
       const base64 = await compressImage(file, 2400, 0.88)
+      // Hand off to the calibration overlay. Slice happens after the admin
+      // confirms shelf boundaries there.
+      setCalibrating(base64)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Couldn’t load image')
+    } finally {
+      if (splitFileRef.current) splitFileRef.current.value = ''
+    }
+  }
+
+  async function runAutoSplit(imageBase64: string, yBoundaries: number[]) {
+    setSplitting(true)
+    setSplitResult('')
+    setError('')
+    try {
       const res = await fetch(`/api/admin/${storeId}/shelf-tour/auto-split`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ imageBase64: base64 }),
+        body: JSON.stringify({ imageBase64, yBoundaries }),
       })
       if (!res.ok) {
         const d = await res.json().catch(() => ({}))
@@ -121,7 +137,7 @@ export default function ShelfGridPage() {
       setError(err instanceof Error ? err.message : 'Auto-split failed')
     } finally {
       setSplitting(false)
-      if (splitFileRef.current) splitFileRef.current.value = ''
+      setCalibrating(null)
     }
   }
 
@@ -237,6 +253,7 @@ export default function ShelfGridPage() {
             <button onClick={() => splitFileRef.current?.click()} disabled={splitting} className="btn-primary">
               {splitting ? `Slicing ${rows * cols} sections…` : '📸 Upload whole-shelf photo'}
             </button>
+            <p className="text-[11px] text-gray-500 text-center">After upload, drag lines onto each shelf edge before slicing.</p>
             {splitResult && <p className="text-xs text-gray-700">{splitResult}</p>}
             {error && <p className="text-xs text-red-600">{error}</p>}
             <p className="text-[11px] text-gray-500 text-center">or tap a cell below to capture section-by-section</p>
@@ -324,6 +341,15 @@ export default function ShelfGridPage() {
 
       <input ref={captureRef} type="file" accept="image/*" capture="environment" onChange={handleFile} className="hidden" />
       <input ref={libraryRef} type="file" accept="image/*" onChange={handleFile} className="hidden" />
+
+      {calibrating && rows > 0 && (
+        <ShelfCalibration
+          imageDataUrl={calibrating}
+          rows={rows}
+          onCancel={() => setCalibrating(null)}
+          onConfirm={yBoundaries => runAutoSplit(calibrating, yBoundaries)}
+        />
+      )}
     </div>
   )
 }
