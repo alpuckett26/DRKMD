@@ -89,6 +89,14 @@ export default function ShelfTourEditor() {
     await saveDetections(next)
   }
 
+  function shiftAll(dx: number, dy: number) {
+    setDetections(prev => prev.map(d => ({
+      ...d,
+      bbox: clampBox({ ...d.bbox, x: d.bbox.x + dx, y: d.bbox.y + dy }),
+    })))
+    setDirty(true)
+  }
+
   async function addDetectionToMenu(index: number, price: number, category: string, restricted: boolean) {
     const det = detections[index]
     const res = await fetch('/api/admin/products', {
@@ -278,14 +286,20 @@ export default function ShelfTourEditor() {
           className="input text-sm"
         />
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <button
             onClick={() => setDrawMode(v => !v)}
             className={`px-4 py-2 rounded-full text-sm font-semibold ${drawMode ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-900 border border-gray-200'}`}
           >
             {drawMode ? '✕ Cancel draw' : '＋ Draw new box'}
           </button>
-          <span className="text-xs text-gray-500">{drawMode ? 'Drag on the image to add a hotspot' : 'Tap a hotspot to edit'}</span>
+          <div className="flex items-center gap-1">
+            <span className="text-xs text-gray-500 pr-1">Shift all:</span>
+            <button onClick={() => shiftAll(0, -0.015)} className="w-8 h-8 rounded-full bg-gray-100 border border-gray-200 text-sm font-bold text-gray-700 active:bg-gray-200" aria-label="Shift up">↑</button>
+            <button onClick={() => shiftAll(0, 0.015)} className="w-8 h-8 rounded-full bg-gray-100 border border-gray-200 text-sm font-bold text-gray-700 active:bg-gray-200" aria-label="Shift down">↓</button>
+            <button onClick={() => shiftAll(-0.015, 0)} className="w-8 h-8 rounded-full bg-gray-100 border border-gray-200 text-sm font-bold text-gray-700 active:bg-gray-200" aria-label="Shift left">←</button>
+            <button onClick={() => shiftAll(0.015, 0)} className="w-8 h-8 rounded-full bg-gray-100 border border-gray-200 text-sm font-bold text-gray-700 active:bg-gray-200" aria-label="Shift right">→</button>
+          </div>
         </div>
 
         <div

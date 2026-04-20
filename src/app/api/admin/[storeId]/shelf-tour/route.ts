@@ -58,17 +58,34 @@ export async function POST(req: Request, { params }: { params: { storeId: string
             text: `This is a photo of a convenience-store shelf (or a fridge/cabinet acting as one for testing).
 Identify every distinct consumable product visible and return a tight bounding box for each.
 
+COORDINATE SYSTEM (read carefully — common source of errors):
+- (0, 0) is the TOP-LEFT pixel of the image.
+- (1, 1) is the BOTTOM-RIGHT pixel of the image.
+- "y" is the TOP edge of the product's packaging, measured from the top of the image.
+- "y + h" is the BOTTOM edge of the product's packaging, measured from the top of the image.
+- "x" is the LEFT edge of the product, measured from the left of the image.
+- "x + w" is the RIGHT edge of the product, measured from the left of the image.
+
+What the bbox MUST contain:
+- Only the product's visible body/packaging.
+
+What the bbox MUST NOT contain:
+- Shelf edges or shelf lips above/below the product.
+- Price tags, promo tags, or shelf-talkers hanging in front.
+- The product above or the product below on an adjacent shelf row.
+- Empty space beside the product.
+
 For each product return:
-- label: specific product name including brand and size if readable (e.g. "Coca-Cola 20oz", "Lay's Classic")
-- bbox: normalized 0.0–1.0 coordinates describing the item's position in the image, as {"x": left, "y": top, "w": width, "h": height}
+- label: specific product name including brand and size if readable (e.g. "Coca-Cola 20oz", "Lay's Classic").
+- bbox: {"x": leftEdge, "y": topEdge, "w": width, "h": height} — all normalized 0.0–1.0.
 - confidence: decimal 0.0–1.0 reflecting how sure you are of the label. Use 0.9+ for unambiguous branded items, 0.6–0.8 for partial guesses, below 0.5 for genuine uncertainty.
 
 Rules:
-- One entry per visible unit. If multiple identical bottles are lined up, list each separately (distinct bboxes).
-- Boxes must be tight around the single item — not a whole row.
-- Skip prices, price tags, shelves, and non-product clutter.
-- Return ONLY a JSON array, no other text:
-[{"label":"Coca-Cola 20oz","bbox":{"x":0.1,"y":0.2,"w":0.08,"h":0.3},"confidence":0.94}]`,
+- One entry per visible unit. If four identical bottles are lined up side by side, return four entries with distinct bboxes.
+- Err toward a smaller, tighter bbox. A box inside the product is always better than a box that crosses into the shelf or neighbor.
+- Skip shelves, price tags, signage, and non-product clutter.
+- Return ONLY a JSON array, no prose:
+[{"label":"Coca-Cola 20oz","bbox":{"x":0.12,"y":0.08,"w":0.06,"h":0.22},"confidence":0.94}]`,
           },
         ],
       }],
