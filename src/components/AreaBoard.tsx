@@ -24,15 +24,16 @@ interface Props {
   onOpenProduct: (productId: string) => void
 }
 
-// Pick a zoom factor that's useful without being claustrophobic. Dense
-// grids need more magnification to separate products; skinny grids
-// (like 7x1 coolers) look fine at ~1.5x.
-function pickZoom(cols: number, rows: number): number {
-  const bigger = Math.max(cols, rows)
-  if (bigger >= 4) return 3
-  if (bigger === 3) return 2.5
-  if (bigger === 2) return 2
-  return 1.6
+// Pick a zoom factor that makes individual items tappable without hiding
+// too much context. Zoom scales with COLUMNS only — shelf rows stack
+// vertically and don't change how many items sit side-by-side in a row.
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+function pickZoom(cols: number, _rows: number): number {
+  if (cols >= 5) return 3
+  if (cols === 4) return 2.5
+  if (cols === 3) return 2
+  if (cols === 2) return 1.5
+  return 1.25 // cols === 1: the whole shelf already fills the width
 }
 
 /**
