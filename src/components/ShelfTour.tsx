@@ -212,27 +212,30 @@ export default function ShelfTour({ storeId, onOpenProduct }: Props) {
           </div>
         )}
 
-        {/* Prev/Next arrows (visible affordance alongside swipe) */}
+        {/* Prev/Next arrows with the destination shelf label so the customer
+            builds a mental map — same way they'd walk aisle to aisle. */}
         {!zoomed && hasMultiple && (
           <>
             {active > 0 && (
               <button
                 onClick={e => { e.stopPropagation(); goPrev() }}
                 onPointerDown={e => e.stopPropagation()}
-                className="absolute left-2 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white/90 border border-gray-200 text-gray-900 font-bold shadow backdrop-blur-sm active:bg-white"
-                aria-label="Previous shelf"
+                className="absolute left-2 top-1/2 -translate-y-1/2 flex items-center gap-1.5 h-10 pl-2 pr-3 rounded-full bg-white/95 border border-gray-200 text-gray-900 font-semibold shadow backdrop-blur-sm active:bg-white max-w-[40%]"
+                aria-label={`Previous shelf: ${shelfLabel(photos[active - 1], active - 1)}`}
               >
-                ‹
+                <span className="text-lg leading-none">‹</span>
+                <span className="text-xs truncate">{shelfLabel(photos[active - 1], active - 1)}</span>
               </button>
             )}
             {active < photos.length - 1 && (
               <button
                 onClick={e => { e.stopPropagation(); goNext() }}
                 onPointerDown={e => e.stopPropagation()}
-                className="absolute right-2 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white/90 border border-gray-200 text-gray-900 font-bold shadow backdrop-blur-sm active:bg-white"
-                aria-label="Next shelf"
+                className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1.5 h-10 pl-3 pr-2 rounded-full bg-white/95 border border-gray-200 text-gray-900 font-semibold shadow backdrop-blur-sm active:bg-white max-w-[40%]"
+                aria-label={`Next shelf: ${shelfLabel(photos[active + 1], active + 1)}`}
               >
-                ›
+                <span className="text-xs truncate">{shelfLabel(photos[active + 1], active + 1)}</span>
+                <span className="text-lg leading-none">›</span>
               </button>
             )}
           </>
@@ -263,3 +266,8 @@ function zoomTransform(cx: number, cy: number, scale: number): string {
 }
 
 function clamp01(v: number) { return Math.max(0, Math.min(1, v)) }
+
+function shelfLabel(photo: ShelfPhoto | undefined, index: number): string {
+  if (photo?.label && photo.label.trim()) return photo.label
+  return `Shelf ${index + 1}`
+}
