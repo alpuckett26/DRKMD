@@ -22,8 +22,26 @@ interface OFFDetail {
   image: string | null
 }
 
+/** Compare two strings by significant-word overlap. Used to reject OFF
+ *  results that don't actually match the product (e.g. "Reese's box"
+ *  matching "Peter Pan Crunchy Peanut Butter"). */
+function isStrictMatch(query: string, candidate: string): boolean {
+  const sig = (s: string) => s
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .split(/\s+/)
+    .filter(w => w.length >= 3 && !STOP_WORDS.has(w))
+  const q = sig(query)
+  const c = sig(candidate)
+  if (q.length === 0 || c.length === 0) return false
+  const shared = q.filter(w => c.includes(w))
+  // Need at least one significant word AND >=50% of query words present
+  return shared.length >= 1 && shared.length / q.length >= 0.5
+}
+const STOP_WORDS = new Set(['box', 'bag', 'pack', 'size', 'king', 'share', 'mini', 'fun', 'count', 'ounce', 'oz', 'with', 'and', 'the', 'pcs', 'piece', 'pieces'])
+
 /** OFF lookup for a single label — returns whatever structured info we can
- *  grab. Swallows all errors since enrichment is best-effort. */
+ *  grab. Strict-matches on brand/product name to reject garbage results. */
 async function lookupOFF(name: string): Promise<OFFDetail | null> {
   try {
     const res = await fetch(
@@ -34,7 +52,10 @@ async function lookupOFF(name: string): Promise<OFFDetail | null> {
     )
     if (!res.ok) return null
     const data = await res.json() as { products?: Array<{ product_name?: string; brands?: string; quantity?: string; categories?: string; image_front_url?: string; image_url?: string }> }
-    const item = data.products?.[0]
+    // Pick the FIRST result that actually matches the query in name OR brand.
+    const item = data.products?.find(p =>
+      isStrictMatch(name, p.product_name ?? '') || isStrictMatch(name, p.brands ?? '')
+    )
     if (!item?.product_name) return null
     return {
       title: item.product_name,

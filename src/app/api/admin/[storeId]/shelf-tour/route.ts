@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
 import sharp from 'sharp'
 import { db } from '@/lib/db'
-import { segmentShelf, filterProductLikely, findBestMask, type SamMaskBBox } from '@/lib/sam'
+import { segmentShelf, filterProductLikely, findBestMask, nonMaxSuppression, type SamMaskBBox } from '@/lib/sam'
 
 export const maxDuration = 60
 
@@ -61,9 +61,11 @@ export async function POST(req: Request, { params }: { params: { storeId: string
     const cleanBase64 = normalizedBuf.toString('base64')
     const normalizedDataUrl = `data:image/jpeg;base64,${cleanBase64}`
 
-    // Step 1: SAM finds shapes.
+    // Step 1: SAM finds shapes. Filter to product-like, then NMS to collapse
+    // SAM's typical 3-5 overlapping masks per real object into one each.
     const samMasks = await segmentShelf(normalizedDataUrl)
-    const usable = samMasks ? filterProductLikely(samMasks) : []
+    const filtered = samMasks ? filterProductLikely(samMasks) : []
+    const usable = nonMaxSuppression(filtered, 0.5)
 
     let rawDetections: LabeledBBox[] = []
     let samMode: 'primary' | 'refine' | 'off' = 'off'

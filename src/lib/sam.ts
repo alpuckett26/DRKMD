@@ -85,6 +85,32 @@ export function filterProductLikely(masks: SamMaskBBox[]): SamMaskBBox[] {
   })
 }
 
+/** Non-max suppression: when two masks overlap heavily, keep the one with
+ *  better confidence (or the larger one if no scores). Stops SAM's typical
+ *  3-5 stacked masks per product from cluttering the editor and creating
+ *  duplicate hotspots. Default IoU cutoff 0.5 = "more than half overlap." */
+export function nonMaxSuppression(masks: SamMaskBBox[], iouCutoff = 0.5): SamMaskBBox[] {
+  // Sort by confidence (desc), tie-break by area (desc).
+  const sorted = masks.slice().sort((a, b) => {
+    const sa = a.score ?? 0
+    const sb = b.score ?? 0
+    if (sb !== sa) return sb - sa
+    return (b.bbox.w * b.bbox.h) - (a.bbox.w * a.bbox.h)
+  })
+  const kept: SamMaskBBox[] = []
+  for (const m of sorted) {
+    let suppressed = false
+    for (const k of kept) {
+      if (computeIoU(m.bbox, k.bbox) >= iouCutoff) {
+        suppressed = true
+        break
+      }
+    }
+    if (!suppressed) kept.push(m)
+  }
+  return kept
+}
+
 /** For a given Claude detection, find the best overlapping SAM mask and
  *  return its tighter bbox. If nothing overlaps well, return null. */
 export function findBestMask(
