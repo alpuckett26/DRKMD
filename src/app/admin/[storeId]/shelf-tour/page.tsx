@@ -22,7 +22,8 @@ interface ShelfPhoto {
 export default function ShelfTourAdmin() {
   const { storeId } = useParams<{ storeId: string }>()
   const router = useRouter()
-  const fileRef = useRef<HTMLInputElement>(null)
+  const captureRef = useRef<HTMLInputElement>(null)
+  const libraryRef = useRef<HTMLInputElement>(null)
   const [photos, setPhotos] = useState<ShelfPhoto[]>([])
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState('')
@@ -59,7 +60,8 @@ export default function ShelfTourAdmin() {
       setError(err instanceof Error ? err.message : 'Upload failed')
     } finally {
       setUploading(false)
-      if (fileRef.current) fileRef.current.value = ''
+      if (captureRef.current) captureRef.current.value = ''
+      if (libraryRef.current) libraryRef.current.value = ''
     }
   }
 
@@ -92,14 +94,24 @@ export default function ShelfTourAdmin() {
             onChange={e => setLabel(e.target.value)}
             className="input text-sm"
           />
-          <input ref={fileRef} type="file" accept="image/*" capture="environment" onChange={handleFile} className="hidden" />
-          <button
-            onClick={() => fileRef.current?.click()}
-            disabled={uploading}
-            className="btn-primary"
-          >
-            {uploading ? 'Analyzing shelf…' : '📷 Take / Upload shelf photo'}
-          </button>
+          <input ref={captureRef} type="file" accept="image/*" capture="environment" onChange={handleFile} className="hidden" />
+          <input ref={libraryRef} type="file" accept="image/*" onChange={handleFile} className="hidden" />
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              onClick={() => captureRef.current?.click()}
+              disabled={uploading}
+              className="btn-primary"
+            >
+              {uploading ? 'Analyzing…' : '📷 Take photo'}
+            </button>
+            <button
+              onClick={() => libraryRef.current?.click()}
+              disabled={uploading}
+              className="btn-secondary"
+            >
+              🖼 Upload from library
+            </button>
+          </div>
           {error && <p className="text-sm text-red-600">{error}</p>}
         </div>
 

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
 import { db } from '@/lib/db'
+import { segmentShelf, filterProductLikely, findBestMask } from '@/lib/sam'
 
 export const maxDuration = 60
 
@@ -42,6 +43,11 @@ export async function POST(req: Request, { params }: { params: { storeId: string
     }
 
     const cleanBase64 = imageBase64.replace(/^data:image\/\w+;base64,/, '')
+
+    // Run Claude (labels + rough bboxes) and SAM (tight shape masks) in parallel.
+    // SAM's result is optional — if it fails or the token is absent, we fall
+    // back cleanly to Claude-only bboxes.
+    const samPromise = segmentShelf(imageBase64)
 
     const message = await client.messages.create({
       model: 'claude-opus-4-7',
@@ -110,12 +116,18 @@ Rules:
       select: { id: true, name: true },
     })
 
+    // Now wait for SAM (if configured) and refine each Claude bbox with the
+    // best-overlapping tight shape mask.
+    const samMasks = await samPromise
+    const usable = samMasks ? filterProductLikely(samMasks) : []
+
     const detections: Detection[] = raw.map(r => {
       const hit = products.find(p => tooSimilar(p.name, r.label))
+      const refined = usable.length ? findBestMask(r.bbox, usable) : null
       return {
         productId: hit?.id ?? null,
         label: r.label,
-        bbox: r.bbox,
+        bbox: refined?.bbox ?? r.bbox,
         confidence: typeof r.confidence === 'number' ? r.confidence : 0.75,
         estimatedPrice: typeof r.estimatedPrice === 'number' && r.estimatedPrice > 0 ? r.estimatedPrice : null,
         matched: !!hit,
@@ -126,6 +138,8 @@ Rules:
     if (detections.length === 0) {
       return NextResponse.json({ error: 'No products detected. Try a clearer, better-lit photo.' }, { status: 422 })
     }
+
+    console.info(`[shelf-tour] SAM masks: ${samMasks?.length ?? 'disabled'} · usable: ${usable.length} · refined ${detections.filter((d, i) => d.bbox !== raw[i]?.bbox).length}/${detections.length}`)
 
     const photo = await db.shelfPhoto.create({
       data: {
