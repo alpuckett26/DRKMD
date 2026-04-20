@@ -12,6 +12,8 @@ const UpdateSchema = z.object({
   imageUrl: z.string().url().optional().nullable(),
   active: z.boolean().optional(),
   promoted: z.boolean().optional(),
+  availabilityStatus: z.enum(['available', 'suppressed', 'watch', 'manual_review']).optional(),
+  similarProductIds: z.array(z.string()).optional(),
 })
 
 export async function PATCH(req: Request, { params }: { params: { productId: string } }) {

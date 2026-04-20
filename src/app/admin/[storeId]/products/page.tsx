@@ -344,6 +344,7 @@ function ProductDetailSheet({
         restrictedFlag: draft.restrictedFlag,
         promoted: draft.promoted,
         imageUrl: draft.imageUrl,
+        availabilityStatus: draft.availabilityStatus ?? 'available',
       }),
     })
     setSaving(false)
@@ -412,6 +413,21 @@ function ProductDetailSheet({
             </div>
           </div>
           <div className="card space-y-3">
+            <label className="flex items-center justify-between cursor-pointer">
+              <div>
+                <p className="text-sm font-semibold">In stock</p>
+                <p className="text-xs text-gray-500">Off = customers see &ldquo;Out of stock&rdquo; + suggestions</p>
+              </div>
+              <div
+                onClick={() => setDraft(d => ({
+                  ...d,
+                  availabilityStatus: (d.availabilityStatus ?? 'available') === 'available' ? 'suppressed' : 'available',
+                }))}
+                className={`w-11 h-6 rounded-full transition-colors relative ${(draft.availabilityStatus ?? 'available') === 'available' ? 'bg-brand' : 'bg-gray-200'}`}
+              >
+                <div className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${(draft.availabilityStatus ?? 'available') === 'available' ? 'translate-x-5' : 'translate-x-0.5'}`} />
+              </div>
+            </label>
             {([
               ['nighttimeAvailable', 'Night Menu', 'Show on after-hours menu'],
               ['restrictedFlag', '21+ Age Restricted', 'Requires ID check at pickup'],
