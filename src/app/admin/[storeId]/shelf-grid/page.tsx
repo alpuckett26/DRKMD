@@ -18,6 +18,7 @@ interface ShelfPhoto {
   detections: Detection[]
   shelfIndex: number | null
   sectionIndex: number | null
+  areaName: string | null
 }
 
 interface ShelfArea {
