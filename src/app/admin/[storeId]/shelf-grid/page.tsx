@@ -238,6 +238,7 @@ export default function ShelfGridPage() {
               {splitting ? `Slicing ${rows * cols} sections…` : '📸 Upload whole-shelf photo'}
             </button>
             {splitResult && <p className="text-xs text-gray-700">{splitResult}</p>}
+            {error && <p className="text-xs text-red-600">{error}</p>}
             <p className="text-[11px] text-gray-500 text-center">or tap a cell below to capture section-by-section</p>
           </div>
         )}
@@ -276,7 +277,13 @@ export default function ShelfGridPage() {
                             <>
                               <img src={photo.imageUrl} alt="" className="absolute inset-0 w-full h-full object-cover" />
                               <span className="absolute bottom-1 left-1 right-1 bg-black/65 text-white text-[10px] font-semibold px-1.5 py-0.5 rounded text-center truncate">
-                                {photo.detections.filter(d => d.matched).length} items
+                                {(() => {
+                                  const det = photo.detections.length
+                                  const matched = photo.detections.filter(d => d.matched).length
+                                  if (det === 0) return 'no items'
+                                  if (matched === det) return `${matched} items`
+                                  return `${matched}/${det} matched`
+                                })()}
                               </span>
                             </>
                           ) : uploading ? (

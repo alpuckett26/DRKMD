@@ -3,7 +3,9 @@ import sharp from 'sharp'
 import { db } from '@/lib/db'
 import { detectShelfProducts } from '@/lib/shelfDetect'
 
-export const maxDuration = 60
+// 300s = Vercel Pro max. Hobby plans cap at 60. Parallel cell loop should
+// stay well under either, but bigger grids (5x6+) may need the headroom.
+export const maxDuration = 300
 
 /** Take one high-res shelf photo and auto-split it into the store's
  *  configured grid (shelfRows × shelfCols). Each cell becomes its own
@@ -51,50 +53,54 @@ export async function POST(req: Request, { params }: { params: { storeId: string
       data: { active: false },
     })
 
-    const results: Array<{ row: number; col: number; detected: number; matched: number; error?: string }> = []
-
+    // Build all cell crop tasks first, then run detection in parallel.
+    // Sequential 16-cell loop blew through Vercel's 60s function timeout.
+    const cellJobs: Array<{ r: number; c: number; left: number; top: number; width: number; height: number }> = []
     for (let r = 0; r < rows; r++) {
       for (let c = 0; c < cols; c++) {
-        try {
-          const left = c * cellW
-          const top = r * cellH
-          const width = c === cols - 1 ? W - left : cellW
-          const height = r === rows - 1 ? H - top : cellH
-
-          const cropBuf = await sharp(normalized)
-            .extract({ left, top, width, height })
-            .jpeg({ quality: 88 })
-            .toBuffer()
-          const cropBase64 = cropBuf.toString('base64')
-
-          const { detections } = await detectShelfProducts(cropBase64, storeId, { alreadyNormalized: true })
-
-          const dataUrl = `data:image/jpeg;base64,${cropBase64}`
-          await db.shelfPhoto.create({
-            data: {
-              storeId,
-              imageUrl: dataUrl,
-              label: `Shelf ${r + 1} · Section ${c + 1}`,
-              shelfIndex: r,
-              sectionIndex: c,
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              detections: detections as any,
-            },
-          })
-
-          results.push({
-            row: r, col: c,
-            detected: detections.length,
-            matched: detections.filter(d => d.matched).length,
-          })
-        } catch (err) {
-          results.push({
-            row: r, col: c, detected: 0, matched: 0,
-            error: err instanceof Error ? err.message : 'Cell failed',
-          })
-        }
+        const left = c * cellW
+        const top = r * cellH
+        const width = c === cols - 1 ? W - left : cellW
+        const height = r === rows - 1 ? H - top : cellH
+        cellJobs.push({ r, c, left, top, width, height })
       }
     }
+
+    const results = await Promise.all(cellJobs.map(async job => {
+      try {
+        const cropBuf = await sharp(normalized)
+          .extract({ left: job.left, top: job.top, width: job.width, height: job.height })
+          .jpeg({ quality: 88 })
+          .toBuffer()
+        const cropBase64 = cropBuf.toString('base64')
+
+        const { detections } = await detectShelfProducts(cropBase64, storeId, { alreadyNormalized: true })
+
+        const dataUrl = `data:image/jpeg;base64,${cropBase64}`
+        await db.shelfPhoto.create({
+          data: {
+            storeId,
+            imageUrl: dataUrl,
+            label: `Shelf ${job.r + 1} · Section ${job.c + 1}`,
+            shelfIndex: job.r,
+            sectionIndex: job.c,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            detections: detections as any,
+          },
+        })
+
+        return {
+          row: job.r, col: job.c,
+          detected: detections.length,
+          matched: detections.filter(d => d.matched).length,
+        }
+      } catch (err) {
+        return {
+          row: job.r, col: job.c, detected: 0, matched: 0,
+          error: err instanceof Error ? err.message : 'Cell failed',
+        }
+      }
+    }))
 
     const totalDetected = results.reduce((s, r) => s + r.detected, 0)
     const totalMatched = results.reduce((s, r) => s + r.matched, 0)
