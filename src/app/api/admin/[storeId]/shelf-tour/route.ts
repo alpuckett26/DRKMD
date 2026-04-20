@@ -3,6 +3,7 @@ import Anthropic from '@anthropic-ai/sdk'
 import sharp from 'sharp'
 import { db } from '@/lib/db'
 import { segmentShelf, filterProductLikely, findBestMask, nonMaxSuppression, type SamMaskBBox } from '@/lib/sam'
+import { canonicalize } from '@/lib/canonicalNames'
 
 export const maxDuration = 60
 
@@ -98,10 +99,14 @@ export async function POST(req: Request, { params }: { params: { storeId: string
     })
 
     const detections: Detection[] = rawDetections.map(r => {
-      const hit = products.find(p => tooSimilar(p.name, r.label))
+      // Canonicalize against the curated catalog so "Snickers chocolate bar"
+      // becomes "Snickers King Size 3.29oz" — stable naming across stores.
+      const canon = canonicalize(r.label)
+      const canonicalLabel = canon?.canonicalName ?? r.label
+      const hit = products.find(p => tooSimilar(p.name, canonicalLabel))
       return {
         productId: hit?.id ?? null,
-        label: r.label,
+        label: canonicalLabel,
         bbox: r.bbox,
         confidence: r.confidence,
         estimatedPrice: r.estimatedPrice,

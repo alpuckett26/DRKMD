@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { fetchProductImage } from '@/lib/productImage'
+import { canonicalize } from '@/lib/canonicalNames'
 
 export const maxDuration = 60
 
@@ -121,15 +122,19 @@ export async function POST(
 
   // Enrich each unmatched in parallel (OFF + image). Best-effort.
   const enriched = await Promise.all(unmatched.map(async ({ d, i }) => {
+    // Normalize to catalog canonical name first so we store "Snickers King
+    // Size 3.29oz" instead of whatever Claude loosely described.
+    const canon = canonicalize(d.label)
+    const canonicalLabel = canon?.canonicalName ?? d.label
     const [off, image] = await Promise.all([
-      lookupOFF(d.label),
-      fetchProductImage(d.label),
+      lookupOFF(canonicalLabel),
+      fetchProductImage(canonicalLabel),
     ])
     const finalImage = image ?? off?.image ?? null
-    const category = guessCategory(d.label) || off?.category || 'General'
-    const restricted = looksRestricted(d.label)
+    const category = canon?.category || guessCategory(canonicalLabel) || off?.category || 'General'
+    const restricted = canon?.restricted ?? looksRestricted(canonicalLabel)
     const priceCents = d.estimatedPrice != null ? Math.round(d.estimatedPrice * 100) : 0
-    return { i, label: d.label, image: finalImage, category, restricted, priceCents, brand: off?.brand, size: off?.size }
+    return { i, label: canonicalLabel, image: finalImage, category, restricted, priceCents, brand: off?.brand, size: off?.size }
   }))
 
   // Create products. Using upsert on (storeId, name) so a double-click
@@ -163,11 +168,18 @@ export async function POST(
     }
   }
 
-  // Update the detections array to link the newly created products.
+  // Update the detections array: link to the new product AND rewrite the
+  // label to the canonical name so hotspot captions stay consistent.
   const next = detections.map((det, idx) => {
     const r = results.find(x => x.i === idx)
-    if (r?.productId) return { ...det, productId: r.productId, matched: true }
-    return det
+    if (!r?.productId) return det
+    const enr = enriched.find(x => x.i === idx)
+    return {
+      ...det,
+      productId: r.productId,
+      matched: true,
+      label: enr?.label ?? det.label,
+    }
   })
 
   await db.shelfPhoto.update({
