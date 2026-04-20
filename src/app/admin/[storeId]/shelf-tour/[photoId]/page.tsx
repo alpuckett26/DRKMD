@@ -206,6 +206,7 @@ export default function ShelfTourEditor() {
       label: 'New item',
       bbox: { x: nx, y: ny, w: 0.001, h: 0.001 },
       confidence: 1,
+      estimatedPrice: null,
       matched: false,
     }
     setDetections(prev => [...prev, newDet])
