@@ -27,6 +27,7 @@ export default function ShelfTourAdmin() {
   const [photos, setPhotos] = useState<ShelfPhoto[]>([])
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState('')
+  const [status, setStatus] = useState('')
   const [label, setLabel] = useState('')
 
   async function load() {
@@ -52,7 +53,16 @@ export default function ShelfTourAdmin() {
         const d = await res.json().catch(() => ({}))
         throw new Error(d.error || 'Upload failed')
       }
-      const created = await res.json() as ShelfPhoto
+      const created = await res.json() as ShelfPhoto & { meta?: { sam?: { mode: string; totalMasks: number; usableMasks: number } } }
+      const sam = created.meta?.sam
+      if (sam) {
+        const msg = sam.mode === 'primary'
+          ? `SAM found ${sam.usableMasks} product shapes · Claude labeled them`
+          : sam.mode === 'refine'
+            ? `SAM ran (${sam.totalMasks} shapes, ${sam.usableMasks} usable) · refined Claude's boxes`
+            : `SAM not configured — using Claude only. Add REPLICATE_API_TOKEN to Vercel for tighter boxes.`
+        setStatus(msg)
+      }
       setLabel('')
       // Jump straight into the editor so admin can nudge boxes.
       router.push(`/admin/${storeId}/shelf-tour/${created.id}`)
@@ -113,6 +123,7 @@ export default function ShelfTourAdmin() {
             </button>
           </div>
           {error && <p className="text-sm text-red-600">{error}</p>}
+          {status && !error && <p className="text-xs text-gray-600">{status}</p>}
         </div>
 
         {photos.length === 0 && !uploading && (
