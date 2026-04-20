@@ -193,7 +193,7 @@ export default function ShelfTour({ storeId, onOpenProduct }: Props) {
                 key={i}
                 onClick={e => handleHotspotTap(e, d, i)}
                 disabled={!interactive}
-                className="absolute flex items-center justify-center -translate-x-1/2 -translate-y-1/2"
+                className={`absolute flex items-center justify-center -translate-x-1/2 -translate-y-1/2 ${!interactive ? 'pointer-events-none' : ''}`}
                 style={{
                   left: `${cx * 100}%`,
                   top: `${cy * 100}%`,
