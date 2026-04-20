@@ -314,6 +314,11 @@ export default function ShelfGridPage() {
           onCamera={() => triggerCapture('camera')}
           onLibrary={() => triggerCapture('library')}
           onEdit={photoId => router.push(`/admin/${storeId}/shelf-tour/${photoId}`)}
+          onRemove={async photoId => {
+            await fetch(`/api/admin/${storeId}/shelf-tour/${photoId}`, { method: 'DELETE' })
+            setActiveCell(null)
+            await load()
+          }}
         />
       )}
 
@@ -324,7 +329,7 @@ export default function ShelfGridPage() {
 }
 
 function CellSheet({
-  cell, photo, storeId, onClose, onCamera, onLibrary, onEdit,
+  cell, photo, storeId, onClose, onCamera, onLibrary, onEdit, onRemove,
 }: {
   cell: { r: number; c: number }
   photo: ShelfPhoto | undefined
@@ -333,6 +338,7 @@ function CellSheet({
   onCamera: () => void
   onLibrary: () => void
   onEdit: (photoId: string) => void
+  onRemove: (photoId: string) => Promise<void>
 }) {
   void storeId
   const title = `Shelf ${cell.r + 1} · Section ${cell.c + 1}`
@@ -369,9 +375,20 @@ function CellSheet({
           <button onClick={onLibrary} className="btn-secondary">🖼 Upload</button>
         </div>
         {photo && (
-          <button onClick={() => onEdit(photo.id)} className="w-full text-brand font-semibold text-sm py-2">
-            Edit hotspots →
-          </button>
+          <>
+            <button onClick={() => onEdit(photo.id)} className="w-full text-brand font-semibold text-sm py-2">
+              Edit hotspots →
+            </button>
+            <button
+              onClick={async () => {
+                if (!confirm('Remove this section photo? You can re-shoot it any time.')) return
+                await onRemove(photo.id)
+              }}
+              className="w-full text-red-600 font-semibold text-sm py-2"
+            >
+              Remove photo
+            </button>
+          </>
         )}
         <button onClick={onClose} className="w-full text-gray-500 text-sm">Cancel</button>
       </div>
