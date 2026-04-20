@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import { MediaAsset } from '@/components/MediaAsset'
+import ShelfTour from '@/components/ShelfTour'
 import { useCart } from '@/context/CartContext'
 import { formatCents } from '@/lib/utils'
 import type { ProductInfo, StoreInfo } from '@/types'
@@ -207,6 +208,18 @@ export default function MenuPage() {
             <h2 className="text-2xl font-black text-gray-900">{greeting()}</h2>
             <p className="text-sm text-gray-500 mt-0.5">Browse the shelf and we&apos;ll have it ready at the window.</p>
           </div>
+        )}
+
+        {/* Shelf Tour — tap products directly on a photo */}
+        {!search && activeCategory === 'All' && (
+          <ShelfTour
+            storeId={storeId}
+            onAddProduct={pid => {
+              const p = products.find(x => x.id === pid)
+              if (!p) return
+              addItem({ productId: p.id, name: p.name, price: p.price, restricted: p.restrictedFlag })
+            }}
+          />
         )}
 
         {/* Quick category pills (DoorDash-style cuisine row) */}

@@ -33,8 +33,24 @@ model Store {
   orders            Order[]
   staff             Staff[]
   account           Account?
+  shelfPhotos       ShelfPhoto[]
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
+}
+
+model ShelfPhoto {
+  id         String   @id @default(cuid())
+  storeId    String
+  store      Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  imageUrl   String
+  label      String?
+  detections Json
+  sortOrder  Int      @default(0)
+  active     Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([storeId, active, sortOrder])
 }
 
 model StoreRequest {
