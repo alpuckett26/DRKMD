@@ -40,6 +40,8 @@ export default function ShelfTourEditor() {
   const [photoLabel, setPhotoLabel] = useState('')
   const [reviewMode, setReviewMode] = useState(false)
   const [reviewStarted, setReviewStarted] = useState(false)
+  const [autoAdding, setAutoAdding] = useState(false)
+  const [autoAddResult, setAutoAddResult] = useState('')
   const drag = useRef<DragMode>({ kind: 'idle' })
   const imgRef = useRef<HTMLDivElement>(null)
 
@@ -62,6 +64,29 @@ export default function ShelfTourEditor() {
   }, [storeId, photoId])
 
   const selectedDet = selected !== null ? detections[selected] : null
+
+  async function autoAddUnmatched() {
+    setAutoAdding(true)
+    setAutoAddResult('')
+    try {
+      const res = await fetch(`/api/admin/${storeId}/shelf-tour/${photoId}/auto-add-unmatched`, { method: 'POST' })
+      if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || 'Failed')
+      const data = await res.json() as { added: number; failed: number; total: number }
+      setAutoAddResult(`✅ Added ${data.added} of ${data.total}${data.failed ? ` (${data.failed} failed)` : ''}`)
+      // Reload detections + product list so the UI reflects newly matched items.
+      const [p, prods] = await Promise.all([
+        fetch(`/api/admin/${storeId}/shelf-tour/${photoId}`).then(r => r.json()),
+        fetch(`/api/stores/${storeId}/menu`).then(r => r.json()),
+      ]) as [ShelfPhoto, ProductLite[]]
+      setPhoto(p)
+      setDetections(p.detections)
+      setProducts(prods)
+    } catch (err) {
+      setAutoAddResult(err instanceof Error ? err.message : 'Failed')
+    } finally {
+      setAutoAdding(false)
+    }
+  }
 
   async function save() {
     setSaving(true)
@@ -266,6 +291,11 @@ export default function ShelfTourEditor() {
           await saveDetections(next)
         }}
         onDone={() => setReviewMode(false)}
+        onAutoAddAll={async () => {
+          await autoAddUnmatched()
+          setReviewMode(false)
+        }}
+        autoAdding={autoAdding}
       />
     )
   }
@@ -350,17 +380,33 @@ export default function ShelfTourEditor() {
         </div>
 
         {unmatchedIndices.length > 0 && selected === null && (
-          <button
-            onClick={() => setReviewMode(true)}
-            className="w-full rounded-2xl p-4 bg-yellow-50 border border-yellow-300 text-left flex items-center gap-3 active:scale-[0.99] transition-transform"
-          >
-            <span className="text-2xl">🏷</span>
-            <div className="flex-1">
-              <p className="font-bold text-sm text-yellow-900">{unmatchedIndices.length} items still need tagging</p>
-              <p className="text-xs text-yellow-800">They&apos;re hidden from customers until you link them to a menu item.</p>
+          <div className="rounded-2xl p-4 bg-yellow-50 border border-yellow-300 space-y-3">
+            <div className="flex items-center gap-3">
+              <span className="text-2xl">🏷</span>
+              <div className="flex-1">
+                <p className="font-bold text-sm text-yellow-900">{unmatchedIndices.length} items still need tagging</p>
+                <p className="text-xs text-yellow-800">Hidden from customers until linked.</p>
+              </div>
             </div>
-            <span className="text-yellow-900 font-semibold text-sm">Review →</span>
-          </button>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={autoAddUnmatched}
+                disabled={autoAdding}
+                className="bg-brand text-white font-semibold text-sm px-3 py-2.5 rounded-full disabled:opacity-40"
+              >
+                {autoAdding ? 'Adding…' : '✨ Auto-add all'}
+              </button>
+              <button
+                onClick={() => setReviewMode(true)}
+                className="bg-white border border-gray-200 text-gray-900 font-semibold text-sm px-3 py-2.5 rounded-full"
+              >
+                Review one-by-one
+              </button>
+            </div>
+            {autoAddResult && (
+              <p className="text-xs text-yellow-900 text-center">{autoAddResult}</p>
+            )}
+          </div>
         )}
 
         {selectedDet && selected !== null ? (
@@ -421,6 +467,8 @@ function ReviewFlow({
   onSkip,
   onRemove,
   onDone,
+  onAutoAddAll,
+  autoAdding,
 }: {
   storeId: string
   photo: ShelfPhoto
@@ -432,6 +480,8 @@ function ReviewFlow({
   onSkip: (i: number) => void
   onRemove: (i: number) => Promise<void>
   onDone: () => void
+  onAutoAddAll: () => Promise<void>
+  autoAdding: boolean
 }) {
   const [cursor, setCursor] = useState(0)
   const [submitting, setSubmitting] = useState(false)
@@ -516,6 +566,13 @@ function ReviewFlow({
             <h1 className="font-bold text-base leading-tight">Tag your items</h1>
             <p className="text-xs text-gray-500">Item {cursor + 1} of {total}</p>
           </div>
+          <button
+            onClick={onAutoAddAll}
+            disabled={autoAdding}
+            className="text-xs font-semibold text-white bg-brand px-3 py-1.5 rounded-full disabled:opacity-40"
+          >
+            {autoAdding ? 'Adding…' : `✨ Auto-add all ${total - cursor}`}
+          </button>
         </div>
         <div className="max-w-2xl mx-auto px-4 pb-3">
           <div className="h-1.5 rounded-full bg-gray-100 overflow-hidden">
