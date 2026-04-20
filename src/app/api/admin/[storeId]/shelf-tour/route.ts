@@ -11,6 +11,7 @@ interface Detection {
   productId: string | null
   label: string
   bbox: BBox
+  confidence: number
   matched: boolean
 }
 
@@ -56,13 +57,14 @@ Identify every distinct consumable product visible and return a tight bounding b
 For each product return:
 - label: specific product name including brand and size if readable (e.g. "Coca-Cola 20oz", "Lay's Classic")
 - bbox: normalized 0.0–1.0 coordinates describing the item's position in the image, as {"x": left, "y": top, "w": width, "h": height}
+- confidence: decimal 0.0–1.0 reflecting how sure you are of the label. Use 0.9+ for unambiguous branded items, 0.6–0.8 for partial guesses, below 0.5 for genuine uncertainty.
 
 Rules:
 - One entry per visible unit. If multiple identical bottles are lined up, list each separately (distinct bboxes).
 - Boxes must be tight around the single item — not a whole row.
 - Skip prices, price tags, shelves, and non-product clutter.
 - Return ONLY a JSON array, no other text:
-[{"label":"Coca-Cola 20oz","bbox":{"x":0.1,"y":0.2,"w":0.08,"h":0.3}}]`,
+[{"label":"Coca-Cola 20oz","bbox":{"x":0.1,"y":0.2,"w":0.08,"h":0.3},"confidence":0.94}]`,
         },
       ],
     }],
@@ -70,7 +72,7 @@ Rules:
 
   const text = message.content.find(b => b.type === 'text')?.text ?? '[]'
   const match = text.match(/\[[\s\S]*\]/)
-  let raw: { label: string; bbox: BBox }[] = []
+  let raw: { label: string; bbox: BBox; confidence?: number }[] = []
   if (match) {
     try { raw = JSON.parse(match[0]) } catch {}
   }
@@ -87,6 +89,7 @@ Rules:
       productId: hit?.id ?? null,
       label: r.label,
       bbox: r.bbox,
+      confidence: typeof r.confidence === 'number' ? r.confidence : 0.75,
       matched: !!hit,
     }
   })

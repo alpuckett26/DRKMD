@@ -214,10 +214,9 @@ export default function MenuPage() {
         {!search && activeCategory === 'All' && (
           <ShelfTour
             storeId={storeId}
-            onAddProduct={pid => {
+            onOpenProduct={pid => {
               const p = products.find(x => x.id === pid)
-              if (!p) return
-              addItem({ productId: p.id, name: p.name, price: p.price, restricted: p.restrictedFlag })
+              if (p) setSelectedProduct(p)
             }}
           />
         )}
@@ -464,12 +463,14 @@ function ProductDetailSheet({
   const [detail, setDetail] = useState<UpcDetail | null>(null)
   const [loadingDetail, setLoadingDetail] = useState(true)
   const [imgError, setImgError] = useState(false)
+  const [pickQty, setPickQty] = useState(1)
   const varieties = getVarieties(product, allProducts)
 
   useEffect(() => {
     setLoadingDetail(true)
     setDetail(null)
     setImgError(false)
+    setPickQty(1)
     fetch(`/api/upc-lookup?name=${encodeURIComponent(product.name)}`)
       .then(r => r.ok ? r.json() : null)
       .then(d => { setDetail(d); setLoadingDetail(false) })
@@ -554,14 +555,35 @@ function ProductDetailSheet({
             </div>
           )}
 
-          {/* Add to cart */}
-          <button
-            onClick={() => { onAdd(); onClose() }}
-            className="btn-primary w-full flex items-center justify-between px-6"
-          >
-            <span className="text-base font-black">Add to Cart</span>
-            <span className="text-base font-black">{formatCents(product.price)}</span>
-          </button>
+          {/* Qty stepper + Add to cart */}
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1 rounded-full border border-gray-200 bg-gray-50 px-1">
+              <button
+                type="button"
+                onClick={() => setPickQty(q => Math.max(1, q - 1))}
+                className="w-10 h-10 rounded-full text-xl font-bold text-gray-900 active:bg-gray-200"
+                aria-label="Decrease"
+              >
+                −
+              </button>
+              <span className="w-8 text-center font-bold text-gray-900 tabular-nums">{pickQty}</span>
+              <button
+                type="button"
+                onClick={() => setPickQty(q => Math.min(99, q + 1))}
+                className="w-10 h-10 rounded-full text-xl font-bold text-gray-900 active:bg-gray-200"
+                aria-label="Increase"
+              >
+                +
+              </button>
+            </div>
+            <button
+              onClick={() => { for (let i = 0; i < pickQty; i++) onAdd(); onClose() }}
+              className="btn-primary flex-1 flex items-center justify-between px-6"
+            >
+              <span className="text-base font-black">Add {pickQty} to cart</span>
+              <span className="text-base font-black">{formatCents(product.price * pickQty)}</span>
+            </button>
+          </div>
 
           {qty > 0 && (
             <p className="text-center text-xs text-gray-500">{qty} already in your cart</p>

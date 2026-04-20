@@ -18,10 +18,10 @@ interface ShelfPhoto {
 
 interface Props {
   storeId: string
-  onAddProduct: (productId: string) => void
+  onOpenProduct: (productId: string) => void
 }
 
-export default function ShelfTour({ storeId, onAddProduct }: Props) {
+export default function ShelfTour({ storeId, onOpenProduct }: Props) {
   const [photos, setPhotos] = useState<ShelfPhoto[]>([])
   const [loading, setLoading] = useState(true)
   const [active, setActive] = useState(0)
@@ -41,9 +41,9 @@ export default function ShelfTour({ storeId, onAddProduct }: Props) {
 
   function handleTap(det: Detection, i: number) {
     if (!det.productId) return
-    onAddProduct(det.productId)
     setTapped({ i, t: Date.now() })
-    setTimeout(() => setTapped(t => (t?.i === i ? null : t)), 600)
+    setTimeout(() => setTapped(t => (t?.i === i ? null : t)), 400)
+    onOpenProduct(det.productId)
   }
 
   return (
