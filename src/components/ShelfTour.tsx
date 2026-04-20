@@ -60,32 +60,91 @@ export default function ShelfTour({ storeId, onOpenProduct }: Props) {
 
 function GridView({ store, photos, onOpenProduct }: { store: StoreMeta; photos: ShelfPhoto[]; onOpenProduct: (id: string) => void }) {
   const rows = store.shelfRows ?? 0
-  // Group photos by shelfIndex → sorted by sectionIndex
-  const byShelf: Record<number, ShelfPhoto[]> = {}
+  const cols = store.shelfCols ?? 0
+  const [activeCell, setActiveCell] = useState<{ r: number; c: number } | null>(null)
+
+  // Lookup by "r:c"
+  const cellMap = new Map<string, ShelfPhoto>()
   for (const p of photos) {
     if (p.shelfIndex == null || p.sectionIndex == null) continue
-    if (!byShelf[p.shelfIndex]) byShelf[p.shelfIndex] = []
-    byShelf[p.shelfIndex].push(p)
+    cellMap.set(`${p.shelfIndex}:${p.sectionIndex}`, p)
   }
-  for (const k of Object.keys(byShelf)) {
-    byShelf[Number(k)].sort((a, b) => (a.sectionIndex ?? 0) - (b.sectionIndex ?? 0))
+
+  const expanded = activeCell ? cellMap.get(`${activeCell.r}:${activeCell.c}`) : null
+
+  if (activeCell && expanded) {
+    return (
+      <section className="space-y-3">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-lg font-bold text-gray-900">🛒 Shelf {activeCell.r + 1} · Section {activeCell.c + 1}</h2>
+            <p className="text-xs text-gray-500">Tap anywhere to zoom · tap the dot to add.</p>
+          </div>
+          <button onClick={() => setActiveCell(null)} className="text-xs font-semibold text-brand">← All sections</button>
+        </div>
+        <ExpandedCell photo={expanded} onOpenProduct={onOpenProduct} />
+      </section>
+    )
   }
 
   return (
-    <section className="space-y-4">
+    <section className="space-y-3">
       <div>
         <h2 className="text-lg font-bold text-gray-900">🛒 Browse the shelf</h2>
-        <p className="text-xs text-gray-500">Swipe across each shelf · tap to zoom · tap the dot to add.</p>
+        <p className="text-xs text-gray-500">Tap any section to zoom in and shop.</p>
       </div>
-      <div className="space-y-4">
-        {Array.from({ length: rows }).map((_, r) => {
-          const sections = byShelf[r] ?? []
-          if (sections.length === 0) return null
-          return <ShelfRow key={r} shelfIndex={r} sections={sections} onOpenProduct={onOpenProduct} />
-        })}
+      <div className="space-y-1.5">
+        {Array.from({ length: rows }).map((_, r) => (
+          <div
+            key={r}
+            className="grid gap-1.5"
+            style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}
+          >
+            {Array.from({ length: cols }).map((_, c) => {
+              const photo = cellMap.get(`${r}:${c}`)
+              const itemCount = photo?.detections.filter(d => d.productId).length ?? 0
+              return (
+                <button
+                  key={c}
+                  onClick={() => photo && setActiveCell({ r, c })}
+                  disabled={!photo}
+                  className={`relative rounded-lg overflow-hidden border ${photo ? 'border-gray-200 active:scale-[0.98]' : 'border-dashed border-gray-300 bg-gray-50'} transition-transform`}
+                  style={{ aspectRatio: '3 / 4' }}
+                >
+                  {photo ? (
+                    <>
+                      <img src={photo.imageUrl} alt="" className="absolute inset-0 w-full h-full object-cover" />
+                      {/* Subtle dot markers so the customer sees tap targets exist */}
+                      {photo.detections.filter(d => d.productId).slice(0, 30).map((d, i) => (
+                        <span
+                          key={i}
+                          className="absolute w-1.5 h-1.5 rounded-full bg-white ring-1 ring-brand/80 -translate-x-1/2 -translate-y-1/2"
+                          style={{
+                            left: `${(d.bbox.x + d.bbox.w / 2) * 100}%`,
+                            top: `${(d.bbox.y + d.bbox.h / 2) * 100}%`,
+                          }}
+                        />
+                      ))}
+                      {itemCount > 0 && (
+                        <span className="absolute bottom-1 left-1 right-1 bg-black/70 text-white text-[10px] font-semibold px-1.5 py-0.5 rounded text-center">
+                          {itemCount} items
+                        </span>
+                      )}
+                    </>
+                  ) : null}
+                </button>
+              )
+            })}
+          </div>
+        ))}
       </div>
     </section>
   )
+}
+
+function ExpandedCell({ photo, onOpenProduct }: { photo: ShelfPhoto; onOpenProduct: (id: string) => void }) {
+  // Reuse ShelfRow with a single-photo array. Disables swipe cleanly.
+  return <ShelfRow shelfIndex={photo.shelfIndex ?? 0} sections={[photo]} onOpenProduct={onOpenProduct} />
 }
 
 function ShelfRow({ shelfIndex, sections, onOpenProduct }: {
