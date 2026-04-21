@@ -133,12 +133,25 @@ export default function AreaBoard({ rows, cols, photos, onOpenProduct, resetZoom
     <div
       ref={containerRef}
       onClick={onBoardClick}
-      className={`relative overflow-hidden rounded-2xl bg-gray-50 border border-gray-100 select-none ${zoomed ? 'cursor-zoom-out' : 'cursor-zoom-in'}`}
-      style={{ boxShadow: '0 1px 2px rgba(0,0,0,0.04)' }}
+      className={
+        zoomed
+          ? 'fixed inset-0 z-40 bg-black overflow-hidden select-none cursor-zoom-out'
+          : 'relative overflow-hidden rounded-2xl bg-gray-50 border border-gray-100 select-none cursor-zoom-in'
+      }
+      style={
+        zoomed
+          ? { touchAction: 'none' }
+          : { boxShadow: '0 1px 2px rgba(0,0,0,0.04)' }
+      }
     >
-        {/* The tiled grid — no gap, no border, looks like one photo */}
+        {/* The tiled grid — no gap, no border, looks like one photo.
+         *  In zoomed (fullscreen) mode the grid fills the viewport with
+         *  equal fractional rows/cols so the whole board is visible and
+         *  centered; images use object-contain to letterbox rather than
+         *  stretch. In normal in-flow mode rows auto-size to image height
+         *  so same-source strips tile seamlessly with no gray backing. */}
         <div
-          className="relative"
+          className={zoomed ? 'relative w-full h-full' : 'relative'}
           style={{
             transform: zoomed ? zoomTransform(zoomed.cx, zoomed.cy, ZOOM_LEVEL) : 'none',
             transformOrigin: '0 0',
@@ -149,10 +162,10 @@ export default function AreaBoard({ rows, cols, photos, onOpenProduct, resetZoom
             className="grid"
             style={{
               gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
-              // Rows size to their images so same-source strips tile seamlessly
-              // vertically. Forcing 1fr rows would leave gray backing visible
-              // under shorter crops (e.g. calibrated shelves of different heights).
-              gridAutoRows: 'auto',
+              gridTemplateRows: zoomed ? `repeat(${rows}, minmax(0, 1fr))` : undefined,
+              gridAutoRows: zoomed ? undefined : 'auto',
+              width: '100%',
+              height: zoomed ? '100%' : 'auto',
               gap: 0,
               lineHeight: 0,
             }}
@@ -164,12 +177,13 @@ export default function AreaBoard({ rows, cols, photos, onOpenProduct, resetZoom
                   <div
                     key={`${r}:${c}`}
                     className="relative"
+                    style={zoomed ? { minHeight: 0, minWidth: 0 } : undefined}
                   >
                     {photo ? (
                       <img
                         src={photo.imageUrl}
                         alt=""
-                        className="block w-full h-auto"
+                        className={zoomed ? 'block w-full h-full object-contain' : 'block w-full h-auto'}
                         draggable={false}
                       />
                     ) : (
