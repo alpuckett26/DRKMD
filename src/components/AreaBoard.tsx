@@ -128,8 +128,12 @@ export default function AreaBoard({ rows, cols, photos, onOpenProduct }: Props) 
             className="grid"
             style={{
               gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
-              gridTemplateRows: `repeat(${rows}, minmax(0, 1fr))`,
+              // Rows size to their images so same-source strips tile seamlessly
+              // vertically. Forcing 1fr rows would leave gray backing visible
+              // under shorter crops (e.g. calibrated shelves of different heights).
+              gridAutoRows: 'auto',
               gap: 0,
+              lineHeight: 0,
             }}
           >
             {Array.from({ length: rows }).map((_, r) =>
@@ -138,7 +142,7 @@ export default function AreaBoard({ rows, cols, photos, onOpenProduct }: Props) 
                 return (
                   <div
                     key={`${r}:${c}`}
-                    className="relative bg-gray-100"
+                    className="relative"
                   >
                     {photo ? (
                       <img
@@ -147,7 +151,9 @@ export default function AreaBoard({ rows, cols, photos, onOpenProduct }: Props) 
                         className="block w-full h-auto"
                         draggable={false}
                       />
-                    ) : null}
+                    ) : (
+                      <div className="w-full h-full bg-gray-100" />
+                    )}
                   </div>
                 )
               }),
