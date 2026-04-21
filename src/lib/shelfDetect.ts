@@ -52,7 +52,7 @@ export interface DetectionResult {
 export async function detectShelfProducts(
   imageBase64: string,
   storeId: string,
-  opts: { alreadyNormalized?: boolean } = {},
+  opts: { alreadyNormalized?: boolean; areaName?: string | null } = {},
 ): Promise<DetectionResult> {
   const incoming = imageBase64.replace(/^data:image\/\w+;base64,/, '')
 
@@ -61,6 +61,14 @@ export async function detectShelfProducts(
     : (await sharp(Buffer.from(incoming, 'base64')).rotate().jpeg({ quality: 85 }).toBuffer()).toString('base64')
 
   const normalizedDataUrl = `data:image/jpeg;base64,${cleanBase64}`
+
+  // Pull the store's catalog up front — we use it both for the final
+  // name-match step AND as a candidate brand hint in the Claude prompts,
+  // which biases recognition toward SKUs the store actually stocks.
+  const products = await db.product.findMany({
+    where: { storeId, active: true },
+    select: { id: true, name: true, category: true },
+  })
 
   const samMasks = await segmentShelf(normalizedDataUrl)
   const filtered = samMasks ? filterProductLikely(samMasks) : []
@@ -71,10 +79,16 @@ export async function detectShelfProducts(
 
   if (usable.length >= 3) {
     samMode = 'primary'
-    rawDetections = await labelMasksWithClaude(cleanBase64, usable)
+    rawDetections = await labelMasksWithClaude(cleanBase64, usable, {
+      areaName: opts.areaName ?? null,
+      candidates: pickCandidateBrands(products, opts.areaName ?? null),
+    })
   } else {
     samMode = samMasks ? 'refine' : 'off'
-    rawDetections = await detectWithClaudeFullImage(cleanBase64)
+    rawDetections = await detectWithClaudeFullImage(cleanBase64, {
+      areaName: opts.areaName ?? null,
+      candidates: pickCandidateBrands(products, opts.areaName ?? null),
+    })
     if (samMode === 'refine') {
       rawDetections = rawDetections.map(r => {
         const mask = findBestMask(r.bbox, usable)
@@ -83,15 +97,10 @@ export async function detectShelfProducts(
     }
   }
 
-  const products = await db.product.findMany({
-    where: { storeId, active: true },
-    select: { id: true, name: true },
-  })
-
   const detections: Detection[] = rawDetections.map(r => {
     const canon = canonicalize(r.label)
     const canonicalLabel = canon?.canonicalName ?? r.label
-    const hit = products.find(p => tooSimilar(p.name, canonicalLabel))
+    const hit = products.find((p: { id: string; name: string }) => tooSimilar(p.name, canonicalLabel))
     return {
       productId: hit?.id ?? null,
       label: canonicalLabel,
@@ -111,16 +120,54 @@ export async function detectShelfProducts(
   }
 }
 
-async function detectWithClaudeFullImage(cleanBase64: string): Promise<LabeledBBox[]> {
+/** Build a short candidate-brand list for Claude. When we know the shelf
+ *  area (e.g. "Energy drinks"), bias toward catalog items whose category
+ *  or name matches; otherwise fall back to the store-wide catalog. Cap at
+ *  ~60 names so the prompt stays tight. */
+function pickCandidateBrands(
+  products: Array<{ name: string; category: string | null }>,
+  areaName: string | null,
+): string[] {
+  const norm = (s: string) => s.toLowerCase()
+  const area = areaName ? norm(areaName) : ''
+  const areaTokens = area.split(/\s+/).filter(t => t.length > 2)
+
+  const scored = products.map(p => {
+    let score = 0
+    const cat = norm(p.category ?? '')
+    const name = norm(p.name)
+    if (area) {
+      for (const t of areaTokens) {
+        if (cat.includes(t)) score += 3
+        if (name.includes(t)) score += 1
+      }
+    }
+    return { name: p.name, score }
+  })
+  scored.sort((a, b) => b.score - a.score)
+  return Array.from(new Set(scored.map(s => s.name))).slice(0, 60)
+}
+
+async function detectWithClaudeFullImage(
+  cleanBase64: string,
+  ctx: { areaName: string | null; candidates: string[] },
+): Promise<LabeledBBox[]> {
+  const contextLine = ctx.areaName
+    ? `\n\nContext: this shelf is the "${ctx.areaName}" section of a convenience store.`
+    : ''
+  const candidateLine = ctx.candidates.length
+    ? `\n\nThe store stocks these SKUs — prefer matching to one of these exact names when a product matches:\n${ctx.candidates.join(', ')}`
+    : ''
+
   const message = await client.messages.create({
     model: 'claude-opus-4-7',
-    max_tokens: 3000,
+    max_tokens: 4000,
     thinking: { type: 'adaptive' },
     messages: [{
       role: 'user',
       content: [
         { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: cleanBase64 } },
-        { type: 'text', text: `Identify every distinct consumable product on this shelf and return a tight bounding box for each.
+        { type: 'text', text: `Identify every distinct consumable product on this shelf and return a tight bounding box for each.${contextLine}${candidateLine}
 
 Coordinate system: (0,0) is top-left, (1,1) is bottom-right. y is the top of the product, y+h is the base. Do not include shelves, price tags, or space below the product.
 
@@ -141,7 +188,11 @@ Return JSON only:
   }))
 }
 
-async function labelMasksWithClaude(cleanBase64: string, masks: SamMaskBBox[]): Promise<LabeledBBox[]> {
+async function labelMasksWithClaude(
+  cleanBase64: string,
+  masks: SamMaskBBox[],
+  ctx: { areaName: string | null; candidates: string[] },
+): Promise<LabeledBBox[]> {
   const buf = Buffer.from(cleanBase64, 'base64')
   const rotated = await sharp(buf).rotate().toBuffer()
   const meta = await sharp(rotated).metadata()
@@ -152,14 +203,36 @@ async function labelMasksWithClaude(cleanBase64: string, masks: SamMaskBBox[]): 
   const CAP = 25
   const sorted = masks.slice().sort((a, b) => (b.bbox.w * b.bbox.h) - (a.bbox.w * a.bbox.h)).slice(0, CAP)
 
+  // Upscale tiny crops so Claude has enough pixels to read the label.
+  // Small bottles on a 1400px source can crop to ~70×180 — below what
+  // Claude reliably OCRs. Force a minimum of 512px on the short side.
+  const MIN_SHORT_SIDE = 512
   const crops = await Promise.all(sorted.map(async m => {
     const left = Math.max(0, Math.round(m.bbox.x * W))
     const top = Math.max(0, Math.round(m.bbox.y * H))
     const width = Math.min(W - left, Math.max(2, Math.round(m.bbox.w * W)))
     const height = Math.min(H - top, Math.max(2, Math.round(m.bbox.h * H)))
-    const cropped = await sharp(rotated).extract({ left, top, width, height }).jpeg({ quality: 82 }).toBuffer()
+    let pipeline = sharp(rotated).extract({ left, top, width, height })
+    const shortSide = Math.min(width, height)
+    if (shortSide < MIN_SHORT_SIDE) {
+      const scale = MIN_SHORT_SIDE / shortSide
+      pipeline = pipeline.resize({
+        width: Math.round(width * scale),
+        height: Math.round(height * scale),
+        fit: 'fill',
+        kernel: 'lanczos3',
+      })
+    }
+    const cropped = await pipeline.jpeg({ quality: 88 }).toBuffer()
     return cropped.toString('base64')
   }))
+
+  const contextLine = ctx.areaName
+    ? ` This shelf is the "${ctx.areaName}" section.`
+    : ''
+  const candidateLine = ctx.candidates.length
+    ? `\n\nThe store stocks these SKUs — prefer one of these exact names when a region matches:\n${ctx.candidates.join(', ')}`
+    : ''
 
   const content: Anthropic.Messages.ContentBlockParam[] = []
   crops.forEach((c, i) => {
@@ -168,7 +241,7 @@ async function labelMasksWithClaude(cleanBase64: string, masks: SamMaskBBox[]): 
   })
   content.push({
     type: 'text',
-    text: `You're cataloging a convenience-store shelf. For each numbered region above, identify the product.
+    text: `You're cataloging a convenience-store shelf.${contextLine} For each numbered region above, identify the product.${candidateLine}
 
 For each region return:
 - index (1-based)
@@ -184,7 +257,7 @@ Return ONLY a JSON array.`,
 
   const message = await client.messages.create({
     model: 'claude-opus-4-7',
-    max_tokens: 4000,
+    max_tokens: 5000,
     thinking: { type: 'adaptive' },
     messages: [{ role: 'user', content }],
   })

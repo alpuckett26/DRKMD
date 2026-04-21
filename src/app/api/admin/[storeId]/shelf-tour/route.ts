@@ -27,7 +27,9 @@ export async function POST(req: Request, { params }: { params: { storeId: string
       return NextResponse.json({ error: 'ANTHROPIC_API_KEY not configured on the server' }, { status: 500 })
     }
 
-    const { detections, samMode, samTotal, samUsable, normalizedDataUrl } = await detectShelfProducts(imageBase64, storeId)
+    const { detections, samMode, samTotal, samUsable, normalizedDataUrl } = await detectShelfProducts(imageBase64, storeId, {
+      areaName: areaName ?? null,
+    })
 
     if (detections.length === 0) {
       return NextResponse.json({

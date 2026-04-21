@@ -107,7 +107,10 @@ export async function POST(req: Request, { params }: { params: { storeId: string
           .toBuffer()
         const cropBase64 = cropBuf.toString('base64')
 
-        const { detections } = await detectShelfProducts(cropBase64, storeId, { alreadyNormalized: true })
+        const { detections } = await detectShelfProducts(cropBase64, storeId, {
+          alreadyNormalized: true,
+          areaName: areaName ?? null,
+        })
 
         const dataUrl = `data:image/jpeg;base64,${cropBase64}`
         await db.shelfPhoto.create({
