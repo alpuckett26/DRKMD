@@ -44,13 +44,23 @@ function greeting() {
   return 'Good evening'
 }
 
+interface ShelfArea { name: string; rows: number; cols: number }
+interface ShelfPhotoLite {
+  areaName: string | null
+  detections: { productId: string | null }[]
+}
+
 export default function MenuPage() {
   const { storeId } = useParams<{ storeId: string }>()
   const [store, setStore] = useState<StoreInfo | null>(null)
   const [products, setProducts] = useState<ProductInfo[]>([])
+  const [shelfPhotos, setShelfPhotos] = useState<ShelfPhotoLite[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [activeCategory, setActiveCategory] = useState('All')
+  // null = "All" (unfiltered). Only used when the store has shelf areas
+  // configured — we pivot the pill row from categories to shelf names.
+  const [activeShelf, setActiveShelf] = useState<string | null>(null)
   const [selectedProduct, setSelectedProduct] = useState<ProductInfo | null>(null)
   const [searchFocused, setSearchFocused] = useState(false)
   const { addItem, items, itemCount, total } = useCart()
@@ -71,6 +81,12 @@ export default function MenuPage() {
       fetch(`/api/stores/${storeId}`).then(r => r.json()),
       fetch(`/api/stores/${storeId}/menu`).then(r => r.json()),
     ]).then(([s, p]) => { setStore(s); setProducts(p); setLoading(false) })
+    // Shelf photos are optional — failures just mean we fall back to
+    // category pills. Don't block the menu on this.
+    fetch(`/api/stores/${storeId}/shelf-tour`)
+      .then(r => r.ok ? r.json() : [])
+      .then((photos: ShelfPhotoLite[]) => setShelfPhotos(photos))
+      .catch(() => {})
   }, [storeId])
 
   useEffect(() => {
@@ -93,10 +109,40 @@ export default function MenuPage() {
   const promoted = products.filter(p => p.promoted && p.price > 0)
   const categories = ['All', ...Array.from(new Set(products.map(p => p.category ?? 'Other')))]
 
+  // Map shelf area → productIds detected on that shelf. When the store has
+  // configured shelf areas and any of them have matched products, the pill
+  // row pivots from product categories to shelf names — so the pills mirror
+  // what the customer actually sees on the shelf-tour boards above.
+  const shelfProductIds: Record<string, Set<string>> = {}
+  for (const photo of shelfPhotos) {
+    const area = photo.areaName ?? 'Main shelf'
+    if (!shelfProductIds[area]) shelfProductIds[area] = new Set()
+    for (const d of photo.detections) {
+      if (d.productId) shelfProductIds[area].add(d.productId)
+    }
+  }
+  const configuredAreas: ShelfArea[] = Array.isArray(
+    (store as StoreInfo & { shelfAreas?: ShelfArea[] })?.shelfAreas,
+  )
+    ? (store as StoreInfo & { shelfAreas?: ShelfArea[] }).shelfAreas!
+    : []
+  const shelfPills: string[] = configuredAreas
+    .map(a => a.name)
+    .filter(name => (shelfProductIds[name]?.size ?? 0) > 0)
+  const useShelfPills = shelfPills.length > 0
+  // "All" view — greeting/hero/hot picks only render here. In shelf-pill
+  // mode that means no shelf selected; in category-pill mode it's the
+  // existing "All" category.
+  const isAtHomeView = useShelfPills ? activeShelf === null : activeCategory === 'All'
+
   const filtered = products.filter(p => {
     const matchSearch = !search || p.name.toLowerCase().includes(search.toLowerCase()) || (p.category ?? '').toLowerCase().includes(search.toLowerCase())
-    const matchCat = activeCategory === 'All' || (p.category ?? 'Other') === activeCategory
-    return matchSearch && matchCat
+    if (!matchSearch) return false
+    if (useShelfPills) {
+      if (!activeShelf) return true
+      return shelfProductIds[activeShelf]?.has(p.id) ?? false
+    }
+    return activeCategory === 'All' || (p.category ?? 'Other') === activeCategory
   })
 
   const grouped = filtered.reduce<Record<string, ProductInfo[]>>((acc, p) => {
@@ -110,6 +156,14 @@ export default function MenuPage() {
     setSearch('')
     if (cat === 'All') { window.scrollTo({ top: 0, behavior: 'smooth' }); return }
     setTimeout(() => catRefs.current[cat]?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50)
+  }
+
+  function pickShelf(name: string | null) {
+    setActiveShelf(name)
+    setSearch('')
+    // Snap back to the top so the shelf board (now driven to the selected
+    // area) is in view alongside the filtered product list below.
+    window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
   if (loading) {
@@ -160,7 +214,7 @@ export default function MenuPage() {
               type="search"
               placeholder="Search products…"
               value={search}
-              onChange={e => { setSearch(e.target.value); setActiveCategory('All') }}
+              onChange={e => { setSearch(e.target.value); setActiveCategory('All'); setActiveShelf(null) }}
               onFocus={() => setSearchFocused(true)}
               className="input pl-9 py-2.5 text-sm"
             />
@@ -185,8 +239,30 @@ export default function MenuPage() {
           </div>
         </div>
 
-        {/* Category chips */}
-        {!search && (
+        {/* Pills — shelf names when shelf tour is configured, product
+            categories otherwise. Shelf pills drive both the ShelfTour
+            board above and the filtered product list below, so tapping
+            "Beer" gives the customer the beer shelf + beer products. */}
+        {!search && useShelfPills && (
+          <div className="flex gap-2 overflow-x-auto px-4 pb-3 scrollbar-hide" style={{ scrollbarWidth: 'none' }}>
+            <button
+              onClick={() => pickShelf(null)}
+              className={`cat-pill shrink-0${activeShelf === null ? ' active' : ''}`}
+            >
+              All
+            </button>
+            {shelfPills.map(name => (
+              <button
+                key={name}
+                onClick={() => pickShelf(name)}
+                className={`cat-pill shrink-0${activeShelf === name ? ' active' : ''}`}
+              >
+                {name}
+              </button>
+            ))}
+          </div>
+        )}
+        {!search && !useShelfPills && (
           <div className="flex gap-2 overflow-x-auto px-4 pb-3 scrollbar-hide" style={{ scrollbarWidth: 'none' }}>
             {categories.map(cat => (
               <button
@@ -202,7 +278,7 @@ export default function MenuPage() {
       </div>
 
       {/* Hero banner */}
-      {!search && activeCategory === 'All' && (store as StoreInfo & { logoUrl?: string })?.logoUrl && (
+      {!search && isAtHomeView && (store as StoreInfo & { logoUrl?: string })?.logoUrl && (
         <div className="max-w-lg mx-auto px-4 pt-3">
           <div className="relative w-full overflow-hidden rounded-2xl" style={{ height: '42vw', maxHeight: 220 }}>
             <MediaAsset
@@ -216,19 +292,22 @@ export default function MenuPage() {
 
       <div className="max-w-lg mx-auto px-4 pt-4 space-y-6">
         {/* Greeting */}
-        {!search && activeCategory === 'All' && (
+        {!search && isAtHomeView && (
           <div>
             <h2 className="text-2xl font-black text-gray-900">{greeting()}</h2>
             <p className="text-sm text-gray-500 mt-0.5">Browse the shelf and we&apos;ll have it ready at the window.</p>
           </div>
         )}
 
-        {/* Shelf Tour — tap products directly on a photo */}
-        {!search && activeCategory === 'All' && (
+        {/* Shelf Tour — tap products directly on a photo. In shelf-pill
+            mode the tour stays visible while filtering so the pill and
+            board stay in sync; in category-pill mode it's home-only. */}
+        {!search && (useShelfPills || isAtHomeView) && (
           <ShelfTour
             storeId={storeId}
             resetZoomSignal={zoomResetSignal}
             onZoomChange={setShelfZoomed}
+            activeAreaName={activeShelf}
             onOpenProduct={pid => {
               const p = products.find(x => x.id === pid)
               if (p) setSelectedProduct(p)
@@ -237,7 +316,7 @@ export default function MenuPage() {
         )}
 
         {/* Hot Picks impulse strip */}
-        {promoted.length > 0 && !search && activeCategory === 'All' && (
+        {promoted.length > 0 && !search && isAtHomeView && (
           <div>
             <div className="flex items-center gap-2 mb-3">
               <span className="text-lg">⚡</span>

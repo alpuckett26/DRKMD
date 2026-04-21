@@ -41,12 +41,15 @@ interface Props {
   /** True while any shelf board is zoomed-in — lets the store page hide
    *  its sticky header for a fuller-height shopping view. */
   onZoomChange?: (zoomed: boolean) => void
+  /** Name of the area the swiper should jump to. Driven by the store
+   *  page's shelf-pill selection so pills and the board stay in sync. */
+  activeAreaName?: string | null
 }
 
 const ZOOM_LEVEL = 3.5
 const SWIPE_THRESHOLD = 50
 
-export default function ShelfTour({ storeId, onOpenProduct, resetZoomSignal, onZoomChange }: Props) {
+export default function ShelfTour({ storeId, onOpenProduct, resetZoomSignal, onZoomChange, activeAreaName }: Props) {
   const [photos, setPhotos] = useState<ShelfPhoto[]>([])
   const [store, setStore] = useState<StoreMeta | null>(null)
   const [loading, setLoading] = useState(true)
@@ -89,6 +92,7 @@ export default function ShelfTour({ storeId, onOpenProduct, resetZoomSignal, onZ
         onOpenProduct={onOpenProduct}
         resetZoomSignal={resetZoomSignal}
         onZoomChange={onZoomChange}
+        activeAreaName={activeAreaName}
       />
     )
   }
@@ -121,17 +125,27 @@ export default function ShelfTour({ storeId, onOpenProduct, resetZoomSignal, onZ
 // ─── Swipe between named areas ──────────────────────────────────────
 
 function AreaSwiper({
-  areas, onOpenProduct, resetZoomSignal, onZoomChange,
+  areas, onOpenProduct, resetZoomSignal, onZoomChange, activeAreaName,
 }: {
   areas: { area: ShelfArea; areaPhotos: ShelfPhoto[] }[]
   onOpenProduct: (id: string) => void
   resetZoomSignal?: number
   onZoomChange?: (zoomed: boolean) => void
+  activeAreaName?: string | null
 }) {
   const [active, setActive] = useState(0)
   const [dragX, setDragX] = useState(0)
   const pointer = useRef<{ id: number; sx: number; sy: number; moved: boolean } | null>(null)
   const SWIPE = 60
+
+  // Store-page pills jump the board to a specific named area. Resolve the
+  // name to an index whenever the prop changes; unknown names are ignored.
+  useEffect(() => {
+    if (!activeAreaName) return
+    const i = areas.findIndex(a => a.area.name === activeAreaName)
+    if (i >= 0 && i !== active) setActive(i)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeAreaName])
 
   const current = areas[active]
   const prev = active > 0 ? areas[active - 1] : null
