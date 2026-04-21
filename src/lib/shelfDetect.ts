@@ -203,28 +203,47 @@ async function labelMasksWithClaude(
   const CAP = 25
   const sorted = masks.slice().sort((a, b) => (b.bbox.w * b.bbox.h) - (a.bbox.w * a.bbox.h)).slice(0, CAP)
 
-  // Upscale tiny crops so Claude has enough pixels to read the label.
-  // Small bottles on a 1400px source can crop to ~70×180 — below what
-  // Claude reliably OCRs. Force a minimum of 512px on the short side.
-  const MIN_SHORT_SIDE = 512
+  // Upscale tiny crops so Claude has enough pixels to read the label,
+  // but never past a hard ceiling — combined request size matters, and
+  // a single broken crop shouldn't fail the whole pass, so fall back to
+  // the raw extract if anything goes sideways.
+  const MIN_SHORT_SIDE = 384
+  const MAX_LONG_SIDE = 1400
   const crops = await Promise.all(sorted.map(async m => {
     const left = Math.max(0, Math.round(m.bbox.x * W))
     const top = Math.max(0, Math.round(m.bbox.y * H))
     const width = Math.min(W - left, Math.max(2, Math.round(m.bbox.w * W)))
     const height = Math.min(H - top, Math.max(2, Math.round(m.bbox.h * H)))
-    let pipeline = sharp(rotated).extract({ left, top, width, height })
+
+    const extract = sharp(rotated).extract({ left, top, width, height })
     const shortSide = Math.min(width, height)
-    if (shortSide < MIN_SHORT_SIDE) {
-      const scale = MIN_SHORT_SIDE / shortSide
-      pipeline = pipeline.resize({
-        width: Math.round(width * scale),
-        height: Math.round(height * scale),
-        fit: 'fill',
-        kernel: 'lanczos3',
-      })
+    const longSide = Math.max(width, height)
+
+    if (shortSide >= MIN_SHORT_SIDE) {
+      const buf = await extract.jpeg({ quality: 88 }).toBuffer()
+      return buf.toString('base64')
     }
-    const cropped = await pipeline.jpeg({ quality: 88 }).toBuffer()
-    return cropped.toString('base64')
+
+    const rawScale = MIN_SHORT_SIDE / shortSide
+    const scale = Math.min(rawScale, MAX_LONG_SIDE / longSide)
+    if (scale <= 1) {
+      const buf = await extract.jpeg({ quality: 88 }).toBuffer()
+      return buf.toString('base64')
+    }
+
+    try {
+      const targetW = Math.max(1, Math.round(width * scale))
+      const targetH = Math.max(1, Math.round(height * scale))
+      const buf = await extract
+        .resize({ width: targetW, height: targetH, fit: 'fill', kernel: 'lanczos3' })
+        .jpeg({ quality: 88 })
+        .toBuffer()
+      return buf.toString('base64')
+    } catch (err) {
+      console.warn('[shelfDetect] upscale failed, using raw crop:', err)
+      const buf = await sharp(rotated).extract({ left, top, width, height }).jpeg({ quality: 88 }).toBuffer()
+      return buf.toString('base64')
+    }
   }))
 
   const contextLine = ctx.areaName

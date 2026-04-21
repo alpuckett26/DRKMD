@@ -132,9 +132,11 @@ export async function POST(req: Request, { params }: { params: { storeId: string
           matched: detections.filter(d => d.matched).length,
         }
       } catch (err) {
+        const message = err instanceof Error ? err.message : 'Cell failed'
+        console.error(`[auto-split] cell r${job.r}c${job.c} failed:`, message, err)
         return {
           row: job.r, col: job.c, detected: 0, matched: 0,
-          error: err instanceof Error ? err.message : 'Cell failed',
+          error: message,
         }
       }
     }))
