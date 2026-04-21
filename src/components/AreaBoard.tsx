@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 
 interface Detection {
   productId: string | null
@@ -69,6 +70,15 @@ export default function AreaBoard({ rows, cols, photos, onOpenProduct, resetZoom
   const [tapped, setTapped] = useState<{ id: string; t: number } | null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
 
+  // Portals need document.body, which only exists on the client. Flip this
+  // on after mount so the fullscreen overlay can render into body — escaping
+  // any transformed ancestor (the AreaSwiper wraps us in a translateX()
+  // drag container, and `position: fixed` inside a transform is scoped to
+  // that ancestor instead of the viewport, so the overlay would otherwise
+  // collapse into the swiper rather than cover the screen).
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => { setMounted(true) }, [])
+
   // Grid lookup by r:c
   const byRc = new Map<string, ShelfPhoto>()
   for (const p of photos) {
@@ -129,101 +139,134 @@ export default function AreaBoard({ rows, cols, photos, onOpenProduct, resetZoom
     onOpenProduct(dot.productId)
   }
 
-  return (
+  // In-flow board — always renders in the swiper. Natural aspect, no zoom.
+  const inFlow = (
     <div
       ref={containerRef}
       onClick={onBoardClick}
-      className={
-        zoomed
-          ? 'fixed inset-0 z-40 bg-black overflow-hidden select-none cursor-zoom-out'
-          : 'relative overflow-hidden rounded-2xl bg-gray-50 border border-gray-100 select-none cursor-zoom-in'
-      }
-      style={
-        zoomed
-          ? { touchAction: 'none' }
-          : { boxShadow: '0 1px 2px rgba(0,0,0,0.04)' }
-      }
+      className="relative overflow-hidden rounded-2xl bg-gray-50 border border-gray-100 select-none cursor-zoom-in"
+      style={{ boxShadow: '0 1px 2px rgba(0,0,0,0.04)' }}
     >
-        {/* The tiled grid — no gap, no border, looks like one photo.
-         *  In zoomed (fullscreen) mode the grid fills the viewport with
-         *  equal fractional rows/cols so the whole board is visible and
-         *  centered; images use object-contain to letterbox rather than
-         *  stretch. In normal in-flow mode rows auto-size to image height
-         *  so same-source strips tile seamlessly with no gray backing. */}
+      <div
+        className="grid"
+        style={{
+          gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
+          gridAutoRows: 'auto',
+          gap: 0,
+          lineHeight: 0,
+        }}
+      >
+        {Array.from({ length: rows }).map((_, r) =>
+          Array.from({ length: cols }).map((_, c) => {
+            const photo = byRc.get(`${r}:${c}`)
+            return (
+              <div key={`${r}:${c}`} className="relative">
+                {photo ? (
+                  <img
+                    src={photo.imageUrl}
+                    alt=""
+                    className="block w-full h-auto"
+                    draggable={false}
+                  />
+                ) : (
+                  <div className="w-full h-full bg-gray-100" />
+                )}
+              </div>
+            )
+          }),
+        )}
+      </div>
+    </div>
+  )
+
+  // Fullscreen zoomed overlay — rendered via portal into document.body so
+  // it escapes the AreaSwiper's translateX transform container. Fills the
+  // viewport with equal 1fr rows/cols and letterboxes each cell's image
+  // so aspect ratio is preserved.
+  const fullscreen = zoomed ? (
+    <div
+      onClick={() => setZoomed(null)}
+      className="fixed inset-0 z-50 bg-black overflow-hidden select-none cursor-zoom-out"
+      style={{ touchAction: 'none' }}
+    >
+      <div
+        className="relative w-full h-full"
+        style={{
+          transform: zoomTransform(zoomed.cx, zoomed.cy, ZOOM_LEVEL),
+          transformOrigin: '0 0',
+          transition: 'transform 0.22s ease-out',
+        }}
+      >
         <div
-          className={zoomed ? 'relative w-full h-full' : 'relative'}
+          className="grid"
           style={{
-            transform: zoomed ? zoomTransform(zoomed.cx, zoomed.cy, ZOOM_LEVEL) : 'none',
-            transformOrigin: '0 0',
-            transition: 'transform 0.22s ease-out',
+            gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
+            gridTemplateRows: `repeat(${rows}, minmax(0, 1fr))`,
+            width: '100%',
+            height: '100%',
+            gap: 0,
+            lineHeight: 0,
           }}
         >
-          <div
-            className="grid"
-            style={{
-              gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
-              gridTemplateRows: zoomed ? `repeat(${rows}, minmax(0, 1fr))` : undefined,
-              gridAutoRows: zoomed ? undefined : 'auto',
-              width: '100%',
-              height: zoomed ? '100%' : 'auto',
-              gap: 0,
-              lineHeight: 0,
-            }}
-          >
-            {Array.from({ length: rows }).map((_, r) =>
-              Array.from({ length: cols }).map((_, c) => {
-                const photo = byRc.get(`${r}:${c}`)
-                return (
-                  <div
-                    key={`${r}:${c}`}
-                    className="relative"
-                    style={zoomed ? { minHeight: 0, minWidth: 0 } : undefined}
-                  >
-                    {photo ? (
-                      <img
-                        src={photo.imageUrl}
-                        alt=""
-                        className={zoomed ? 'block w-full h-full object-contain' : 'block w-full h-auto'}
-                        draggable={false}
-                      />
-                    ) : (
-                      <div className="w-full h-full bg-gray-100" />
-                    )}
-                  </div>
-                )
-              }),
-            )}
-          </div>
-
-          {/* Dots only materialize once the customer has zoomed in */}
-          {zoomed && dots.map(d => {
-            const isTapped = tapped?.id === d.id
-            return (
-              <button
-                key={d.id}
-                onClick={e => handleDotTap(e, d)}
-                className="absolute flex items-center justify-center -translate-x-1/2 -translate-y-1/2"
-                style={{
-                  left: `${d.gx * 100}%`,
-                  top: `${d.gy * 100}%`,
-                  width: `${Math.max(2, d.gw * 100) / ZOOM_LEVEL}%`,
-                  height: `${Math.max(2, d.gh * 100) / ZOOM_LEVEL}%`,
-                  minWidth: 28, minHeight: 28,
-                }}
-                aria-label={d.label}
-              >
-                <span
-                  className={`rounded-full transition-all shadow ${
-                    isTapped ? 'bg-brand scale-150' : 'bg-brand ring-2 ring-white/90'
-                  }`}
-                  style={{ width: 14, height: 14 }}
-                />
-              </button>
-            )
-          })}
+          {Array.from({ length: rows }).map((_, r) =>
+            Array.from({ length: cols }).map((_, c) => {
+              const photo = byRc.get(`${r}:${c}`)
+              return (
+                <div
+                  key={`${r}:${c}`}
+                  className="relative"
+                  style={{ minHeight: 0, minWidth: 0 }}
+                >
+                  {photo ? (
+                    <img
+                      src={photo.imageUrl}
+                      alt=""
+                      className="block w-full h-full object-contain"
+                      draggable={false}
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-gray-900" />
+                  )}
+                </div>
+              )
+            }),
+          )}
         </div>
 
+        {dots.map(d => {
+          const isTapped = tapped?.id === d.id
+          return (
+            <button
+              key={d.id}
+              onClick={e => handleDotTap(e, d)}
+              className="absolute flex items-center justify-center -translate-x-1/2 -translate-y-1/2"
+              style={{
+                left: `${d.gx * 100}%`,
+                top: `${d.gy * 100}%`,
+                width: `${Math.max(2, d.gw * 100) / ZOOM_LEVEL}%`,
+                height: `${Math.max(2, d.gh * 100) / ZOOM_LEVEL}%`,
+                minWidth: 28, minHeight: 28,
+              }}
+              aria-label={d.label}
+            >
+              <span
+                className={`rounded-full transition-all shadow ${
+                  isTapped ? 'bg-brand scale-150' : 'bg-brand ring-2 ring-white/90'
+                }`}
+                style={{ width: 14, height: 14 }}
+              />
+            </button>
+          )
+        })}
+      </div>
     </div>
+  ) : null
+
+  return (
+    <>
+      {inFlow}
+      {mounted && fullscreen ? createPortal(fullscreen, document.body) : null}
+    </>
   )
 }
 
