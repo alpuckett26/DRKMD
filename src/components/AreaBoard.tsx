@@ -76,37 +76,6 @@ export default function AreaBoard({ rows, cols, photos, onOpenProduct, resetZoom
     byRc.set(`${p.shelfIndex}:${p.sectionIndex}`, p)
   }
 
-  // Flatten every detection into global (area-normalized) coords so we can
-  // position a dot regardless of which cell it came from.
-  interface Dot {
-    id: string
-    productId: string
-    gx: number
-    gy: number
-    gw: number
-    gh: number
-    label: string
-  }
-  const dots: Dot[] = []
-  for (let r = 0; r < rows; r++) {
-    for (let c = 0; c < cols; c++) {
-      const photo = byRc.get(`${r}:${c}`)
-      if (!photo) continue
-      for (const d of photo.detections) {
-        if (!d.productId) continue
-        dots.push({
-          id: `${photo.id}:${d.productId}:${d.bbox.x}:${d.bbox.y}`,
-          productId: d.productId,
-          gx: (c + d.bbox.x + d.bbox.w / 2) / cols,
-          gy: (r + d.bbox.y + d.bbox.h / 2) / rows,
-          gw: d.bbox.w / cols,
-          gh: d.bbox.h / rows,
-          label: d.label,
-        })
-      }
-    }
-  }
-
   function onBoardClick(e: React.MouseEvent<HTMLDivElement>) {
     if (zoomed) {
       setZoomed(null)
@@ -116,17 +85,14 @@ export default function AreaBoard({ rows, cols, photos, onOpenProduct, resetZoom
     if (!rect) return
     const cx = (e.clientX - rect.left) / rect.width
     const cy = (e.clientY - rect.top) / rect.height
-    // Diagnostic so we can tell in the console whether the expected zoom
-    // level is actually being applied when bottles get cut off.
-    console.info('[AreaBoard] zoom', { cols, rows, zoom: ZOOM_LEVEL, board: { w: rect.width, h: rect.height }, tap: { cx, cy } })
     setZoomed({ cx: clamp01(cx), cy: clamp01(cy) })
   }
 
-  function handleDotTap(e: React.MouseEvent, dot: Dot) {
+  function handleDotTap(e: React.MouseEvent, dotId: string, productId: string) {
     e.stopPropagation()
-    setTapped({ id: dot.id, t: Date.now() })
-    setTimeout(() => setTapped(t => (t?.id === dot.id ? null : t)), 400)
-    onOpenProduct(dot.productId)
+    setTapped({ id: dotId, t: Date.now() })
+    setTimeout(() => setTapped(t => (t?.id === dotId ? null : t)), 400)
+    onOpenProduct(productId)
   }
 
   return (
@@ -136,82 +102,87 @@ export default function AreaBoard({ rows, cols, photos, onOpenProduct, resetZoom
       className={`relative overflow-hidden rounded-2xl bg-gray-50 border border-gray-100 select-none ${zoomed ? 'cursor-zoom-out' : 'cursor-zoom-in'}`}
       style={{ boxShadow: '0 1px 2px rgba(0,0,0,0.04)' }}
     >
-        {/* The tiled grid — no gap, no border, looks like one photo */}
+      <div
+        className="relative"
+        style={{
+          transform: zoomed ? zoomTransform(zoomed.cx, zoomed.cy, ZOOM_LEVEL) : 'none',
+          transformOrigin: '0 0',
+          transition: 'transform 0.22s ease-out',
+        }}
+      >
         <div
-          className="relative"
+          className="grid"
           style={{
-            transform: zoomed ? zoomTransform(zoomed.cx, zoomed.cy, ZOOM_LEVEL) : 'none',
-            transformOrigin: '0 0',
-            transition: 'transform 0.22s ease-out',
+            gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
+            // Rows auto-size to their images so same-source strips tile
+            // seamlessly — don't assume 1/rows per row. Dots below are
+            // rendered inside the cell so they track whatever real
+            // height each row ends up with.
+            gridAutoRows: 'auto',
+            gap: 0,
+            lineHeight: 0,
           }}
         >
-          <div
-            className="grid"
-            style={{
-              gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
-              // Rows size to their images so same-source strips tile seamlessly
-              // vertically. Forcing 1fr rows would leave gray backing visible
-              // under shorter crops (e.g. calibrated shelves of different heights).
-              gridAutoRows: 'auto',
-              gap: 0,
-              lineHeight: 0,
-            }}
-          >
-            {Array.from({ length: rows }).map((_, r) =>
-              Array.from({ length: cols }).map((_, c) => {
-                const photo = byRc.get(`${r}:${c}`)
-                return (
-                  <div
-                    key={`${r}:${c}`}
-                    className="relative"
-                  >
-                    {photo ? (
-                      <img
-                        src={photo.imageUrl}
-                        alt=""
-                        className="block w-full h-auto"
-                        draggable={false}
-                      />
-                    ) : (
-                      <div className="w-full h-full bg-gray-100" />
-                    )}
-                  </div>
-                )
-              }),
-            )}
-          </div>
+          {Array.from({ length: rows }).map((_, r) =>
+            Array.from({ length: cols }).map((_, c) => {
+              const photo = byRc.get(`${r}:${c}`)
+              return (
+                <div key={`${r}:${c}`} className="relative">
+                  {photo ? (
+                    <img
+                      src={photo.imageUrl}
+                      alt=""
+                      className="block w-full h-auto"
+                      draggable={false}
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-gray-100" />
+                  )}
 
-          {/* Dots only materialize once the customer has zoomed in */}
-          {zoomed && dots.map(d => {
-            const isTapped = tapped?.id === d.id
-            return (
-              <button
-                key={d.id}
-                onClick={e => handleDotTap(e, d)}
-                className="absolute flex items-center justify-center -translate-x-1/2 -translate-y-1/2"
-                style={{
-                  left: `${d.gx * 100}%`,
-                  top: `${d.gy * 100}%`,
-                  width: `${Math.max(2, d.gw * 100) / ZOOM_LEVEL}%`,
-                  height: `${Math.max(2, d.gh * 100) / ZOOM_LEVEL}%`,
-                  minWidth: 28, minHeight: 28,
-                }}
-                aria-label={d.label}
-              >
-                <span
-                  className={`rounded-full transition-all shadow ${
-                    isTapped ? 'bg-brand scale-150' : 'bg-brand ring-2 ring-white/90'
-                  }`}
-                  style={{ width: 14, height: 14 }}
-                />
-              </button>
-            )
-          })}
+                  {/* Dots render inside their originating cell so their
+                   *  % coords line up with the actual rendered image —
+                   *  unlike a global overlay which assumes equal row
+                   *  heights across the whole board. */}
+                  {zoomed && photo && photo.detections.map(d => {
+                    if (!d.productId) return null
+                    const dotId = `${photo.id}:${d.productId}:${d.bbox.x}:${d.bbox.y}`
+                    const cx = d.bbox.x + d.bbox.w / 2
+                    const cy = d.bbox.y + d.bbox.h / 2
+                    const isTapped = tapped?.id === dotId
+                    const productId = d.productId
+                    return (
+                      <button
+                        key={dotId}
+                        onClick={e => handleDotTap(e, dotId, productId)}
+                        className="absolute flex items-center justify-center -translate-x-1/2 -translate-y-1/2"
+                        style={{
+                          left: `${cx * 100}%`,
+                          top: `${cy * 100}%`,
+                          width: `${Math.max(2, d.bbox.w * 100) / ZOOM_LEVEL}%`,
+                          height: `${Math.max(2, d.bbox.h * 100) / ZOOM_LEVEL}%`,
+                          minWidth: 28, minHeight: 28,
+                        }}
+                        aria-label={d.label}
+                      >
+                        <span
+                          className={`rounded-full transition-all shadow ${
+                            isTapped ? 'bg-brand scale-150' : 'bg-brand ring-2 ring-white/90'
+                          }`}
+                          style={{ width: 14, height: 14 }}
+                        />
+                      </button>
+                    )
+                  })}
+                </div>
+              )
+            }),
+          )}
         </div>
-
+      </div>
     </div>
   )
 }
+
 
 function zoomTransform(cx: number, cy: number, scale: number): string {
   const txPct = (0.5 / scale - cx) * 100
