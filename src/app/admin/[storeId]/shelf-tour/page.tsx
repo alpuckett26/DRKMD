@@ -159,7 +159,13 @@ function PhotoCard({ photo, storeId, onRemove }: { photo: ShelfPhoto; storeId: s
     <div className="card !p-0 overflow-hidden">
       <Link href={`/admin/${storeId}/shelf-tour/${photo.id}`} className="block">
         <div className="relative w-full bg-gray-100">
-          <img src={photo.imageUrl} alt={photo.label ?? 'Shelf'} className="block w-full h-auto" />
+          {/* Cap preview height so a tall chip-cell crop doesn't dominate the list */}
+          <img
+            src={photo.imageUrl}
+            alt={photo.label ?? 'Shelf'}
+            className="block w-full object-contain bg-gray-50"
+            style={{ maxHeight: 240 }}
+          />
           {photo.detections.map((d, i) => (
             <div
               key={i}

@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 interface Detection {
   productId: string | null
@@ -22,6 +22,9 @@ interface Props {
   cols: number
   photos: ShelfPhoto[]
   onOpenProduct: (productId: string) => void
+  /** When this value changes, the board collapses its zoom state — used
+   *  by the parent to exit zoom after an item was added to cart. */
+  resetZoomSignal?: number
 }
 
 // Pick a zoom factor that makes individual items tappable without hiding
@@ -42,9 +45,16 @@ function pickZoom(cols: number, _rows: number): number {
  * Tap anywhere → zooms 3x to that point and dots appear over every
  * matched product. Tap a dot → opens the product sheet.
  */
-export default function AreaBoard({ rows, cols, photos, onOpenProduct }: Props) {
+export default function AreaBoard({ rows, cols, photos, onOpenProduct, resetZoomSignal }: Props) {
   const ZOOM_LEVEL = pickZoom(cols, rows)
   const [zoomed, setZoomed] = useState<{ cx: number; cy: number } | null>(null)
+
+  // Parent bumps this counter when an item is added — collapse the zoom so
+  // the customer lands back on the clean cooler view without dots.
+  useEffect(() => {
+    if (resetZoomSignal !== undefined) setZoomed(null)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [resetZoomSignal])
   const [tapped, setTapped] = useState<{ id: string; t: number } | null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
 

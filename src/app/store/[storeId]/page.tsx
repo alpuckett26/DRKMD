@@ -54,6 +54,14 @@ export default function MenuPage() {
   const [selectedProduct, setSelectedProduct] = useState<ProductInfo | null>(null)
   const [searchFocused, setSearchFocused] = useState(false)
   const { addItem, items, itemCount, total } = useCart()
+  const [zoomResetSignal, setZoomResetSignal] = useState(0)
+  const prevItemCountRef = useRef(itemCount)
+  useEffect(() => {
+    if (itemCount > prevItemCountRef.current) {
+      setZoomResetSignal(n => n + 1)
+    }
+    prevItemCountRef.current = itemCount
+  }, [itemCount])
   const catRefs = useRef<Record<string, HTMLDivElement | null>>({})
   const searchRef = useRef<HTMLDivElement | null>(null)
 
@@ -215,6 +223,7 @@ export default function MenuPage() {
         {!search && activeCategory === 'All' && (
           <ShelfTour
             storeId={storeId}
+            resetZoomSignal={zoomResetSignal}
             onOpenProduct={pid => {
               const p = products.find(x => x.id === pid)
               if (p) setSelectedProduct(p)

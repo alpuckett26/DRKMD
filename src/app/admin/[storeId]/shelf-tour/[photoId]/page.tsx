@@ -346,7 +346,15 @@ export default function ShelfTourEditor() {
           onPointerUp={onPointerUp}
           style={{ touchAction: 'none' }}
         >
-          <img src={photo.imageUrl} alt={photo.label ?? 'Shelf'} className="block w-full h-auto select-none" draggable={false} />
+          {/* Cap working canvas so tall cell crops (e.g. chip aisle) still fit
+              on screen while the admin nudges boxes. */}
+          <img
+            src={photo.imageUrl}
+            alt={photo.label ?? 'Shelf'}
+            className="block w-full object-contain select-none bg-gray-50"
+            style={{ maxHeight: '70vh' }}
+            draggable={false}
+          />
           {detections.map((d, i) => {
             const isSel = i === selected
             return (

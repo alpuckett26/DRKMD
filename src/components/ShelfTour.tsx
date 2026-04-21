@@ -35,12 +35,15 @@ interface StoreMeta {
 interface Props {
   storeId: string
   onOpenProduct: (productId: string) => void
+  /** Bumped by the parent store page each time an item is added so the
+   *  zoomed AreaBoard can collapse back to the clean cooler view. */
+  resetZoomSignal?: number
 }
 
 const ZOOM_LEVEL = 3.5
 const SWIPE_THRESHOLD = 50
 
-export default function ShelfTour({ storeId, onOpenProduct }: Props) {
+export default function ShelfTour({ storeId, onOpenProduct, resetZoomSignal }: Props) {
   const [photos, setPhotos] = useState<ShelfPhoto[]>([])
   const [store, setStore] = useState<StoreMeta | null>(null)
   const [loading, setLoading] = useState(true)
@@ -78,29 +81,11 @@ export default function ShelfTour({ storeId, onOpenProduct }: Props) {
     if (visibleAreas.length === 0) return null
 
     return (
-      <section className="space-y-5">
-        <div>
-          <h2 className="text-lg font-bold text-gray-900">Shop the aisle</h2>
-          <p className="text-xs text-gray-500 mt-0.5">Tap a shelf to zoom in, then tap the item you want.</p>
-        </div>
-        {visibleAreas.map(({ area, areaPhotos }) => {
-          const itemCount = areaPhotos.reduce((sum, p) => sum + p.detections.filter(d => d.productId).length, 0)
-          return (
-            <div key={area.name} className="space-y-2">
-              <div className="flex items-baseline justify-between">
-                <h3 className="text-base font-bold text-gray-900">{area.name}</h3>
-                {itemCount > 0 && <span className="text-xs text-gray-500">{itemCount} items</span>}
-              </div>
-              <AreaBoard
-                rows={area.rows}
-                cols={area.cols}
-                photos={areaPhotos}
-                onOpenProduct={onOpenProduct}
-              />
-            </div>
-          )
-        })}
-      </section>
+      <AreaSwiper
+        areas={visibleAreas}
+        onOpenProduct={onOpenProduct}
+        resetZoomSignal={resetZoomSignal}
+      />
     )
   }
 
@@ -120,11 +105,138 @@ export default function ShelfTour({ storeId, onOpenProduct }: Props) {
           cols={store!.shelfCols ?? 0}
           photos={photos}
           onOpenProduct={onOpenProduct}
+          resetZoomSignal={resetZoomSignal}
         />
       </section>
     )
   }
   return <LegacyView photos={photos} onOpenProduct={onOpenProduct} />
+}
+
+// ─── Swipe between named areas ──────────────────────────────────────
+
+function AreaSwiper({
+  areas, onOpenProduct, resetZoomSignal,
+}: {
+  areas: { area: ShelfArea; areaPhotos: ShelfPhoto[] }[]
+  onOpenProduct: (id: string) => void
+  resetZoomSignal?: number
+}) {
+  const [active, setActive] = useState(0)
+  const [dragX, setDragX] = useState(0)
+  const pointer = useRef<{ id: number; sx: number; sy: number; moved: boolean } | null>(null)
+  const SWIPE = 60
+
+  const current = areas[active]
+  const prev = active > 0 ? areas[active - 1] : null
+  const next = active < areas.length - 1 ? areas[active + 1] : null
+
+  function goPrev() { if (prev) setActive(active - 1) }
+  function goNext() { if (next) setActive(active + 1) }
+
+  function onPointerDown(e: React.PointerEvent) {
+    pointer.current = { id: e.pointerId, sx: e.clientX, sy: e.clientY, moved: false }
+  }
+  function onPointerMove(e: React.PointerEvent) {
+    const p = pointer.current
+    if (!p || p.id !== e.pointerId) return
+    const dx = e.clientX - p.sx
+    const dy = e.clientY - p.sy
+    if (!p.moved && Math.hypot(dx, dy) > 8) p.moved = true
+    if (Math.abs(dx) > Math.abs(dy)) {
+      let resisted = dx
+      if ((active === 0 && dx > 0) || (active === areas.length - 1 && dx < 0)) resisted = dx * 0.35
+      setDragX(resisted)
+    }
+  }
+  function onPointerUp(e: React.PointerEvent) {
+    const p = pointer.current
+    pointer.current = null
+    if (!p || p.id !== e.pointerId) return
+    const dx = e.clientX - p.sx
+    const dy = e.clientY - p.sy
+    setDragX(0)
+    if (Math.abs(dx) >= SWIPE && Math.abs(dx) > Math.abs(dy)) {
+      if (dx < 0) goNext()
+      else goPrev()
+    }
+  }
+
+  const itemCount = current.areaPhotos.reduce((sum, p) => sum + p.detections.filter(d => d.productId).length, 0)
+
+  return (
+    <section className="space-y-3">
+      <div className="flex items-baseline justify-between">
+        <div>
+          <h2 className="text-lg font-bold text-gray-900">{current.area.name}</h2>
+          <p className="text-xs text-gray-500 mt-0.5">Swipe ↔ to change aisle · tap to zoom · tap the item to add.</p>
+        </div>
+        {itemCount > 0 && <span className="text-xs text-gray-500">{itemCount} items</span>}
+      </div>
+
+      <div
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={onPointerUp}
+        onPointerCancel={() => { pointer.current = null; setDragX(0) }}
+        className="relative"
+        style={{ touchAction: 'pan-y' }}
+      >
+        <div
+          style={{
+            transform: `translateX(${dragX}px)`,
+            transition: pointer.current ? 'none' : 'transform 0.22s ease-out',
+          }}
+        >
+          <AreaBoard
+            rows={current.area.rows}
+            cols={current.area.cols}
+            photos={current.areaPhotos}
+            onOpenProduct={onOpenProduct}
+            resetZoomSignal={resetZoomSignal}
+          />
+        </div>
+
+        {/* Prev / Next labeled arrows, same language as the old shelf-tour swipe */}
+        {prev && (
+          <button
+            onClick={goPrev}
+            onPointerDown={e => e.stopPropagation()}
+            className="absolute left-2 top-1/2 -translate-y-1/2 flex items-center gap-1.5 h-10 pl-2 pr-3 rounded-full bg-white/95 border border-gray-200 text-gray-900 font-semibold shadow backdrop-blur-sm active:bg-white max-w-[45%]"
+            aria-label={`Previous: ${prev.area.name}`}
+          >
+            <span className="text-lg leading-none">‹</span>
+            <span className="text-xs truncate">{prev.area.name}</span>
+          </button>
+        )}
+        {next && (
+          <button
+            onClick={goNext}
+            onPointerDown={e => e.stopPropagation()}
+            className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1.5 h-10 pl-3 pr-2 rounded-full bg-white/95 border border-gray-200 text-gray-900 font-semibold shadow backdrop-blur-sm active:bg-white max-w-[45%]"
+            aria-label={`Next: ${next.area.name}`}
+          >
+            <span className="text-xs truncate">{next.area.name}</span>
+            <span className="text-lg leading-none">›</span>
+          </button>
+        )}
+      </div>
+
+      {/* Pagination dots */}
+      {areas.length > 1 && (
+        <div className="flex justify-center gap-1.5 pt-1">
+          {areas.map((a, i) => (
+            <button
+              key={a.area.name}
+              onClick={() => setActive(i)}
+              className={`h-1.5 rounded-full transition-all ${i === active ? 'bg-gray-900 w-6' : 'bg-gray-300 w-1.5'}`}
+              aria-label={a.area.name}
+            />
+          ))}
+        </div>
+      )}
+    </section>
+  )
 }
 
 // ─── Grid (panorama) View ────────────────────────────────────────────
