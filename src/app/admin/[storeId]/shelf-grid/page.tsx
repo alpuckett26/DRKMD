@@ -185,8 +185,18 @@ export default function ShelfGridPage() {
         const d = await res.json().catch(() => ({}))
         throw new Error(d.error || 'Auto-split failed')
       }
-      const data = await res.json() as { cells: number; detected: number; matched: number; failedCells: number }
-      setSplitResult(`✅ Sliced into ${data.cells} sections · found ${data.detected} items · ${data.matched} matched${data.failedCells ? ` · ${data.failedCells} cells failed` : ''}`)
+      const data = await res.json() as {
+        cells: number
+        detected: number
+        matched: number
+        failedCells: number
+        results?: Array<{ row: number; col: number; error?: string }>
+      }
+      const firstError = data.results?.find(r => r.error)?.error
+      const suffix = data.failedCells
+        ? ` · ${data.failedCells} cells failed${firstError ? ` — e.g. "${firstError}"` : ''}`
+        : ''
+      setSplitResult(`✅ Sliced into ${data.cells} sections · found ${data.detected} items · ${data.matched} matched${suffix}`)
       await load()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Auto-split failed')
