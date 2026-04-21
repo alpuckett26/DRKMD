@@ -174,6 +174,24 @@ function AreaSwiper({
         {itemCount > 0 && <span className="text-xs text-gray-500">{itemCount} items</span>}
       </div>
 
+      {/* Subtle prev/next row above the board — no overlay on the shelf */}
+      {(prev || next) && (
+        <div className="flex items-center justify-between gap-3 text-xs font-medium text-gray-500 px-0.5">
+          {prev ? (
+            <button onClick={goPrev} className="flex items-center gap-1 min-w-0 active:text-gray-900">
+              <span>‹</span>
+              <span className="truncate">{prev.area.name}</span>
+            </button>
+          ) : <span />}
+          {next ? (
+            <button onClick={goNext} className="flex items-center gap-1 min-w-0 active:text-gray-900">
+              <span className="truncate">{next.area.name}</span>
+              <span>›</span>
+            </button>
+          ) : <span />}
+        </div>
+      )}
+
       <div
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
@@ -196,30 +214,6 @@ function AreaSwiper({
             resetZoomSignal={resetZoomSignal}
           />
         </div>
-
-        {/* Prev / Next labeled arrows, same language as the old shelf-tour swipe */}
-        {prev && (
-          <button
-            onClick={goPrev}
-            onPointerDown={e => e.stopPropagation()}
-            className="absolute left-2 top-1/2 -translate-y-1/2 flex items-center gap-1.5 h-10 pl-2 pr-3 rounded-full bg-white/95 border border-gray-200 text-gray-900 font-semibold shadow backdrop-blur-sm active:bg-white max-w-[45%]"
-            aria-label={`Previous: ${prev.area.name}`}
-          >
-            <span className="text-lg leading-none">‹</span>
-            <span className="text-xs truncate">{prev.area.name}</span>
-          </button>
-        )}
-        {next && (
-          <button
-            onClick={goNext}
-            onPointerDown={e => e.stopPropagation()}
-            className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1.5 h-10 pl-3 pr-2 rounded-full bg-white/95 border border-gray-200 text-gray-900 font-semibold shadow backdrop-blur-sm active:bg-white max-w-[45%]"
-            aria-label={`Next: ${next.area.name}`}
-          >
-            <span className="text-xs truncate">{next.area.name}</span>
-            <span className="text-lg leading-none">›</span>
-          </button>
-        )}
       </div>
 
       {/* Pagination dots */}
