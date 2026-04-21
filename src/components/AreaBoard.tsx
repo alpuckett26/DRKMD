@@ -25,6 +25,10 @@ interface Props {
   /** When this value changes, the board collapses its zoom state — used
    *  by the parent to exit zoom after an item was added to cart. */
   resetZoomSignal?: number
+  /** Fires true when the customer enters zoom, false when they exit.
+   *  The store page uses this to hide the sticky header for a cleaner
+   *  full-height shelf view. */
+  onZoomChange?: (zoomed: boolean) => void
 }
 
 // Pick a zoom factor that makes individual items tappable without hiding
@@ -45,7 +49,7 @@ function pickZoom(cols: number, _rows: number): number {
  * Tap anywhere → zooms 3x to that point and dots appear over every
  * matched product. Tap a dot → opens the product sheet.
  */
-export default function AreaBoard({ rows, cols, photos, onOpenProduct, resetZoomSignal }: Props) {
+export default function AreaBoard({ rows, cols, photos, onOpenProduct, resetZoomSignal, onZoomChange }: Props) {
   const ZOOM_LEVEL = pickZoom(cols, rows)
   const [zoomed, setZoomed] = useState<{ cx: number; cy: number } | null>(null)
 
@@ -55,6 +59,13 @@ export default function AreaBoard({ rows, cols, photos, onOpenProduct, resetZoom
     if (resetZoomSignal !== undefined) setZoomed(null)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [resetZoomSignal])
+
+  // Tell the parent whenever zoom state changes so the app chrome can
+  // hide for a full-height shelf view.
+  useEffect(() => {
+    onZoomChange?.(zoomed !== null)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [zoomed !== null])
   const [tapped, setTapped] = useState<{ id: string; t: number } | null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
 

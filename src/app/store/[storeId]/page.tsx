@@ -55,6 +55,7 @@ export default function MenuPage() {
   const [searchFocused, setSearchFocused] = useState(false)
   const { addItem, items, itemCount, total } = useCart()
   const [zoomResetSignal, setZoomResetSignal] = useState(0)
+  const [shelfZoomed, setShelfZoomed] = useState(false)
   const prevItemCountRef = useRef(itemCount)
   useEffect(() => {
     if (itemCount > prevItemCountRef.current) {
@@ -121,8 +122,11 @@ export default function MenuPage() {
 
   return (
     <div className="min-h-screen pb-32">
-      {/* Header */}
-      <div className="panel sticky top-0 z-20">
+      {/* Header — hides while a shelf is zoomed in for a full-screen shopping view */}
+      <div
+        className={`panel sticky top-0 z-20 transition-all duration-200 ${shelfZoomed ? 'opacity-0 pointer-events-none -translate-y-2' : ''}`}
+        aria-hidden={shelfZoomed}
+      >
         <div className="max-w-lg mx-auto px-4 pt-4 pb-2">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-3">
@@ -224,6 +228,7 @@ export default function MenuPage() {
           <ShelfTour
             storeId={storeId}
             resetZoomSignal={zoomResetSignal}
+            onZoomChange={setShelfZoomed}
             onOpenProduct={pid => {
               const p = products.find(x => x.id === pid)
               if (p) setSelectedProduct(p)
@@ -282,7 +287,7 @@ export default function MenuPage() {
 
       {/* Cart bar */}
       {itemCount > 0 && (
-        <div className="fixed bottom-0 left-0 right-0 p-4 z-30 panel">
+        <div className={`fixed bottom-0 left-0 right-0 p-4 z-30 panel transition-all duration-200 ${shelfZoomed ? 'opacity-0 pointer-events-none translate-y-2' : ''}`} aria-hidden={shelfZoomed}>
           <div className="max-w-lg mx-auto">
             <Link href={`/store/${storeId}/cart`} className="btn-primary flex items-center justify-between">
               <span className="bg-brand-dark/60 rounded-lg px-2 py-0.5 text-sm font-bold">{itemCount}</span>

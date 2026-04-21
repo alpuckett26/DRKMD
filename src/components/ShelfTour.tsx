@@ -38,12 +38,15 @@ interface Props {
   /** Bumped by the parent store page each time an item is added so the
    *  zoomed AreaBoard can collapse back to the clean cooler view. */
   resetZoomSignal?: number
+  /** True while any shelf board is zoomed-in — lets the store page hide
+   *  its sticky header for a fuller-height shopping view. */
+  onZoomChange?: (zoomed: boolean) => void
 }
 
 const ZOOM_LEVEL = 3.5
 const SWIPE_THRESHOLD = 50
 
-export default function ShelfTour({ storeId, onOpenProduct, resetZoomSignal }: Props) {
+export default function ShelfTour({ storeId, onOpenProduct, resetZoomSignal, onZoomChange }: Props) {
   const [photos, setPhotos] = useState<ShelfPhoto[]>([])
   const [store, setStore] = useState<StoreMeta | null>(null)
   const [loading, setLoading] = useState(true)
@@ -85,6 +88,7 @@ export default function ShelfTour({ storeId, onOpenProduct, resetZoomSignal }: P
         areas={visibleAreas}
         onOpenProduct={onOpenProduct}
         resetZoomSignal={resetZoomSignal}
+        onZoomChange={onZoomChange}
       />
     )
   }
@@ -106,6 +110,7 @@ export default function ShelfTour({ storeId, onOpenProduct, resetZoomSignal }: P
           photos={photos}
           onOpenProduct={onOpenProduct}
           resetZoomSignal={resetZoomSignal}
+          onZoomChange={onZoomChange}
         />
       </section>
     )
@@ -116,11 +121,12 @@ export default function ShelfTour({ storeId, onOpenProduct, resetZoomSignal }: P
 // ─── Swipe between named areas ──────────────────────────────────────
 
 function AreaSwiper({
-  areas, onOpenProduct, resetZoomSignal,
+  areas, onOpenProduct, resetZoomSignal, onZoomChange,
 }: {
   areas: { area: ShelfArea; areaPhotos: ShelfPhoto[] }[]
   onOpenProduct: (id: string) => void
   resetZoomSignal?: number
+  onZoomChange?: (zoomed: boolean) => void
 }) {
   const [active, setActive] = useState(0)
   const [dragX, setDragX] = useState(0)
@@ -212,6 +218,7 @@ function AreaSwiper({
             photos={current.areaPhotos}
             onOpenProduct={onOpenProduct}
             resetZoomSignal={resetZoomSignal}
+            onZoomChange={onZoomChange}
           />
         </div>
       </div>
