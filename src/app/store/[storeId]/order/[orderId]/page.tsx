@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
+import Link from 'next/link'
 import { formatCents, orderStatusLabel } from '@/lib/utils'
 import type { OrderSummary } from '@/types'
 
@@ -20,7 +21,7 @@ const statusColor: Record<string, string> = {
 }
 
 export default function OrderStatusPage() {
-  const { orderId } = useParams<{ orderId: string }>()
+  const { orderId, storeId } = useParams<{ orderId: string; storeId: string }>()
   const [order, setOrder] = useState<OrderSummary | null>(null)
   const [loading, setLoading] = useState(true)
 
@@ -56,10 +57,14 @@ export default function OrderStatusPage() {
   const isDone = order.status === 'completed'
 
   return (
-    <div className="min-h-screen pb-10">
-      <div className="bg-white border-b border-gray-200">
-        <div className="max-w-lg mx-auto px-4 py-4">
-          <h1 className="font-black text-lg text-brand">WendOS</h1>
+    <div className="min-h-screen pb-28">
+      <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
+        <div className="max-w-lg mx-auto px-4 py-3 flex items-center justify-between">
+          <Link href={`/store/${storeId}`} className="text-sm font-semibold text-brand">
+            ‹ Back to store
+          </Link>
+          <h1 className="font-black text-base">Order</h1>
+          <div className="w-20" />
         </div>
       </div>
 
@@ -133,10 +138,26 @@ export default function OrderStatusPage() {
         </div>
 
         {isDone && (
-          <div className="card bg-green-900/30 border border-green-700/50 text-center text-white text-sm">
+          <div className="card bg-green-50 border border-green-200 text-center text-green-800 text-sm">
             ✓ Order complete. Thank you!
           </div>
         )}
+
+        <Link
+          href={`/store/${storeId}`}
+          className="btn-secondary block text-center"
+        >
+          {isDone ? 'Start a new order' : 'Continue shopping'}
+        </Link>
+      </div>
+
+      {/* Sticky bottom action — always present so the customer never dead-ends */}
+      <div className="fixed bottom-0 left-0 right-0 z-20 panel">
+        <div className="max-w-lg mx-auto px-4 py-3">
+          <Link href={`/store/${storeId}`} className="btn-primary block text-center">
+            {isReady ? '🛍 Keep shopping' : isDone ? '＋ Start a new order' : '← Back to store'}
+          </Link>
+        </div>
       </div>
     </div>
   )
